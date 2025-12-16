@@ -1,6 +1,9 @@
-import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, AlertCircle, Loader2 } from 'lucide-react';
 import type { Language } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { tripsApi, imagesApi } from '../lib/api';
+import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 
 interface TripDetailsProps {
   tripId: string;
@@ -85,55 +88,87 @@ const translations = {
   },
 };
 
-// Mock trip data
-const mockTripData: Record<string, any> = {
-  '1': {
-    id: '1',
-    from: 'Damascus',
-    to: 'Aleppo',
-    departureTime: '08:00',
-    arrivalTime: '12:30',
-    duration: '4h 30m',
-    price: 1500,
-    company: 'AlKhaleej Transport',
-    type: 'vip',
-    amenities: ['wifi', 'ac', 'reclining-seats', 'charging-ports'],
-    seatsAvailable: 12,
-    totalSeats: 40,
-    stops: [
-      { city: 'Damascus', time: '08:00', duration: '0h' },
-      { city: 'Homs', time: '10:15', duration: '2h 15m' },
-      { city: 'Hama', time: '11:00', duration: '3h' },
-      { city: 'Aleppo', time: '12:30', duration: '4h 30m' },
-    ],
-    available: true,
-  },
-  '2': {
-    id: '2',
-    from: 'Damascus',
-    to: 'Aleppo',
-    departureTime: '10:30',
-    arrivalTime: '15:15',
-    duration: '4h 45m',
-    price: 1200,
-    company: 'Pullman Syria',
-    type: 'normal',
-    amenities: ['ac', 'reclining-seats'],
-    seatsAvailable: 8,
-    totalSeats: 45,
-    stops: [
-      { city: 'Damascus', time: '10:30', duration: '0h' },
-      { city: 'Homs', time: '12:45', duration: '2h 15m' },
-      { city: 'Hama', time: '13:30', duration: '3h' },
-      { city: 'Aleppo', time: '15:15', duration: '4h 45m' },
-    ],
-    available: true,
-  },
-};
-
 export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, isLoggedIn }: TripDetailsProps) {
   const t = translations[language];
-  const trip = mockTripData[tripId] || mockTripData['1'];
+  const [trip, setTrip] = useState<any>(null);
+  const [busImages, setBusImages] = useState<any[]>([]);
+  const [stationImages, setStationImages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchTrip = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await tripsApi.getById(tripId);
+        
+        // Format the trip data for display
+        const formattedTrip = {
+          id: data.id,
+          from: data.from_city,
+          to: data.to_city,
+          departureTime: formatTime(data.departure_time, language),
+          arrivalTime: formatTime(data.arrival_time, language),
+          duration: formatDuration(data.duration_minutes, language),
+          price: data.price || 0,
+          company: data.company_name || 'Unknown',
+          companyId: data.company_id,
+          seatsAvailable: data.seats_available,
+          totalSeats: data.seats_total,
+          stops: data.stops || [],
+          available: data.status === 'scheduled' && data.seats_available > 0,
+          equipment: data.equipment,
+          amenities: data.equipment ? (data.equipment.includes('wifi') ? ['wifi'] : []).concat(
+            data.equipment.includes('ac') ? ['ac'] : []
+          ) : [],
+        };
+        
+        setTrip(formattedTrip);
+
+        // Fetch images for this trip
+        try {
+          const [busImgs, stationImgs] = await Promise.all([
+            imagesApi.getByEntity('bus', data.company_id || 0),
+            imagesApi.getByEntity('station', data.departure_station_id || 0),
+          ]);
+          setBusImages(busImgs);
+          setStationImages(stationImgs);
+        } catch (imgErr) {
+          console.error('Error fetching images:', imgErr);
+          // Images are optional, so we continue
+        }
+      } catch (err: any) {
+        console.error('Error fetching trip:', err);
+        setError(err.message || 'Failed to load trip details');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrip();
+  }, [tripId, language]);
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !trip) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+          <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+          <h3 className="text-xl text-gray-900 mb-2">{error || 'Trip not found'}</h3>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -172,34 +207,75 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
             </div>
 
             {/* Stops */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl text-gray-900 mb-6">{t.stops}</h2>
-              <div className="space-y-4">
-                {trip.stops.map((stop: any, index: number) => (
-                  <div key={index} className="flex items-start gap-4">
+            {trip.stops && trip.stops.length > 0 && (
+              <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                <h2 className="text-xl text-gray-900 mb-6">{t.stops}</h2>
+                <div className="space-y-4">
+                  {/* Add departure station */}
+                  <div className="flex items-start gap-4">
                     <div className="flex flex-col items-center">
-                      <div className={`w-4 h-4 rounded-full ${
-                        index === 0 || index === trip.stops.length - 1
-                          ? 'bg-green-600'
-                          : 'bg-gray-300'
-                      }`} />
-                      {index < trip.stops.length - 1 && (
+                      <div className="w-4 h-4 rounded-full bg-green-600" />
+                      {trip.stops.length > 0 && (
                         <div className="w-0.5 h-12 bg-gray-200 my-1" />
                       )}
                     </div>
                     <div className="flex-1 pt-0.5">
                       <div className="flex justify-between items-start">
                         <div>
-                          <div className="text-gray-900">{stop.city}</div>
-                          <div className="text-sm text-gray-600">{stop.duration}</div>
+                          <div className="text-gray-900">{trip.from}</div>
+                          <div className="text-sm text-gray-600">0h</div>
                         </div>
-                        <div className="text-gray-900">{stop.time}</div>
+                        <div className="text-gray-900">{trip.departureTime}</div>
                       </div>
                     </div>
                   </div>
-                ))}
+                  
+                  {trip.stops.map((stop: any, index: number) => (
+                    <div key={index} className="flex items-start gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="w-4 h-4 rounded-full bg-gray-300" />
+                        {index < trip.stops.length - 1 && (
+                          <div className="w-0.5 h-12 bg-gray-200 my-1" />
+                        )}
+                      </div>
+                      <div className="flex-1 pt-0.5">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <div className="text-gray-900">{stop.station_name}</div>
+                            {stop.arrival_time && (
+                              <div className="text-sm text-gray-600">
+                                {new Date(stop.arrival_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                              </div>
+                            )}
+                          </div>
+                          {stop.arrival_time && (
+                            <div className="text-gray-900">
+                              {new Date(stop.arrival_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Add arrival station */}
+                  <div className="flex items-start gap-4">
+                    <div className="flex flex-col items-center">
+                      <div className="w-4 h-4 rounded-full bg-green-600" />
+                    </div>
+                    <div className="flex-1 pt-0.5">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-gray-900">{trip.to}</div>
+                          <div className="text-sm text-gray-600">{trip.duration}</div>
+                        </div>
+                        <div className="text-gray-900">{trip.arrivalTime}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Photos */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
@@ -212,33 +288,41 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                 {/* Bus Photos */}
                 <div>
                   <h3 className="text-sm text-gray-700 mb-3">{t.busPhotos}</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="aspect-video rounded-lg overflow-hidden">
-                        <ImageWithFallback
-                          src="https://images.unsplash.com/photo-1760386128700-d752f805c116?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxtb2Rlcm4lMjBidXMlMjB0cmF2ZWx8ZW58MXx8fHwxNzY0ODUxOTYxfDA&ixlib=rb-4.1.0&q=80&w=1080"
-                          alt={`Bus photo ${i}`}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {busImages.length === 0 ? (
+                    <p className="text-sm text-gray-500">No bus photos available</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {busImages.map((img: any) => (
+                        <div key={img.id} className="aspect-video rounded-lg overflow-hidden">
+                          <ImageWithFallback
+                            src={`http://localhost:4000${img.image_url}`}
+                            alt={img.file_name || 'Bus photo'}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Station Photos */}
                 <div>
                   <h3 className="text-sm text-gray-700 mb-3">{t.stationPhotos}</h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="aspect-video rounded-lg overflow-hidden">
-                        <ImageWithFallback
-                          src="https://images.unsplash.com/photo-1559990050-9e0b9175a782?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxidXMlMjBzdGF0aW9uJTIwdGVybWluYWx8ZW58MXx8fHwxNzY0NzgyNjQxfDA&ixlib=rb-4.1.0&q=80&w=1080"
-                          alt={`Station photo ${i}`}
-                          className="w-full h-full object-cover hover:scale-105 transition-transform"
-                        />
-                      </div>
-                    ))}
-                  </div>
+                  {stationImages.length === 0 ? (
+                    <p className="text-sm text-gray-500">No station photos available</p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {stationImages.map((img: any) => (
+                        <div key={img.id} className="aspect-video rounded-lg overflow-hidden">
+                          <ImageWithFallback
+                            src={`http://localhost:4000${img.image_url}`}
+                            alt={img.file_name || 'Station photo'}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -250,7 +334,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
               <div className="mb-6">
                 <div className="text-3xl text-green-600 mb-1">
-                  {trip.price.toLocaleString()} SYP
+                  {formatCurrency(trip.price, language)}
                 </div>
                 <div className="text-sm text-gray-600">{t.price}</div>
               </div>

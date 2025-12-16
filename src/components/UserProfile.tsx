@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { User as UserIcon, Phone, Mail, Calendar, Save, LogIn } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { User as UserIcon, Phone, Mail, Calendar, Save, LogIn, Loader2 } from 'lucide-react';
 import type { Language, User } from '../App';
+import { usersApi } from '../lib/api';
 
 interface UserProfileProps {
   user: User | null;
@@ -70,6 +71,8 @@ export function UserProfile({ user, language, onNavigateToLogin, onUpdateUser }:
   const t = translations[language];
   const [formData, setFormData] = useState({
     name: user?.name || '',
+    firstName: '',
+    lastName: '',
     email: user?.email || '',
     phone: user?.phone || '',
     birthDate: '',
@@ -77,10 +80,57 @@ export function UserProfile({ user, language, onNavigateToLogin, onUpdateUser }:
     language: user?.language || language,
   });
   const [showSaved, setShowSaved] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) {
+        setFetching(false);
+        return;
+      }
+
+      try {
+        setFetching(true);
+        const profile = await usersApi.getMe();
+        setFormData({
+          name: profile.name || '',
+          firstName: profile.firstName || '',
+          lastName: profile.lastName || '',
+          email: profile.email || '',
+          phone: profile.phone || '',
+          birthDate: profile.birthDate ? new Date(profile.birthDate).toISOString().split('T')[0] : '',
+          gender: profile.gender || '',
+          language: user.language || language,
+        });
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    fetchProfile();
+  }, [user, language]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (user) {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+      const nameParts = formData.name.split(' ');
+      const firstName = nameParts[0] || formData.firstName;
+      const lastName = nameParts.slice(1).join(' ') || formData.lastName;
+
+      await usersApi.updateMe({
+        firstName,
+        lastName,
+        phone: formData.phone,
+        gender: formData.gender || undefined,
+        birthDate: formData.birthDate || undefined,
+      });
+
       onUpdateUser({
         ...user,
         name: formData.name,
@@ -88,8 +138,13 @@ export function UserProfile({ user, language, onNavigateToLogin, onUpdateUser }:
         phone: formData.phone,
         language: formData.language as Language,
       });
+
       setShowSaved(true);
       setTimeout(() => setShowSaved(false), 3000);
+    } catch (err: any) {
+      alert(err.message || 'Failed to update profile');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -108,6 +163,16 @@ export function UserProfile({ user, language, onNavigateToLogin, onUpdateUser }:
           >
             {t.loginButton}
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (fetching) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
         </div>
       </div>
     );
@@ -244,9 +309,14 @@ export function UserProfile({ user, language, onNavigateToLogin, onUpdateUser }:
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full mt-8 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
+          disabled={loading}
+          className="w-full mt-8 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <Save className="w-5 h-5" />
+          {loading ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <Save className="w-5 h-5" />
+          )}
           {t.saveProfile}
         </button>
       </form>

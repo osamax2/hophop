@@ -12,6 +12,7 @@ import {
   Heart,
 } from 'lucide-react';
 import type { Language, SearchParams } from '../App';
+import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 
 interface SearchResultsProps {
   searchParams: SearchParams;
@@ -305,9 +306,8 @@ export function SearchResults({
                 <div className="flex md:flex-col items-center md:items-end gap-3">
                   <div className="text-right flex-1 md:flex-none">
                     <div className="text-2xl text-green-600">
-                      {trip.price.toLocaleString()}
+                      {formatCurrency(trip.price, language)}
                     </div>
-                    <div className="text-sm text-gray-600">SYP</div>
                   </div>
                   <div className="flex gap-2">
                     {isLoggedIn && (

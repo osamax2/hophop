@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Star, ThumbsUp, MessageSquare } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Star, ThumbsUp, MessageSquare, Loader2 } from 'lucide-react';
 import type { Language } from '../App';
+import { ratingsApi, companiesApi } from '../lib/api';
 
 interface ReviewsProps {
   language: Language;
@@ -52,43 +53,12 @@ const translations = {
   },
 };
 
-const companies = [
-  'AlKhaleej Transport',
-  'Pullman Syria',
-  'Karnak Tours',
-  'Damascus Express',
-];
-
-const mockReviews = [
-  {
-    id: '1',
-    company: 'AlKhaleej Transport',
-    user: 'Ahmed K.',
-    date: '2024-11-20',
-    ratings: { punctuality: 5, friendliness: 5, cleanliness: 4 },
-    comment: 'Sehr guter Service, pünktliche Abfahrt und angenehme Fahrt.',
-  },
-  {
-    id: '2',
-    company: 'Pullman Syria',
-    user: 'Sara M.',
-    date: '2024-11-18',
-    ratings: { punctuality: 4, friendliness: 5, cleanliness: 5 },
-    comment: 'Freundliches Personal und sauberer Bus. Sehr empfehlenswert!',
-  },
-  {
-    id: '3',
-    company: 'AlKhaleej Transport',
-    user: 'Omar H.',
-    date: '2024-11-15',
-    ratings: { punctuality: 5, friendliness: 4, cleanliness: 5 },
-    comment: 'Komfortabel und zuverlässig. Gerne wieder!',
-  },
-];
-
 export function Reviews({ language, isLoggedIn }: ReviewsProps) {
   const t = translations[language];
+  const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
   const [selectedCompany, setSelectedCompany] = useState('');
+  const [selectedCompanyId, setSelectedCompanyId] = useState<number | null>(null);
   const [ratings, setRatings] = useState({
     punctuality: 0,
     friendliness: 0,
@@ -96,19 +66,85 @@ export function Reviews({ language, isLoggedIn }: ReviewsProps) {
   });
   const [comment, setComment] = useState('');
   const [showThankYou, setShowThankYou] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [companiesData, reviewsData] = await Promise.all([
+          companiesApi.getAll(),
+          ratingsApi.getAll(),
+        ]);
+        setCompanies(companiesData);
+        setReviews(reviewsData);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    if (selectedCompanyId) {
+      const fetchReviews = async () => {
+        try {
+          const data = await ratingsApi.getAll(selectedCompanyId);
+          setReviews(data);
+        } catch (err) {
+          console.error('Error fetching reviews:', err);
+        }
+      };
+      fetchReviews();
+    }
+  }, [selectedCompanyId]);
+
+  const handleCompanyChange = (companyName: string) => {
+    setSelectedCompany(companyName);
+    const company = companies.find(c => c.name === companyName);
+    setSelectedCompanyId(company?.id || null);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isLoggedIn) return;
+    if (!isLoggedIn || !selectedCompanyId) return;
     
-    // Mock submission
-    setShowThankYou(true);
-    setTimeout(() => setShowThankYou(false), 3000);
-    
-    // Reset form
-    setSelectedCompany('');
-    setRatings({ punctuality: 0, friendliness: 0, cleanliness: 0 });
-    setComment('');
+    if (ratings.punctuality === 0 || ratings.friendliness === 0 || ratings.cleanliness === 0) {
+      alert('Please rate all categories');
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      await ratingsApi.submit({
+        company_id: selectedCompanyId,
+        punctuality_rating: ratings.punctuality,
+        friendliness_rating: ratings.friendliness,
+        cleanliness_rating: ratings.cleanliness,
+        comment: comment || undefined,
+      });
+      
+      setShowThankYou(true);
+      setTimeout(() => setShowThankYou(false), 3000);
+      
+      // Refresh reviews
+      const updatedReviews = await ratingsApi.getAll(selectedCompanyId);
+      setReviews(updatedReviews);
+      
+      // Reset form
+      setSelectedCompany('');
+      setSelectedCompanyId(null);
+      setRatings({ punctuality: 0, friendliness: 0, cleanliness: 0 });
+      setComment('');
+    } catch (err: any) {
+      alert(err.message || 'Failed to submit rating');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const renderStars = (category: keyof typeof ratings, interactive = false) => {
@@ -136,7 +172,8 @@ export function Reviews({ language, isLoggedIn }: ReviewsProps) {
   };
 
   const calculateAverage = (ratings: { punctuality: number; friendliness: number; cleanliness: number }) => {
-    return ((ratings.punctuality + ratings.friendliness + ratings.cleanliness) / 3).toFixed(1);
+    const avg = (ratings.punctuality + ratings.friendliness + ratings.cleanliness) / 3;
+    return avg.toFixed(1);
   };
 
   return (
@@ -170,13 +207,13 @@ export function Reviews({ language, isLoggedIn }: ReviewsProps) {
                   </label>
                   <select
                     value={selectedCompany}
-                    onChange={(e) => setSelectedCompany(e.target.value)}
+                    onChange={(e) => handleCompanyChange(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
                     required
                   >
                     <option value="">{t.selectCompany}</option>
                     {companies.map(company => (
-                      <option key={company} value={company}>{company}</option>
+                      <option key={company.id} value={company.name}>{company.name}</option>
                     ))}
                   </select>
                 </div>
@@ -225,8 +262,12 @@ export function Reviews({ language, isLoggedIn }: ReviewsProps) {
                 {/* Submit */}
                 <button
                   type="submit"
-                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors"
+                  disabled={submitting}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
+                  {submitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : null}
                   {t.submit}
                 </button>
               </form>
@@ -243,60 +284,76 @@ export function Reviews({ language, isLoggedIn }: ReviewsProps) {
         <div className="lg:col-span-2">
           <h2 className="text-xl text-gray-900 mb-6">{t.allReviews}</h2>
           
-          <div className="space-y-4">
-            {mockReviews.map(review => (
-              <div key={review.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="text-gray-900 mb-1">{review.company}</div>
-                    <div className="text-sm text-gray-600">
-                      {review.user} • {review.date}
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+            </div>
+          ) : reviews.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
+              <p className="text-gray-600">No reviews yet</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review: any) => {
+                const avgRating = calculateAverage({
+                  punctuality: review.punctuality_rating,
+                  friendliness: review.friendliness_rating,
+                  cleanliness: review.cleanliness_rating,
+                });
+                
+                return (
+                  <div key={review.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div>
+                        <div className="text-gray-900 mb-1">{review.company_name || 'Unknown Company'}</div>
+                        <div className="text-sm text-gray-600">
+                          {review.user_name || review.user_email} • {new Date(review.created_at).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="flex items-center gap-1 mb-1">
+                          <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
+                          <span className="text-lg text-gray-900">{avgRating}</span>
+                        </div>
+                        <div className="text-xs text-gray-600">{t.averageRating}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-1 mb-1">
-                      <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                      <span className="text-lg text-gray-900">
-                        {calculateAverage(review.ratings)}
-                      </span>
-                    </div>
-                    <div className="text-xs text-gray-600">{t.averageRating}</div>
-                  </div>
-                </div>
 
-                {/* Detailed Ratings */}
-                <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b border-gray-100">
-                  <div>
-                    <div className="text-xs text-gray-600 mb-1">{t.punctuality}</div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-900">{review.ratings.punctuality}</span>
+                    {/* Detailed Ratings */}
+                    <div className="grid grid-cols-3 gap-4 mb-4 pb-4 border-b border-gray-100">
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">{t.punctuality}</div>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm text-gray-900">{review.punctuality_rating}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">{t.friendliness}</div>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm text-gray-900">{review.friendliness_rating}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-600 mb-1">{t.cleanliness}</div>
+                        <div className="flex items-center gap-1">
+                          <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm text-gray-900">{review.cleanliness_rating}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-600 mb-1">{t.friendliness}</div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-900">{review.ratings.friendliness}</span>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-600 mb-1">{t.cleanliness}</div>
-                    <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                      <span className="text-sm text-gray-900">{review.ratings.cleanliness}</span>
-                    </div>
-                  </div>
-                </div>
 
-                {/* Comment */}
-                {review.comment && (
-                  <p className="text-sm text-gray-700">{review.comment}</p>
-                )}
-              </div>
-            ))}
-          </div>
+                    {/* Comment */}
+                    {review.comment && (
+                      <p className="text-sm text-gray-700">{review.comment}</p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
     </div>

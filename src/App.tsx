@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Navigation } from './components/Navigation';
 import { HomePage } from './components/HomePage';
 import { SearchResults } from './components/SearchResults';
@@ -8,6 +8,7 @@ import { UserProfile } from './components/UserProfile';
 import { AdminDashboard } from './components/AdminDashboard';
 import { LoginRegister } from './components/LoginRegister';
 import { Reviews } from './components/Reviews';
+import { favoritesApi } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
 export type UserRole = 'visitor' | 'user' | 'admin' | 'agent';
@@ -49,12 +50,44 @@ export default function App() {
     setCurrentPage('trip-details');
   };
 
-  const toggleFavorite = (tripId: string) => {
-    setFavorites(prev => 
-      prev.includes(tripId) 
-        ? prev.filter(id => id !== tripId)
-        : [...prev, tripId]
-    );
+  // Load favorites when user logs in
+  useEffect(() => {
+    const loadFavorites = async () => {
+      if (!user) {
+        setFavorites([]);
+        return;
+      }
+
+      try {
+        const favs = await favoritesApi.getAll();
+        setFavorites(favs.map((f: any) => String(f.trip_id)));
+      } catch (err) {
+        console.error('Error loading favorites:', err);
+      }
+    };
+
+    loadFavorites();
+  }, [user]);
+
+  const toggleFavorite = async (tripId: string) => {
+    if (!user) return;
+
+    const tripIdNum = parseInt(tripId);
+    if (isNaN(tripIdNum)) return;
+
+    try {
+      const isFavorite = favorites.includes(tripId);
+      if (isFavorite) {
+        await favoritesApi.remove(tripIdNum);
+        setFavorites(prev => prev.filter(id => id !== tripId));
+      } else {
+        await favoritesApi.add(tripIdNum);
+        setFavorites(prev => [...prev, tripId]);
+      }
+    } catch (err: any) {
+      console.error('Error toggling favorite:', err);
+      alert(err.message || 'Failed to update favorite');
+    }
   };
 
   const handleLogin = (userData: User) => {
@@ -64,6 +97,7 @@ export default function App() {
 
   const handleLogout = () => {
     setUser(null);
+    setFavorites([]);
     setCurrentPage('home');
   };
 

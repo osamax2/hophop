@@ -1,8 +1,11 @@
-import { Heart, MapPin, Clock, DollarSign, LogIn } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, MapPin, Clock, DollarSign, LogIn, Loader2 } from 'lucide-react';
 import type { Language } from '../App';
+import { favoritesApi } from '../lib/api';
+import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 
 interface FavoritesProps {
-  favorites: string[];
+  favorites: string[]; // Keep for backward compatibility, but will fetch from API
   onViewDetails: (tripId: string) => void;
   language: Language;
   isLoggedIn: boolean;
@@ -42,56 +45,48 @@ const translations = {
   },
 };
 
-// Mock trip data
-const mockTrips: Record<string, any> = {
-  '1': {
-    id: '1',
-    from: 'Damascus',
-    to: 'Aleppo',
-    departureTime: '08:00',
-    arrivalTime: '12:30',
-    duration: '4h 30m',
-    price: 1500,
-    company: 'AlKhaleej Transport',
-    seatsAvailable: 12,
-  },
-  '2': {
-    id: '2',
-    from: 'Damascus',
-    to: 'Aleppo',
-    departureTime: '10:30',
-    arrivalTime: '15:15',
-    duration: '4h 45m',
-    price: 1200,
-    company: 'Pullman Syria',
-    seatsAvailable: 8,
-  },
-  '3': {
-    id: '3',
-    from: 'Damascus',
-    to: 'Aleppo',
-    departureTime: '14:00',
-    arrivalTime: '18:30',
-    duration: '4h 30m',
-    price: 1800,
-    company: 'Karnak Tours',
-    seatsAvailable: 15,
-  },
-  '4': {
-    id: '4',
-    from: 'Damascus',
-    to: 'Aleppo',
-    departureTime: '16:30',
-    arrivalTime: '21:00',
-    duration: '4h 30m',
-    price: 1000,
-    company: 'Damascus Express',
-    seatsAvailable: 20,
-  },
-};
-
 export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNavigateToLogin }: FavoritesProps) {
   const t = translations[language];
+  const [favoriteTrips, setFavoriteTrips] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!isLoggedIn) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError(null);
+        const favs = await favoritesApi.getAll();
+        
+        // Format trips for display
+        const formatted = favs.map((f: any) => ({
+          id: String(f.trip_id),
+          from: f.from_city,
+          to: f.to_city,
+          departureTime: formatTime(f.departure_time, language),
+          arrivalTime: formatTime(f.arrival_time, language),
+          duration: formatDuration(f.duration_minutes, language),
+          price: f.price || 0,
+          company: f.company_name || 'Unknown',
+          seatsAvailable: f.seats_available,
+        }));
+        
+        setFavoriteTrips(formatted);
+      } catch (err: any) {
+        console.error('Error fetching favorites:', err);
+        setError(err.message || 'Failed to load favorites');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFavorites();
+  }, [isLoggedIn]);
 
   if (!isLoggedIn) {
     return (
@@ -113,7 +108,25 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
     );
   }
 
-  const favoriteTrips = favorites.map(id => mockTrips[id]).filter(Boolean);
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
+          <p className="text-red-700">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -124,7 +137,7 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
           <h1 className="text-3xl text-gray-900">{t.favorites}</h1>
         </div>
         <p className="text-gray-600">
-          {favorites.length} {favorites.length === 1 ? 'Fahrt' : 'Fahrten'} gespeichert
+          {favoriteTrips.length} {favoriteTrips.length === 1 ? 'trip' : 'trips'} saved
         </p>
       </div>
 
@@ -186,7 +199,7 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
                     Preis
                   </div>
                   <span className="text-lg text-green-600">
-                    {trip.price.toLocaleString()} SYP
+                    {formatCurrency(trip.price, language)}
                   </span>
                 </div>
               </div>

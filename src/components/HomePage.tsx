@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Search, MapPin, Calendar, Building2, Clock, Star, ShieldCheck, Bus } from 'lucide-react';
 import type { Language, SearchParams } from '../App';
 import logo from 'figma:asset/4dddb73877b28322b7848adc27f0f948198765ae.png';
+import { CitySelector } from './CitySelector';
 
 interface HomePageProps {
   onSearch: (params: SearchParams) => void;
@@ -95,16 +96,11 @@ const translations = {
   },
 };
 
-const cities = [
-  'Damascus', 'Aleppo', 'Homs', 'Latakia', 'Hama', 'Tartus', 
-  'Deir ez-Zor', 'Raqqa', 'Idlib', 'Daraa', 'Al-Hasakah', 'Qamishli'
-];
-
 const popularRoutes = [
-  { from: 'Damascus', to: 'Aleppo', duration: '4h 30m' },
-  { from: 'Damascus', to: 'Latakia', duration: '3h 45m' },
-  { from: 'Aleppo', to: 'Homs', duration: '2h 15m' },
-  { from: 'Damascus', to: 'Homs', duration: '2h 30m' },
+  { from: 'دمشق', to: 'حلب', duration: '4h 30m' },
+  { from: 'دمشق', to: 'اللاذقية', duration: '3h 45m' },
+  { from: 'حلب', to: 'حمص', duration: '2h 15m' },
+  { from: 'دمشق', to: 'حمص', duration: '2h 30m' },
 ];
 
 export function HomePage({ onSearch, language }: HomePageProps) {
@@ -166,42 +162,22 @@ export function HomePage({ onSearch, language }: HomePageProps) {
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl p-8">
           <div className="grid md:grid-cols-3 gap-6 mb-6">
             {/* From */}
-            <div>
-              <label className="block text-gray-700 mb-3 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-green-600" />
-                <span>{t.from}</span>
-              </label>
-              <select
-                value={from}
-                onChange={(e) => setFrom(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
-                required
-              >
-                <option value="">{t.fromPlaceholder}</option>
-                {cities.map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
-            </div>
+            <CitySelector
+              value={from}
+              onChange={setFrom}
+              placeholder={t.fromPlaceholder}
+              label={t.from}
+              required
+            />
 
             {/* To */}
-            <div>
-              <label className="block text-gray-700 mb-3 flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-green-600" />
-                <span>{t.to}</span>
-              </label>
-              <select
-                value={to}
-                onChange={(e) => setTo(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
-                required
-              >
-                <option value="">{t.toPlaceholder}</option>
-                {cities.map(city => (
-                  <option key={city} value={city}>{city}</option>
-                ))}
-              </select>
-            </div>
+            <CitySelector
+              value={to}
+              onChange={setTo}
+              placeholder={t.toPlaceholder}
+              label={t.to}
+              required
+            />
 
             {/* Date */}
             <div>

@@ -56,6 +56,10 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const t = translations[language];
 
+  // Debug: Log user role
+  console.log("Navigation - User object:", user);
+  console.log("Navigation - User role:", user?.role);
+
   const menuItems = [
     { id: 'home', label: t.home, icon: Home },
     { id: 'search-results', label: t.search, icon: Search },
@@ -64,7 +68,10 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   ];
 
   if (user?.role === 'admin' || user?.role === 'agent') {
+    console.log("Adding admin menu item");
     menuItems.push({ id: 'admin', label: t.admin, icon: BarChart3 });
+  } else {
+    console.log("NOT adding admin menu item - role is:", user?.role);
   }
 
   return (

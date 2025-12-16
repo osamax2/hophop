@@ -88,23 +88,83 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
     gender: '',
     language: language,
   });
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Mock login/register - in real app, this would call an API
-    const user: UserType = {
-      id: '1',
-      name: formData.name || 'Test User',
-      email: formData.email,
-      phone: formData.phone,
-      role: 'user',
-      language: formData.language as Language,
-    };
-    
-    onLogin(user);
+
+    try {
+      const url = isLogin
+        ? `${API_BASE}/api/auth/login`
+        : `${API_BASE}/api/auth/register`;
+
+
+      // ملاحظة: عدّل أسماء الحقول إذا باك-إندك مختلف (مثلاً full_name بدل name)
+      const payload: any = isLogin
+        ? { email: formData.email, password: formData.password }
+        : {
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            password: formData.password,
+            language: formData.language,
+            birthDate: formData.birthDate || null,
+            gender: formData.gender || null,
+          };
+
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data?.message || "Login/Register failed");
+        return;
+      }
+
+      // ✅ خزّن JWT الحقيقي
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      } else {
+        alert("No token returned from server");
+        return;
+      }
+
+      // ✅ (اختياري لكن مهم) جيب بيانات المستخدم من /api/me
+      const meRes = await fetch(`${API_BASE}/api/me`, {
+        headers: { Authorization: "Bearer " + data.token },
+      });
+      const meData = await meRes.json();
+
+      // Debug: Log the response to see what we're getting
+      console.log("API /api/me response:", meData);
+
+      // إذا /api/me بيرجع user أو أي شكل مختلف، عدله هون
+      const userRole = meData?.user?.role ?? meData?.role ?? "user";
+      console.log("Detected role:", userRole);
+      
+      const userObj: UserType = {
+        id: String(meData?.user?.id ?? meData?.id ?? "1"),
+        name: (meData?.user?.name ?? meData?.name ?? formData.name) || "User",
+        email: meData?.user?.email ?? meData?.email ?? formData.email,
+        phone: meData?.user?.phone ?? meData?.phone ?? formData.phone ?? "",
+        role: userRole as any,
+        language: formData.language as Language,
+      };
+      
+      console.log("User object being set:", userObj);
+
+      onLogin(userObj);
+    } catch (err: any) {
+      console.error(err);
+      alert("Something went wrong. Check console.");
+    }
   };
 
+  
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-gradient-to-br from-green-50 to-blue-50">
       <div className="w-full max-w-md">
