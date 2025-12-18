@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, MapPin, Calendar, Building2, Clock, Star, ShieldCheck, Bus } from 'lucide-react';
+import { Search, MapPin, Calendar, Building2, Clock, Star, ShieldCheck, Bus, ArrowLeftRight, Mail, Phone, Facebook, Instagram } from 'lucide-react';
 import type { Language, SearchParams } from '../App';
 import logo from 'figma:asset/4dddb73877b28322b7848adc27f0f948198765ae.png';
 import { CitySelector } from './CitySelector';
@@ -23,6 +23,7 @@ const translations = {
     transportType: 'Transportart (optional)',
     popularRoutes: 'Beliebte Routen',
     whyHopHop: 'Warum HopHop ist deine beste Wahl',
+    typeAll: 'Alle',
     typeBus: 'Bus',
     typeVan: 'Van',
     typeVipVan: 'VIP Van',
@@ -39,6 +40,17 @@ const translations = {
     featureBookingText: 'Sichere Zahlungsmethoden und bestätigte Reservierungen',
     // Validation messages
     searchValidationError: 'Bitte füllen Sie alle erforderlichen Felder aus (Von, Nach, Datum)',
+    // Footer
+    footerAbout: 'Über uns',
+    footerContact: 'Kontakt',
+    footerLinks: 'Links',
+    footerFollowUs: 'Folgen Sie uns',
+    footerCopyright: '© 2024 HopHop. Alle Rechte vorbehalten.',
+    footerAboutText: 'Ihre zuverlässige Plattform für Busfahrpläne zwischen syrischen Städten.',
+    footerContactText: 'Kontaktieren Sie uns für Unterstützung und Fragen.',
+    footerSocialText: 'Folgen Sie uns auf sozialen Medien',
+    footerPrivacy: 'Datenschutz',
+    footerTerms: 'Nutzungsbedingungen',
   },
   en: {
     mainTitle: 'Find Your Journey',
@@ -53,6 +65,7 @@ const translations = {
     transportType: 'Transport Type (optional)',
     popularRoutes: 'Popular Routes',
     whyHopHop: 'Why HopHop is your best choice',
+    typeAll: 'All',
     typeBus: 'Bus',
     typeVan: 'Van',
     typeVipVan: 'VIP Van',
@@ -69,6 +82,17 @@ const translations = {
     featureBookingText: 'Secure payment methods and confirmed reservations',
     // Validation messages
     searchValidationError: 'Please fill in all required fields (From, To, Date)',
+    // Footer
+    footerAbout: 'About Us',
+    footerContact: 'Contact',
+    footerLinks: 'Links',
+    footerFollowUs: 'Follow Us',
+    footerCopyright: '© 2024 HopHop. All rights reserved.',
+    footerAboutText: 'Your reliable platform for bus schedules between Syrian cities.',
+    footerContactText: 'Contact us for support and inquiries.',
+    footerSocialText: 'Follow us on social media',
+    footerPrivacy: 'Privacy Policy',
+    footerTerms: 'Terms of Service',
   },
   ar: {
     mainTitle: 'ابحث عن رحلتك',
@@ -82,7 +106,8 @@ const translations = {
     toPlaceholder: 'اختر مدينة الوصول',
     transportType: 'نوع النقل (اختياري)',
     popularRoutes: 'الطرق الشائعة',
-    whyHopHop: 'لماذا هوب هوب هو خيارك الأفضل',
+    whyHopHop: 'لماذا هوب هوب خيارك الأفضل',
+    typeAll: 'الكل',
     typeBus: 'باص',
     typeVan: 'فان',
     typeVipVan: 'فان VIP',
@@ -99,6 +124,17 @@ const translations = {
     featureBookingText: 'طرق دفع آمنة وحجوزات مؤكدة',
     // Validation messages
     searchValidationError: 'يرجى تعبئة جميع الحقول المطلوبة (من، إلى، التاريخ)',
+    // Footer
+    footerAbout: 'من نحن',
+    footerContact: 'اتصل بنا',
+    footerLinks: 'روابط',
+    footerFollowUs: 'تابعنا',
+    footerCopyright: '© 2024 هوب هوب. جميع الحقوق محفوظة.',
+    footerAboutText: 'منصتك الموثوقة لجدول مواعيد الحافلات بين المدن السورية.',
+    footerContactText: 'اتصل بنا للحصول على الدعم والاستفسارات.',
+    footerSocialText: 'تابعنا على وسائل التواصل الاجتماعي',
+    footerPrivacy: 'سياسة الخصوصية',
+    footerTerms: 'شروط الاستخدام',
   },
 };
 
@@ -116,6 +152,12 @@ export function HomePage({ onSearch, language }: HomePageProps) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [busType, setBusType] = useState('');
   const [searchError, setSearchError] = useState('');
+
+  const handleSwapCities = () => {
+    const temp = from;
+    setFrom(to);
+    setTo(temp);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -148,7 +190,7 @@ export function HomePage({ onSearch, language }: HomePageProps) {
         {/* Content Container */}
         <div className="relative max-w-5xl mx-auto px-6 text-center">
           {/* Logo Card */}
-          <div className="inline-block mb-8">
+          <div className="inline-block mb-2">
             <div className="bg-white rounded-3xl p-8 shadow-2xl">
               <img src={logo} alt="Logo" className="h-32 w-auto" />
             </div>
@@ -161,35 +203,48 @@ export function HomePage({ onSearch, language }: HomePageProps) {
           <h1 className="text-white text-5xl md:text-6xl mb-4 drop-shadow-lg">
             {t.mainTitle}
           </h1>
-
-          {/* Subtitle */}
-          <p className="text-white/90 text-xl md:text-2xl max-w-2xl mx-auto">
-            {t.subtitle}
-          </p>
         </div>
       </div>
 
       {/* Search Box - Floating Effect */}
       <div className="max-w-4xl mx-auto px-6 -mt-20 relative z-10">
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl p-8">
-          <div className="grid md:grid-cols-3 gap-6 mb-6">
-            {/* From */}
-            <CitySelector
-              value={from}
-              onChange={setFrom}
-              placeholder={t.fromPlaceholder}
-              label={t.from}
-              required
-            />
+          <div className="space-y-6 mb-6">
+            {/* From and To with Swap Button */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* From with Swap Button */}
+              <div className="relative flex items-end gap-2">
+                <div className="flex-1">
+                  <CitySelector
+                    value={from}
+                    onChange={setFrom}
+                    placeholder={t.fromPlaceholder}
+                    label={t.from}
+                    required
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSwapCities}
+                  className="w-10 h-10 flex items-center justify-center bg-green-100 hover:bg-green-200 text-green-600 rounded-lg transition-all shadow-sm hover:shadow-md transform hover:scale-105 active:scale-95 mb-2"
+                  title="تبديل بين من وإلى"
+                  aria-label="Swap cities"
+                >
+                  <ArrowLeftRight className="w-5 h-5" />
+                </button>
+              </div>
 
-            {/* To */}
-            <CitySelector
-              value={to}
-              onChange={setTo}
-              placeholder={t.toPlaceholder}
-              label={t.to}
-              required
-            />
+              {/* To */}
+              <div className="relative">
+                <CitySelector
+                  value={to}
+                  onChange={setTo}
+                  placeholder={t.toPlaceholder}
+                  label={t.to}
+                  required
+                />
+              </div>
+            </div>
 
             {/* Date */}
             <div>
@@ -226,7 +281,7 @@ export function HomePage({ onSearch, language }: HomePageProps) {
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                   }`}
                 >
-                  {type === '' ? 'Alle' : 
+                  {type === '' ? t.typeAll : 
                    type === 'bus' ? t.typeBus : 
                    type === 'van' ? t.typeVan : 
                    type === 'vip-van' ? t.typeVipVan : 
@@ -335,6 +390,82 @@ export function HomePage({ onSearch, language }: HomePageProps) {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <footer className="bg-gradient-to-b from-gray-900 to-gray-800 text-white mt-20">
+        <div className="max-w-6xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+            {/* About Section */}
+            <div className="lg:col-span-1">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-gray-200 rounded-xl p-2">
+                  <img src={logo} alt="Logo" className="h-8 w-auto" />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-300">HopHop</h3>
+              </div>
+              <p className="text-gray-300 text-sm leading-relaxed mb-4">{t.footerAboutText}</p>
+            </div>
+
+            {/* Links Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6 text-gray-300">{t.footerLinks}</h3>
+              <ul className="space-y-3">
+                <li>
+                  <a href="#" className="text-gray-300 hover:text-green-400 transition-colors text-sm flex items-center gap-2 group">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
+                    <span>{t.footerAbout}</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contact Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6 text-gray-300">{t.footerContact}</h3>
+              <p className="text-gray-300 text-sm mb-6 leading-relaxed">{t.footerContactText}</p>
+              <div className="space-y-4">
+                <a href="mailto:info@hophop.com" className="flex items-center gap-3 text-gray-300 hover:text-green-400 transition-colors text-sm group">
+                  <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-green-600 transition-colors">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <span>info@hophop.com</span>
+                </a>
+                <a href="tel:+963111234567" className="flex items-center gap-3 text-gray-300 hover:text-green-400 transition-colors text-sm group">
+                  <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-green-600 transition-colors">
+                    <Phone className="w-4 h-4" />
+                  </div>
+                  <span>+963 11 123 4567</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Social Media Section */}
+            <div>
+              <h3 className="text-lg font-semibold mb-6 text-gray-300">{t.footerFollowUs}</h3>
+              <p className="text-gray-300 text-sm mb-6 leading-relaxed">{t.footerSocialText}</p>
+              <div className="flex gap-4">
+                <a href="#" className="w-14 h-14 bg-gray-800 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:scale-110 transition-all shadow-lg hover:shadow-blue-500/50 group">
+                  <Facebook className="w-6 h-6 text-gray-300 group-hover:text-white" />
+                </a>
+                <a href="#" className="w-14 h-14 bg-gray-800 rounded-xl flex items-center justify-center hover:bg-gradient-to-br hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 hover:scale-110 transition-all shadow-lg hover:shadow-pink-500/50 group">
+                  <Instagram className="w-6 h-6 text-gray-300 group-hover:text-white" />
+                </a>
+              </div>
+            </div>
+          </div>
+
+          {/* Copyright */}
+          <div className="border-t border-gray-700 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+              <p className="text-gray-400 text-sm">{t.footerCopyright}</p>
+              <div className="flex gap-6 text-sm">
+                <a href="#" className="text-gray-400 hover:text-green-400 transition-colors">{t.footerPrivacy}</a>
+                <a href="#" className="text-gray-400 hover:text-green-400 transition-colors">{t.footerTerms}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

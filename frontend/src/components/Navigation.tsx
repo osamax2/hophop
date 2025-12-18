@@ -62,7 +62,6 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
 
   const menuItems = [
     { id: 'home', label: t.home, icon: Home },
-    { id: 'search-results', label: t.search, icon: Search },
     { id: 'reviews', label: t.reviews, icon: Star },
     { id: 'favorites', label: t.favorites, icon: Star },
   ];
@@ -77,38 +76,43 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   return (
     <nav className="bg-white shadow-md sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Logo */}
-          <button
-            onClick={() => setCurrentPage('home')}
-            className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-          >
-            <img src={logo} alt="Logo" className="h-12 w-auto" />
-          </button>
-
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-6">
-            {menuItems.map(item => {
-              const Icon = item.icon;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setCurrentPage(item.id)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                    currentPage === item.id
-                      ? 'bg-green-50 text-green-600'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  {item.label}
-                </button>
-              );
-            })}
+        <div className="flex items-center h-16">
+          {/* Logo - Left Side */}
+          <div className="flex-shrink-0">
+            <button
+              onClick={() => setCurrentPage('home')}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              <img src={logo} alt="Logo" className="h-12 w-auto" />
+            </button>
           </div>
 
-          {/* Right Side */}
+          {/* Spacer */}
+          <div className="flex-1"></div>
+
+          {/* Right Side - Menu, Language, Login */}
           <div className="flex items-center gap-4">
+            {/* Desktop Menu */}
+            <div className="hidden md:flex items-center gap-4">
+              {menuItems.map(item => {
+                const Icon = item.icon;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setCurrentPage(item.id)}
+                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                      currentPage === item.id
+                        ? 'bg-green-50 text-green-600'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+            
             {/* Language Selector */}
             <div className="relative">
               <button
@@ -120,7 +124,7 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
               </button>
               
               {languageMenuOpen && (
-                <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1">
+                <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
                   {(['de', 'en', 'ar'] as Language[]).map(lang => (
                     <button
                       key={lang}

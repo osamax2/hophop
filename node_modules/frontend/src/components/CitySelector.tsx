@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Search, ChevronDown } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 import { citiesApi } from '../lib/api';
 
 interface City {
@@ -29,10 +29,12 @@ export function CitySelector({
 }: CitySelectorProps) {
   const [cities, setCities] = useState<City[]>([]);
   const [filteredCities, setFilteredCities] = useState<City[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [inputValue, setInputValue] = useState(value || '');
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Load all cities on mount
   useEffect(() => {
@@ -44,14 +46,11 @@ export function CitySelector({
         console.log('Cities loaded:', data.length, 'cities');
         if (data && Array.isArray(data) && data.length > 0) {
           setCities(data);
-          setFilteredCities(data);
         } else {
           console.warn('No cities returned from API');
         }
       } catch (error) {
         console.error('Error loading cities:', error);
-        // Show error message to user
-        alert('فشل تحميل المدن. تأكد من أن الخادم يعمل وأن المدن موجودة في قاعدة البيانات.');
       } finally {
         setLoading(false);
       }
@@ -60,18 +59,27 @@ export function CitySelector({
     loadCities();
   }, []);
 
-  // Filter cities based on search term
+  // Update input value when value prop changes
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      setFilteredCities(cities);
+    setInputValue(value || '');
+  }, [value]);
+
+  // Filter cities based on input value - show suggestions immediately
+  useEffect(() => {
+    if (!inputValue.trim()) {
+      setFilteredCities([]);
+      setIsOpen(false);
       return;
     }
 
     const filtered = cities.filter(city =>
-      city.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+      city.name.toLowerCase().startsWith(inputValue.toLowerCase())
+    ).slice(0, 10); // Limit to 10 suggestions
+    
     setFilteredCities(filtered);
-  }, [searchTerm, cities]);
+    setIsOpen(filtered.length > 0);
+    setSelectedIndex(-1);
+  }, [inputValue, cities]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -87,13 +95,45 @@ export function CitySelector({
     };
   }, []);
 
-  const handleSelect = (city: City) => {
-    onChange(city.name);
-    setSearchTerm('');
-    setIsOpen(false);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setInputValue(newValue);
+    onChange(newValue);
   };
 
-  const selectedCity = cities.find(c => c.name === value);
+  const handleSelect = (city: City) => {
+    setInputValue(city.name);
+    onChange(city.name);
+    setIsOpen(false);
+    setSelectedIndex(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen || filteredCities.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedIndex(prev => 
+          prev < filteredCities.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedIndex >= 0 && selectedIndex < filteredCities.length) {
+          handleSelect(filteredCities[selectedIndex]);
+        }
+        break;
+      case 'Escape':
+        setIsOpen(false);
+        setSelectedIndex(-1);
+        break;
+    }
+  };
 
   return (
     <div className={`relative ${className}`} ref={wrapperRef}>
@@ -105,64 +145,49 @@ export function CitySelector({
       )}
       
       <div className="relative">
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white text-left flex items-center justify-between ${
-            !value ? 'text-gray-400' : ''
-          }`}
-          required={required}
-        >
-          <span className="truncate">
-            {selectedCity ? selectedCity.name : placeholder}
-          </span>
-          <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-        </button>
+        <div className="relative">
+          <input
+            ref={inputRef}
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            onFocus={() => {
+              if (filteredCities.length > 0) {
+                setIsOpen(true);
+              }
+            }}
+            placeholder={placeholder}
+            className={`w-full border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white ${
+              !inputValue ? 'text-gray-400' : ''
+            }`}
+            style={{ paddingLeft: '1rem', paddingRight: '1.5rem', paddingTop: '0.875rem', paddingBottom: '0.875rem' }}
+            required={required}
+          />
+        </div>
 
-        {isOpen && (
-          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-300 rounded-xl shadow-2xl max-h-80 overflow-hidden flex flex-col">
-            {/* Search input */}
-            <div className="p-3 border-b border-gray-200">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search cities..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            {/* Cities list */}
-            <div className="overflow-y-auto flex-1">
-              {loading ? (
-                <div className="p-4 text-center text-gray-500">Loading cities...</div>
-              ) : filteredCities.length === 0 ? (
-                <div className="p-4 text-center text-gray-500">
-                  {searchTerm ? 'No cities found' : 'No cities available'}
-                </div>
-              ) : (
-                <div className="py-2">
-                  {filteredCities.map((city) => (
-                    <button
-                      key={city.id}
-                      type="button"
-                      onClick={() => handleSelect(city)}
-                      className={`w-full px-4 py-2 text-left hover:bg-green-50 transition-colors ${
-                        value === city.name ? 'bg-green-100 font-medium' : ''
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-green-600" />
-                        <span>{city.name}</span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
+        {/* Autocomplete suggestions dropdown */}
+        {isOpen && filteredCities.length > 0 && (
+          <div className="absolute z-50 w-full mt-2 bg-white border border-gray-300 rounded-xl shadow-2xl max-h-80 overflow-hidden">
+            <div className="overflow-y-auto max-h-80">
+              {filteredCities.map((city, index) => (
+                <button
+                  key={city.id}
+                  type="button"
+                  onClick={() => handleSelect(city)}
+                  className={`w-full px-4 py-3 text-left hover:bg-green-50 transition-colors flex items-center gap-2 ${
+                    index === selectedIndex ? 'bg-green-100' : ''
+                  } ${
+                    value === city.name ? 'bg-green-50 font-medium' : ''
+                  }`}
+                >
+                  <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
+                  <span className="text-gray-900">
+                    <span className="font-medium">{inputValue}</span>
+                    <span>{city.name.substring(inputValue.length)}</span>
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
         )}
