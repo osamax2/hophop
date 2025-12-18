@@ -1,7 +1,9 @@
 services:
   # PostgreSQL Database
   db:
-    image: postgres:16-alpine
+    build:
+      context: .
+      dockerfile: Dockerfile.db
     container_name: hophop-db
     restart: unless-stopped
     environment:
@@ -10,7 +12,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-hophop}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./backup_fixed.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     ports:
       - "5432:5432"
     healthcheck:
