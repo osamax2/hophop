@@ -1,15 +1,15 @@
-﻿--
+--
 -- PostgreSQL database dump
 --
 
+\restrict a4Xqbw5Gi2UYU2ho7rFLvizs8ThzaSzUcvHHn4RuNULHkpUO1dxvedetFiGYnXr
 
--- Dumped from database version 18.1
--- Dumped by pg_dump version 18.1
+-- Dumped from database version 16.11
+-- Dumped by pg_dump version 16.11
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET idle_in_transaction_session_timeout = 0;
-SET transaction_timeout = 0;
 SET client_encoding = 'UTF8';
 SET standard_conforming_strings = on;
 SELECT pg_catalog.set_config('search_path', '', false);
@@ -19,7 +19,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: postgres
+-- Name: update_updated_at_column(); Type: FUNCTION; Schema: public; Owner: hophop
 --
 
 CREATE FUNCTION public.update_updated_at_column() RETURNS trigger
@@ -39,7 +39,7 @@ SET default_tablespace = '';
 SET default_table_access_method = heap;
 
 --
--- Name: accounts; Type: TABLE; Schema: public; Owner: postgres
+-- Name: accounts; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.accounts (
@@ -56,7 +56,7 @@ CREATE TABLE public.accounts (
 ALTER TABLE public.accounts OWNER TO hophop;
 
 --
--- Name: accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: accounts_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.accounts_id_seq
@@ -71,14 +71,14 @@ CREATE SEQUENCE public.accounts_id_seq
 ALTER SEQUENCE public.accounts_id_seq OWNER TO hophop;
 
 --
--- Name: accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: accounts_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.accounts_id_seq OWNED BY public.accounts.id;
 
 
 --
--- Name: activity_logs; Type: TABLE; Schema: public; Owner: postgres
+-- Name: activity_logs; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.activity_logs (
@@ -97,7 +97,7 @@ CREATE TABLE public.activity_logs (
 ALTER TABLE public.activity_logs OWNER TO hophop;
 
 --
--- Name: activity_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: activity_logs_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.activity_logs_id_seq
@@ -112,14 +112,14 @@ CREATE SEQUENCE public.activity_logs_id_seq
 ALTER SEQUENCE public.activity_logs_id_seq OWNER TO hophop;
 
 --
--- Name: activity_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: activity_logs_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.activity_logs_id_seq OWNED BY public.activity_logs.id;
 
 
 --
--- Name: booking_options; Type: TABLE; Schema: public; Owner: postgres
+-- Name: booking_options; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.booking_options (
@@ -134,7 +134,7 @@ CREATE TABLE public.booking_options (
 ALTER TABLE public.booking_options OWNER TO hophop;
 
 --
--- Name: booking_options_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: booking_options_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.booking_options_id_seq
@@ -149,14 +149,14 @@ CREATE SEQUENCE public.booking_options_id_seq
 ALTER SEQUENCE public.booking_options_id_seq OWNER TO hophop;
 
 --
--- Name: booking_options_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: booking_options_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.booking_options_id_seq OWNED BY public.booking_options.id;
 
 
 --
--- Name: bookings; Type: TABLE; Schema: public; Owner: postgres
+-- Name: bookings; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.bookings (
@@ -174,7 +174,7 @@ CREATE TABLE public.bookings (
 ALTER TABLE public.bookings OWNER TO hophop;
 
 --
--- Name: bookings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: bookings_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.bookings_id_seq
@@ -189,14 +189,14 @@ CREATE SEQUENCE public.bookings_id_seq
 ALTER SEQUENCE public.bookings_id_seq OWNER TO hophop;
 
 --
--- Name: bookings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: bookings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.bookings_id_seq OWNED BY public.bookings.id;
 
 
 --
--- Name: cities; Type: TABLE; Schema: public; Owner: postgres
+-- Name: cities; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.cities (
@@ -212,7 +212,7 @@ CREATE TABLE public.cities (
 ALTER TABLE public.cities OWNER TO hophop;
 
 --
--- Name: cities_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: cities_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.cities_id_seq
@@ -227,14 +227,14 @@ CREATE SEQUENCE public.cities_id_seq
 ALTER SEQUENCE public.cities_id_seq OWNER TO hophop;
 
 --
--- Name: cities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: cities_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.cities_id_seq OWNED BY public.cities.id;
 
 
 --
--- Name: ratings; Type: TABLE; Schema: public; Owner: postgres
+-- Name: ratings; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.ratings (
@@ -256,7 +256,7 @@ CREATE TABLE public.ratings (
 ALTER TABLE public.ratings OWNER TO hophop;
 
 --
--- Name: company_ratings_summary; Type: VIEW; Schema: public; Owner: postgres
+-- Name: company_ratings_summary; Type: VIEW; Schema: public; Owner: hophop
 --
 
 CREATE VIEW public.company_ratings_summary AS
@@ -273,7 +273,7 @@ CREATE VIEW public.company_ratings_summary AS
 ALTER VIEW public.company_ratings_summary OWNER TO hophop;
 
 --
--- Name: fare_categories; Type: TABLE; Schema: public; Owner: postgres
+-- Name: fare_categories; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.fare_categories (
@@ -288,7 +288,7 @@ CREATE TABLE public.fare_categories (
 ALTER TABLE public.fare_categories OWNER TO hophop;
 
 --
--- Name: fare_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: fare_categories_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.fare_categories_id_seq
@@ -303,14 +303,14 @@ CREATE SEQUENCE public.fare_categories_id_seq
 ALTER SEQUENCE public.fare_categories_id_seq OWNER TO hophop;
 
 --
--- Name: fare_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: fare_categories_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.fare_categories_id_seq OWNED BY public.fare_categories.id;
 
 
 --
--- Name: favorites; Type: TABLE; Schema: public; Owner: postgres
+-- Name: favorites; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.favorites (
@@ -324,7 +324,7 @@ CREATE TABLE public.favorites (
 ALTER TABLE public.favorites OWNER TO hophop;
 
 --
--- Name: favorites_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: favorites_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.favorites_id_seq
@@ -339,14 +339,14 @@ CREATE SEQUENCE public.favorites_id_seq
 ALTER SEQUENCE public.favorites_id_seq OWNER TO hophop;
 
 --
--- Name: favorites_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: favorites_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.favorites_id_seq OWNED BY public.favorites.id;
 
 
 --
--- Name: invoices; Type: TABLE; Schema: public; Owner: postgres
+-- Name: invoices; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.invoices (
@@ -367,7 +367,7 @@ CREATE TABLE public.invoices (
 ALTER TABLE public.invoices OWNER TO hophop;
 
 --
--- Name: invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: invoices_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.invoices_id_seq
@@ -382,14 +382,14 @@ CREATE SEQUENCE public.invoices_id_seq
 ALTER SEQUENCE public.invoices_id_seq OWNER TO hophop;
 
 --
--- Name: invoices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: invoices_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.invoices_id_seq OWNED BY public.invoices.id;
 
 
 --
--- Name: media; Type: TABLE; Schema: public; Owner: postgres
+-- Name: media; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.media (
@@ -405,7 +405,7 @@ CREATE TABLE public.media (
 ALTER TABLE public.media OWNER TO hophop;
 
 --
--- Name: media_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: media_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.media_id_seq
@@ -420,14 +420,14 @@ CREATE SEQUENCE public.media_id_seq
 ALTER SEQUENCE public.media_id_seq OWNER TO hophop;
 
 --
--- Name: media_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: media_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.media_id_seq OWNED BY public.media.id;
 
 
 --
--- Name: media_relations; Type: TABLE; Schema: public; Owner: postgres
+-- Name: media_relations; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.media_relations (
@@ -442,7 +442,7 @@ CREATE TABLE public.media_relations (
 ALTER TABLE public.media_relations OWNER TO hophop;
 
 --
--- Name: media_relations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: media_relations_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.media_relations_id_seq
@@ -457,14 +457,14 @@ CREATE SEQUENCE public.media_relations_id_seq
 ALTER SEQUENCE public.media_relations_id_seq OWNER TO hophop;
 
 --
--- Name: media_relations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: media_relations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.media_relations_id_seq OWNED BY public.media_relations.id;
 
 
 --
--- Name: notifications; Type: TABLE; Schema: public; Owner: postgres
+-- Name: notifications; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.notifications (
@@ -483,7 +483,7 @@ CREATE TABLE public.notifications (
 ALTER TABLE public.notifications OWNER TO hophop;
 
 --
--- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: notifications_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.notifications_id_seq
@@ -498,14 +498,14 @@ CREATE SEQUENCE public.notifications_id_seq
 ALTER SEQUENCE public.notifications_id_seq OWNER TO hophop;
 
 --
--- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: notifications_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.notifications_id_seq OWNED BY public.notifications.id;
 
 
 --
--- Name: ratings_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: ratings_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.ratings_id_seq
@@ -520,14 +520,14 @@ CREATE SEQUENCE public.ratings_id_seq
 ALTER SEQUENCE public.ratings_id_seq OWNER TO hophop;
 
 --
--- Name: ratings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: ratings_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.ratings_id_seq OWNED BY public.ratings.id;
 
 
 --
--- Name: reviews; Type: TABLE; Schema: public; Owner: postgres
+-- Name: reviews; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.reviews (
@@ -546,7 +546,7 @@ CREATE TABLE public.reviews (
 ALTER TABLE public.reviews OWNER TO hophop;
 
 --
--- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: reviews_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.reviews_id_seq
@@ -561,14 +561,14 @@ CREATE SEQUENCE public.reviews_id_seq
 ALTER SEQUENCE public.reviews_id_seq OWNER TO hophop;
 
 --
--- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: reviews_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.reviews_id_seq OWNED BY public.reviews.id;
 
 
 --
--- Name: roles; Type: TABLE; Schema: public; Owner: postgres
+-- Name: roles; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.roles (
@@ -581,7 +581,7 @@ CREATE TABLE public.roles (
 ALTER TABLE public.roles OWNER TO hophop;
 
 --
--- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: roles_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.roles_id_seq
@@ -596,14 +596,14 @@ CREATE SEQUENCE public.roles_id_seq
 ALTER SEQUENCE public.roles_id_seq OWNER TO hophop;
 
 --
--- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.roles_id_seq OWNED BY public.roles.id;
 
 
 --
--- Name: route_stops; Type: TABLE; Schema: public; Owner: postgres
+-- Name: route_stops; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.route_stops (
@@ -620,7 +620,7 @@ CREATE TABLE public.route_stops (
 ALTER TABLE public.route_stops OWNER TO hophop;
 
 --
--- Name: route_stops_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: route_stops_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.route_stops_id_seq
@@ -635,14 +635,14 @@ CREATE SEQUENCE public.route_stops_id_seq
 ALTER SEQUENCE public.route_stops_id_seq OWNER TO hophop;
 
 --
--- Name: route_stops_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: route_stops_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.route_stops_id_seq OWNED BY public.route_stops.id;
 
 
 --
--- Name: routes; Type: TABLE; Schema: public; Owner: postgres
+-- Name: routes; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.routes (
@@ -655,7 +655,7 @@ CREATE TABLE public.routes (
 ALTER TABLE public.routes OWNER TO hophop;
 
 --
--- Name: routes_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: routes_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.routes_id_seq
@@ -670,14 +670,14 @@ CREATE SEQUENCE public.routes_id_seq
 ALTER SEQUENCE public.routes_id_seq OWNER TO hophop;
 
 --
--- Name: routes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: routes_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.routes_id_seq OWNED BY public.routes.id;
 
 
 --
--- Name: stations; Type: TABLE; Schema: public; Owner: postgres
+-- Name: stations; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.stations (
@@ -693,7 +693,7 @@ CREATE TABLE public.stations (
 ALTER TABLE public.stations OWNER TO hophop;
 
 --
--- Name: stations_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: stations_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.stations_id_seq
@@ -708,14 +708,14 @@ CREATE SEQUENCE public.stations_id_seq
 ALTER SEQUENCE public.stations_id_seq OWNER TO hophop;
 
 --
--- Name: stations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: stations_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.stations_id_seq OWNED BY public.stations.id;
 
 
 --
--- Name: transport_companies; Type: TABLE; Schema: public; Owner: postgres
+-- Name: transport_companies; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.transport_companies (
@@ -734,7 +734,7 @@ CREATE TABLE public.transport_companies (
 ALTER TABLE public.transport_companies OWNER TO hophop;
 
 --
--- Name: transport_companies_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: transport_companies_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.transport_companies_id_seq
@@ -749,14 +749,14 @@ CREATE SEQUENCE public.transport_companies_id_seq
 ALTER SEQUENCE public.transport_companies_id_seq OWNER TO hophop;
 
 --
--- Name: transport_companies_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: transport_companies_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.transport_companies_id_seq OWNED BY public.transport_companies.id;
 
 
 --
--- Name: transport_types; Type: TABLE; Schema: public; Owner: postgres
+-- Name: transport_types; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.transport_types (
@@ -769,7 +769,7 @@ CREATE TABLE public.transport_types (
 ALTER TABLE public.transport_types OWNER TO hophop;
 
 --
--- Name: transport_types_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: transport_types_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.transport_types_id_seq
@@ -784,14 +784,14 @@ CREATE SEQUENCE public.transport_types_id_seq
 ALTER SEQUENCE public.transport_types_id_seq OWNER TO hophop;
 
 --
--- Name: transport_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: transport_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.transport_types_id_seq OWNED BY public.transport_types.id;
 
 
 --
--- Name: trip_fares; Type: TABLE; Schema: public; Owner: postgres
+-- Name: trip_fares; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.trip_fares (
@@ -808,7 +808,7 @@ CREATE TABLE public.trip_fares (
 ALTER TABLE public.trip_fares OWNER TO hophop;
 
 --
--- Name: trip_fares_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: trip_fares_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.trip_fares_id_seq
@@ -823,14 +823,14 @@ CREATE SEQUENCE public.trip_fares_id_seq
 ALTER SEQUENCE public.trip_fares_id_seq OWNER TO hophop;
 
 --
--- Name: trip_fares_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: trip_fares_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.trip_fares_id_seq OWNED BY public.trip_fares.id;
 
 
 --
--- Name: trips; Type: TABLE; Schema: public; Owner: postgres
+-- Name: trips; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.trips (
@@ -856,7 +856,7 @@ CREATE TABLE public.trips (
 ALTER TABLE public.trips OWNER TO hophop;
 
 --
--- Name: trips_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: trips_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.trips_id_seq
@@ -871,14 +871,14 @@ CREATE SEQUENCE public.trips_id_seq
 ALTER SEQUENCE public.trips_id_seq OWNER TO hophop;
 
 --
--- Name: trips_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: trips_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.trips_id_seq OWNED BY public.trips.id;
 
 
 --
--- Name: user_roles; Type: TABLE; Schema: public; Owner: postgres
+-- Name: user_roles; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.user_roles (
@@ -891,7 +891,7 @@ CREATE TABLE public.user_roles (
 ALTER TABLE public.user_roles OWNER TO hophop;
 
 --
--- Name: user_roles_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: user_roles_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.user_roles_id_seq
@@ -906,14 +906,14 @@ CREATE SEQUENCE public.user_roles_id_seq
 ALTER SEQUENCE public.user_roles_id_seq OWNER TO hophop;
 
 --
--- Name: user_roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: user_roles_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.user_roles_id_seq OWNED BY public.user_roles.id;
 
 
 --
--- Name: user_types; Type: TABLE; Schema: public; Owner: postgres
+-- Name: user_types; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.user_types (
@@ -927,7 +927,7 @@ CREATE TABLE public.user_types (
 ALTER TABLE public.user_types OWNER TO hophop;
 
 --
--- Name: user_types_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: user_types_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.user_types_id_seq
@@ -942,14 +942,14 @@ CREATE SEQUENCE public.user_types_id_seq
 ALTER SEQUENCE public.user_types_id_seq OWNER TO hophop;
 
 --
--- Name: user_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: user_types_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.user_types_id_seq OWNED BY public.user_types.id;
 
 
 --
--- Name: users; Type: TABLE; Schema: public; Owner: postgres
+-- Name: users; Type: TABLE; Schema: public; Owner: hophop
 --
 
 CREATE TABLE public.users (
@@ -971,7 +971,7 @@ CREATE TABLE public.users (
 ALTER TABLE public.users OWNER TO hophop;
 
 --
--- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE; Schema: public; Owner: hophop
 --
 
 CREATE SEQUENCE public.users_id_seq
@@ -986,182 +986,182 @@ CREATE SEQUENCE public.users_id_seq
 ALTER SEQUENCE public.users_id_seq OWNER TO hophop;
 
 --
--- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: hophop
 --
 
 ALTER SEQUENCE public.users_id_seq OWNED BY public.users.id;
 
 
 --
--- Name: accounts id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: accounts id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.accounts ALTER COLUMN id SET DEFAULT nextval('public.accounts_id_seq'::regclass);
 
 
 --
--- Name: activity_logs id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: activity_logs id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.activity_logs ALTER COLUMN id SET DEFAULT nextval('public.activity_logs_id_seq'::regclass);
 
 
 --
--- Name: booking_options id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: booking_options id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.booking_options ALTER COLUMN id SET DEFAULT nextval('public.booking_options_id_seq'::regclass);
 
 
 --
--- Name: bookings id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: bookings id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.bookings ALTER COLUMN id SET DEFAULT nextval('public.bookings_id_seq'::regclass);
 
 
 --
--- Name: cities id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: cities id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.cities ALTER COLUMN id SET DEFAULT nextval('public.cities_id_seq'::regclass);
 
 
 --
--- Name: fare_categories id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: fare_categories id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.fare_categories ALTER COLUMN id SET DEFAULT nextval('public.fare_categories_id_seq'::regclass);
 
 
 --
--- Name: favorites id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: favorites id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.favorites ALTER COLUMN id SET DEFAULT nextval('public.favorites_id_seq'::regclass);
 
 
 --
--- Name: invoices id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: invoices id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.invoices ALTER COLUMN id SET DEFAULT nextval('public.invoices_id_seq'::regclass);
 
 
 --
--- Name: media id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: media id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.media ALTER COLUMN id SET DEFAULT nextval('public.media_id_seq'::regclass);
 
 
 --
--- Name: media_relations id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: media_relations id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.media_relations ALTER COLUMN id SET DEFAULT nextval('public.media_relations_id_seq'::regclass);
 
 
 --
--- Name: notifications id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: notifications id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.notifications ALTER COLUMN id SET DEFAULT nextval('public.notifications_id_seq'::regclass);
 
 
 --
--- Name: ratings id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: ratings id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.ratings ALTER COLUMN id SET DEFAULT nextval('public.ratings_id_seq'::regclass);
 
 
 --
--- Name: reviews id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: reviews id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.reviews ALTER COLUMN id SET DEFAULT nextval('public.reviews_id_seq'::regclass);
 
 
 --
--- Name: roles id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: roles id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.roles ALTER COLUMN id SET DEFAULT nextval('public.roles_id_seq'::regclass);
 
 
 --
--- Name: route_stops id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: route_stops id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.route_stops ALTER COLUMN id SET DEFAULT nextval('public.route_stops_id_seq'::regclass);
 
 
 --
--- Name: routes id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: routes id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.routes ALTER COLUMN id SET DEFAULT nextval('public.routes_id_seq'::regclass);
 
 
 --
--- Name: stations id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: stations id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.stations ALTER COLUMN id SET DEFAULT nextval('public.stations_id_seq'::regclass);
 
 
 --
--- Name: transport_companies id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: transport_companies id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.transport_companies ALTER COLUMN id SET DEFAULT nextval('public.transport_companies_id_seq'::regclass);
 
 
 --
--- Name: transport_types id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: transport_types id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.transport_types ALTER COLUMN id SET DEFAULT nextval('public.transport_types_id_seq'::regclass);
 
 
 --
--- Name: trip_fares id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: trip_fares id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trip_fares ALTER COLUMN id SET DEFAULT nextval('public.trip_fares_id_seq'::regclass);
 
 
 --
--- Name: trips id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: trips id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trips ALTER COLUMN id SET DEFAULT nextval('public.trips_id_seq'::regclass);
 
 
 --
--- Name: user_roles id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: user_roles id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.user_roles ALTER COLUMN id SET DEFAULT nextval('public.user_roles_id_seq'::regclass);
 
 
 --
--- Name: user_types id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: user_types id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.user_types ALTER COLUMN id SET DEFAULT nextval('public.user_types_id_seq'::regclass);
 
 
 --
--- Name: users id; Type: DEFAULT; Schema: public; Owner: postgres
+-- Name: users id; Type: DEFAULT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.users ALTER COLUMN id SET DEFAULT nextval('public.users_id_seq'::regclass);
 
 
 --
--- Data for Name: accounts; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: accounts; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.accounts (id, user_id, username, password_hash, last_login, access_tokens, created_at) FROM stdin;
@@ -1169,7 +1169,7 @@ COPY public.accounts (id, user_id, username, password_hash, last_login, access_t
 
 
 --
--- Data for Name: activity_logs; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: activity_logs; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.activity_logs (id, user_id, action, entity_type, entity_id, details, ip_address, user_agent, created_at) FROM stdin;
@@ -1177,7 +1177,7 @@ COPY public.activity_logs (id, user_id, action, entity_type, entity_id, details,
 
 
 --
--- Data for Name: booking_options; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: booking_options; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.booking_options (id, transport_type_id, code, label, description) FROM stdin;
@@ -1186,7 +1186,7 @@ COPY public.booking_options (id, transport_type_id, code, label, description) FR
 
 
 --
--- Data for Name: bookings; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: bookings; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.bookings (id, user_id, trip_id, booking_status, seats_booked, total_price, currency, created_at) FROM stdin;
@@ -1196,115 +1196,109 @@ COPY public.bookings (id, user_id, trip_id, booking_status, seats_booked, total_
 
 
 --
--- Data for Name: cities; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: cities; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.cities (id, name, country_code, address, latitude, longitude) FROM stdin;
-52	Ï»┘àÏ┤┘é	SY	\N	33.513800	36.276500
-53	Ï¡┘äÏ¿	SY	\N	36.202100	37.134300
-54	Ï¡┘àÏÁ	SY	\N	34.726800	36.723400
-55	Ïº┘ä┘äÏºÏ░┘é┘èÏ®	SY	\N	35.513800	35.779400
-56	ÏÀÏ▒ÏÀ┘êÏ│	SY	\N	34.888600	35.886400
-57	Ï»┘èÏ▒ Ïº┘äÏ▓┘êÏ▒	SY	\N	35.335400	40.140800
-58	Ïº┘äÏ¡Ï│┘âÏ®	SY	\N	36.504700	40.748900
-59	Ïº┘äÏ▒┘éÏ®	SY	\N	35.950600	39.009400
-60	Ïº┘äÏ│┘ê┘èÏ»ÏºÏí	SY	\N	32.708900	36.569400
-61	Ï»Ï▒Ï╣Ïº	SY	\N	32.618900	36.101900
-62	ÏÑÏ»┘äÏ¿	SY	\N	35.933300	36.633300
-63	Ï¡┘àÏºÏ®	SY	\N	35.131800	36.757800
-64	Ïº┘ä┘é┘å┘èÏÀÏ▒Ï®	SY	\N	33.123900	35.824400
-65	Ï»┘ê┘àÏº	SY	\N	33.571100	36.402800
-66	Ï»ÏºÏ▒┘èÏº	SY	\N	33.458100	36.232200
-67	Ïº┘äÏ│┘èÏ»Ï® Ï▓┘è┘åÏ¿	SY	\N	33.444400	36.336100
-68	Ïº┘äÏ¬┘ä	SY	\N	33.600000	36.300000
-69	Ïº┘äÏ▓Ï¿Ï»Ïº┘å┘è	SY	\N	33.716700	36.100000
-70	┘éÏÀ┘åÏº	SY	\N	33.433300	36.116700
-71	┘èÏ¿Ï▒┘êÏ»	SY	\N	33.966700	36.666700
-72	Ïº┘ä┘åÏ¿┘â	SY	\N	34.016700	36.733300
-73	Ïº┘äÏ▓Ïº┘çÏ▒Ï®	SY	\N	33.516700	36.300000
-74	Ï¿Ï▒Ï▓Ï®	SY	\N	33.516700	36.283300
-75	┘â┘üÏ▒ Ï│┘êÏ│Ï®	SY	\N	33.500000	36.283300
-76	Ïº┘ä┘àÏ▓Ï®	SY	\N	33.483300	36.250000
-77	Ï¼┘êÏ¿Ï▒	SY	\N	33.533300	36.333300
-78	Ïº┘ä┘éÏ»┘à	SY	\N	33.466700	36.300000
-79	Ïº┘ä┘à┘èÏ»Ïº┘å	SY	\N	33.450000	36.316700
-80	Ïº┘äÏÁÏº┘äÏ¡┘èÏ®	SY	\N	33.483300	36.316700
-81	Ï¿ÏºÏ¿ Ï¬┘ê┘àÏº	SY	\N	33.516700	36.316700
-82	Ï¿ÏºÏ¿ Ï┤Ï▒┘é┘è	SY	\N	33.516700	36.316700
-83	Ïº┘äÏ┤ÏºÏ▒Ï╣ Ïº┘ä┘àÏ│Ï¬┘é┘è┘à	SY	\N	33.516700	36.316700
-84	Ï│┘ê┘é Ïº┘äÏ¡┘à┘èÏ»┘èÏ®	SY	\N	33.516700	36.316700
-85	Ïº┘ä┘àÏ▒Ï¼Ï®	SY	\N	33.516700	36.316700
-86	Ïº┘äÏ╣Ï¿ÏºÏ│┘è┘è┘å	SY	\N	33.516700	36.316700
-87	Ïº┘äÏ▒┘â┘å Ïº┘äÏ┤┘àÏº┘ä┘è	SY	\N	33.516700	36.316700
-88	Ïº┘äÏ▒┘â┘å Ïº┘äÏ¼┘å┘êÏ¿┘è	SY	\N	33.516700	36.316700
-89	Ïº┘äÏ╣Ï»┘ê┘è	SY	\N	33.516700	36.316700
-90	Ïº┘ä┘éÏ»Ï│	SY	\N	33.516700	36.316700
-91	Ïº┘äÏ▓┘çÏ▒ÏºÏí	SY	\N	33.516700	36.316700
-92	Ïº┘äÏ▒┘êÏÂÏ®	SY	\N	33.516700	36.316700
-93	Ïº┘ä┘àÏº┘ä┘â┘è	SY	\N	33.516700	36.316700
-94	ÏúÏ¿┘ê Ï▒┘àÏº┘åÏ®	SY	\N	33.516700	36.316700
-95	┘à┘åÏ¿Ï¼	SY	\N	36.528100	37.955000
-96	Ïº┘äÏ¿ÏºÏ¿	SY	\N	36.370600	37.515800
-97	Ï╣┘üÏ▒┘è┘å	SY	\N	36.511400	36.866400
-98	ÏÑÏ╣Ï▓ÏºÏ▓	SY	\N	36.586100	37.044400
-99	Ïº┘äÏ│┘ü┘èÏ▒Ï®	SY	\N	36.066700	37.366700
-100	Ï¬┘ä Ï▒┘üÏ╣Ï¬	SY	\N	36.466700	37.100000
-101	Ï¼Ï¿┘ä Ï│┘àÏ╣Ïº┘å	SY	\N	36.200000	37.133300
-102	Ï╣┘åÏ»Ïº┘å	SY	\N	36.300000	37.050000
-103	┘åÏ¿┘ä	SY	\N	36.366700	37.016700
-104	Ïº┘äÏ│Ï▒┘èÏº┘å	SY	\N	36.183300	37.166700
-105	Ï¬Ï»┘àÏ▒	SY	\N	34.558100	38.273900
-106	Ïº┘äÏ▒Ï│Ï¬┘å	SY	\N	34.933300	36.733300
-107	Ï¬┘ä┘â┘äÏ«	SY	\N	34.666700	36.250000
-108	┘àÏÁ┘èÏº┘ü	SY	\N	35.066700	36.350000
-109	Ï┤┘è┘å	SY	\N	34.783300	36.466700
-110	Ïº┘ä┘éÏÁ┘èÏ▒	SY	\N	34.516700	36.583300
-111	Ïº┘ä┘éÏ»┘à┘êÏ│	SY	\N	34.916700	36.116700
-112	Ï¬ÏºÏ»┘à┘êÏ▒	SY	\N	34.558100	38.273900
-113	Ï¼Ï¿┘äÏ®	SY	\N	35.366700	35.933300
-114	Ï¿Ïº┘å┘èÏºÏ│	SY	\N	35.183300	35.950000
-115	ÏÁÏº┘ü┘èÏ¬Ïº	SY	\N	34.816700	36.116700
-116	Ïº┘äÏ¡┘üÏ®	SY	\N	35.600000	36.033300
-117	┘éÏ▒Ï»ÏºÏ¡Ï®	SY	\N	35.450000	36.000000
-118	┘âÏ│Ï¿	SY	\N	35.916700	36.116700
-119	Ïº┘äÏ»Ï▒┘è┘â┘èÏ┤	SY	\N	34.900000	36.116700
-120	Ïº┘äÏ┤┘èÏ« Ï¿Ï»Ï▒	SY	\N	34.833300	36.050000
-121	Ïº┘äÏ¿┘ê┘â┘àÏº┘ä	SY	\N	34.450000	40.916700
-122	Ïº┘ä┘à┘èÏºÏ»┘è┘å	SY	\N	34.450000	40.783300
-123	ÏúÏ¿┘ê ┘â┘àÏº┘ä	SY	\N	34.450000	40.916700
-124	Ïº┘ä┘éÏº┘àÏ┤┘ä┘è	SY	\N	37.051100	41.229400
-125	Ï▒ÏúÏ│ Ïº┘äÏ╣┘è┘å	SY	\N	36.850000	40.066700
-126	Ïº┘ä┘àÏº┘ä┘â┘èÏ®	SY	\N	37.166700	42.133300
-127	Ï╣Ïº┘à┘êÏ»Ïº	SY	\N	37.000000	41.016700
-128	Ï»┘èÏ▒┘è┘â	SY	\N	37.050000	42.200000
-129	Ï¬┘ä Ï¬┘àÏ▒	SY	\N	36.650000	40.366700
-130	Ï┤Ï»Ï»┘è	SY	\N	36.816700	40.516700
-131	Ï╣┘è┘å Ïº┘äÏ╣Ï▒Ï¿	SY	\N	36.816700	38.016700
-132	Ïº┘äÏÀÏ¿┘éÏ®	SY	\N	35.833300	38.550000
-133	Ï┤┘çÏ¿Ïº	SY	\N	32.850000	36.566700
-134	ÏÁ┘äÏ«Ï»	SY	\N	32.483300	36.716700
-135	Ï¿ÏÁÏ▒┘ë	SY	\N	32.516700	36.483300
-136	ÏÑÏ▓Ï▒Ï╣	SY	\N	32.866700	36.250000
-137	┘å┘ê┘ë	SY	\N	32.883300	36.033300
-138	ÏÀ┘üÏ│	SY	\N	32.733300	36.066700
-139	Ïº┘äÏ┤┘èÏ« ┘àÏ│┘â┘è┘å	SY	\N	32.816700	36.150000
-140	Ï¼ÏºÏ│┘à	SY	\N	32.783300	36.050000
-141	ÏÑ┘åÏ«┘ä	SY	\N	32.750000	36.016700
-142	Ï»ÏºÏ╣┘ä	SY	\N	32.816700	36.083300
-143	┘àÏ╣Ï▒Ï® Ïº┘ä┘åÏ╣┘àÏº┘å	SY	\N	35.633300	36.683300
-144	Ï¼Ï│Ï▒ Ïº┘äÏ┤Ï║┘êÏ▒	SY	\N	35.816700	36.316700
-145	ÏúÏ▒┘èÏ¡Ïº	SY	\N	35.816700	36.600000
-146	┘â┘üÏ▒ Ï¬Ï«ÏºÏ▒┘è┘à	SY	\N	36.116700	36.516700
-147	Ï¡ÏºÏ▒┘à	SY	\N	36.200000	36.516700
-148	Ï│Ï▒┘à┘è┘å	SY	\N	35.866700	36.716700
-149	Ï¿┘è┘åÏ┤	SY	\N	35.816700	36.633300
-150	Ïº┘äÏ»Ïº┘åÏº	SY	\N	35.766700	36.783300
-151	Ïº┘äÏ│┘ä┘à┘èÏ®	SY	\N	35.016700	37.050000
-152	┘àÏ¡Ï▒Ï»Ï®	SY	\N	35.250000	36.566700
-153	┘â┘üÏ▒ Ï▓┘èÏ¬Ïº	SY	\N	35.116700	36.600000
-154	Ïº┘ä┘äÏÀÏº┘à┘åÏ®	SY	\N	35.083300	36.500000
-155	┘à┘êÏ▒┘â	SY	\N	35.200000	36.683300
-156	┘â┘üÏ▒ ┘åÏ¿┘êÏ»Ï®	SY	\N	35.133300	36.550000
+53	حلب	SY	\N	36.202100	37.134300
+54	حمص	SY	\N	34.726800	36.723400
+55	اللاذقية	SY	\N	35.513800	35.779400
+56	طرطوس	SY	\N	34.888600	35.886400
+57	دير الزور	SY	\N	35.335400	40.140800
+58	الحسكة	SY	\N	36.504700	40.748900
+59	الرقة	SY	\N	35.950600	39.009400
+60	السويداء	SY	\N	32.708900	36.569400
+61	درعا	SY	\N	32.618900	36.101900
+62	إدلب	SY	\N	35.933300	36.633300
+63	حماة	SY	\N	35.131800	36.757800
+64	القنيطرة	SY	\N	33.123900	35.824400
+65	دوما	SY	\N	33.571100	36.402800
+66	داريا	SY	\N	33.458100	36.232200
+67	السيدة زينب	SY	\N	33.444400	36.336100
+68	التل	SY	\N	33.600000	36.300000
+69	الزبداني	SY	\N	33.716700	36.100000
+70	قطنا	SY	\N	33.433300	36.116700
+71	يبرود	SY	\N	33.966700	36.666700
+72	النبك	SY	\N	34.016700	36.733300
+73	الزاهرة	SY	\N	33.516700	36.300000
+74	برزة	SY	\N	33.516700	36.283300
+75	كفر سوسة	SY	\N	33.500000	36.283300
+76	المزة	SY	\N	33.483300	36.250000
+77	جوبر	SY	\N	33.533300	36.333300
+78	القدم	SY	\N	33.466700	36.300000
+79	الميدان	SY	\N	33.450000	36.316700
+80	الصالحية	SY	\N	33.483300	36.316700
+81	باب توما	SY	\N	33.516700	36.316700
+82	باب شرقي	SY	\N	33.516700	36.316700
+83	الشارع المستقيم	SY	\N	33.516700	36.316700
+84	سوق الحميدية	SY	\N	33.516700	36.316700
+85	المرجة	SY	\N	33.516700	36.316700
+86	العباسيين	SY	\N	33.516700	36.316700
+87	الركن الشمالي	SY	\N	33.516700	36.316700
+88	الركن الجنوبي	SY	\N	33.516700	36.316700
+89	العدوي	SY	\N	33.516700	36.316700
+90	القدس	SY	\N	33.516700	36.316700
+91	الزهراء	SY	\N	33.516700	36.316700
+92	الروضة	SY	\N	33.516700	36.316700
+93	المالكي	SY	\N	33.516700	36.316700
+94	أبو رمانة	SY	\N	33.516700	36.316700
+95	منبج	SY	\N	36.528100	37.955000
+96	الباب	SY	\N	36.370600	37.515800
+97	عفرين	SY	\N	36.511400	36.866400
+98	إعزاز	SY	\N	36.586100	37.044400
+99	السفيرة	SY	\N	36.066700	37.366700
+100	تل رفعت	SY	\N	36.466700	37.100000
+101	جبل سمعان	SY	\N	36.200000	37.133300
+102	عندان	SY	\N	36.300000	37.050000
+103	نبل	SY	\N	36.366700	37.016700
+104	الزهراء	SY	\N	36.183300	37.166700
+105	تدمر	SY	\N	34.558100	38.273900
+106	القصير	SY	\N	34.933300	36.733300
+107	تلكلخ	SY	\N	34.666700	36.250000
+108	مشتى	SY	\N	35.066700	36.350000
+109	شين	SY	\N	34.783300	36.466700
+110	القصير	SY	\N	34.516700	36.583300
+111	القصاير	SY	\N	34.916700	36.116700
+112	تادمور	SY	\N	34.558100	38.273900
+113	جبلة	SY	\N	35.366700	35.933300
+114	بانياس	SY	\N	35.183300	35.950000
+115	صافيتا	SY	\N	34.816700	36.116700
+116	الحفة	SY	\N	35.600000	36.033300
+117	قرداحة	SY	\N	35.450000	36.000000
+118	كسب	SY	\N	35.916700	36.116700
+119	الدريكيش	SY	\N	34.900000	36.116700
+120	الشيخ بدر	SY	\N	34.833300	36.050000
+121	البوكمال	SY	\N	34.450000	40.916700
+122	الميادين	SY	\N	34.450000	40.783300
+123	أبو كمال	SY	\N	34.450000	40.916700
+124	القامشلي	SY	\N	37.051100	41.229400
+125	رأس العين	SY	\N	36.850000	40.066700
+126	المالكية	SY	\N	37.166700	42.133300
+127	عامودا	SY	\N	37.000000	41.016700
+128	ديريك	SY	\N	37.050000	42.200000
+129	تل تمر	SY	\N	36.650000	40.366700
+130	شدادي	SY	\N	36.816700	40.516700
+131	عين العرب	SY	\N	36.816700	38.016700
+132	الطبقة	SY	\N	35.833300	38.550000
+133	شهبا	SY	\N	32.850000	36.566700
+134	صلخد	SY	\N	32.483300	36.716700
+135	بصرى	SY	\N	32.516700	36.483300
+136	إزرع	SY	\N	32.866700	36.250000
+137	نوى	SY	\N	32.883300	36.033300
+138	طفس	SY	\N	32.733300	36.066700
+139	الشيخ مسكين	SY	\N	32.816700	36.150000
+140	جاسم	SY	\N	32.783300	36.050000
+141	إنخل	SY	\N	32.750000	36.016700
+142	داعل	SY	\N	32.816700	36.083300
+143	معرة النعمان	SY	\N	35.633300	36.683300
+144	جسر الشغور	SY	\N	35.816700	36.316700
+145	أريحا	SY	\N	35.816700	36.600000
+146	كفر تخاريم	SY	\N	36.116700	36.516700
+147	حارم	SY	\N	36.200000	36.516700
+148	سلقين	SY	\N	35.866700	36.716700
+149	بنش	SY	\N	35.816700	36.633300
+150	الدانا	SY	\N	35.766700	36.783300
+151	السلمية	SY	\N	35.016700	37.050000
 7	Damascus	SY	\N	\N	\N
 8	Rif Dimashq	SY	\N	\N	\N
 9	Aleppo	SY	\N	\N	\N
@@ -1350,11 +1344,17 @@ COPY public.cities (id, name, country_code, address, latitude, longitude) FROM s
 49	Damascus	SY	\N	\N	\N
 50	Homs	SY	\N	\N	\N
 51	Aleppo	SY	\N	\N	\N
+52	دمشق	SY	\N	33.513800	36.276500
+152	محردة	SY	\N	35.250000	36.566700
+153	كفر نبودة	SY	\N	35.116700	36.600000
+154	اللطامنة	SY	\N	35.083300	36.500000
+155	مورك	SY	\N	35.200000	36.683300
+156	كفر زيتا	SY	\N	35.133300	36.550000
 \.
 
 
 --
--- Data for Name: fare_categories; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: fare_categories; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.fare_categories (id, code, label, description, is_extra) FROM stdin;
@@ -1363,7 +1363,7 @@ COPY public.fare_categories (id, code, label, description, is_extra) FROM stdin;
 
 
 --
--- Data for Name: favorites; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: favorites; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.favorites (id, user_id, trip_id, created_at) FROM stdin;
@@ -1371,7 +1371,7 @@ COPY public.favorites (id, user_id, trip_id, created_at) FROM stdin;
 
 
 --
--- Data for Name: invoices; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: invoices; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.invoices (id, booking_id, invoice_number, issue_date, due_date, amount, currency, status, payment_method, payment_date, created_at) FROM stdin;
@@ -1379,7 +1379,7 @@ COPY public.invoices (id, booking_id, invoice_number, issue_date, due_date, amou
 
 
 --
--- Data for Name: media; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: media; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.media (id, file_url, mime_type, tag, uploaded_by_user_id, created_at) FROM stdin;
@@ -1387,7 +1387,7 @@ COPY public.media (id, file_url, mime_type, tag, uploaded_by_user_id, created_at
 
 
 --
--- Data for Name: media_relations; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: media_relations; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.media_relations (id, media_id, entity_type, entity_id, is_primary) FROM stdin;
@@ -1395,7 +1395,7 @@ COPY public.media_relations (id, media_id, entity_type, entity_id, is_primary) F
 
 
 --
--- Data for Name: notifications; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: notifications; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.notifications (id, user_id, type, title, message, related_entity_type, related_entity_id, is_read, created_at) FROM stdin;
@@ -1403,7 +1403,7 @@ COPY public.notifications (id, user_id, type, title, message, related_entity_typ
 
 
 --
--- Data for Name: ratings; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: ratings; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.ratings (id, user_id, transport_company_id, punctuality_rating, friendliness_rating, cleanliness_rating, comment, created_at, updated_at) FROM stdin;
@@ -1411,7 +1411,7 @@ COPY public.ratings (id, user_id, transport_company_id, punctuality_rating, frie
 
 
 --
--- Data for Name: reviews; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: reviews; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.reviews (id, user_id, trip_id, transport_company_id, rating_id, comment, is_approved, created_at, updated_at) FROM stdin;
@@ -1419,7 +1419,7 @@ COPY public.reviews (id, user_id, trip_id, transport_company_id, rating_id, comm
 
 
 --
--- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.roles (id, name, description) FROM stdin;
@@ -1433,7 +1433,7 @@ COPY public.roles (id, name, description) FROM stdin;
 
 
 --
--- Data for Name: route_stops; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: route_stops; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.route_stops (id, route_id, station_id, stop_order, arrival_time, departure_time, created_at) FROM stdin;
@@ -1441,7 +1441,7 @@ COPY public.route_stops (id, route_id, station_id, stop_order, arrival_time, dep
 
 
 --
--- Data for Name: routes; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: routes; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.routes (id, from_city_id, to_city_id) FROM stdin;
@@ -1457,7 +1457,7 @@ COPY public.routes (id, from_city_id, to_city_id) FROM stdin;
 
 
 --
--- Data for Name: stations; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: stations; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.stations (id, city_id, name, address, latitude, longitude) FROM stdin;
@@ -1510,7 +1510,7 @@ COPY public.stations (id, city_id, name, address, latitude, longitude) FROM stdi
 
 
 --
--- Data for Name: transport_companies; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: transport_companies; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.transport_companies (id, name, logo_url, description, address, phone, cr_number, is_active, created_at) FROM stdin;
@@ -1519,7 +1519,7 @@ COPY public.transport_companies (id, name, logo_url, description, address, phone
 
 
 --
--- Data for Name: transport_types; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: transport_types; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.transport_types (id, code, label) FROM stdin;
@@ -1528,7 +1528,7 @@ COPY public.transport_types (id, code, label) FROM stdin;
 
 
 --
--- Data for Name: trip_fares; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: trip_fares; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.trip_fares (id, trip_id, fare_category_id, booking_option_id, price, currency, seats_available) FROM stdin;
@@ -1543,7 +1543,7 @@ COPY public.trip_fares (id, trip_id, fare_category_id, booking_option_id, price,
 
 
 --
--- Data for Name: trips; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: trips; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.trips (id, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id, departure_time, arrival_time, duration_minutes, seats_total, seats_available, status, is_active, equipment, cancellation_policy, extra_info) FROM stdin;
@@ -1558,7 +1558,7 @@ COPY public.trips (id, route_id, company_id, transport_type_id, departure_statio
 
 
 --
--- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: user_roles; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.user_roles (id, user_id, role_id) FROM stdin;
@@ -1569,7 +1569,7 @@ COPY public.user_roles (id, user_id, role_id) FROM stdin;
 
 
 --
--- Data for Name: user_types; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: user_types; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.user_types (id, code, name, description) FROM stdin;
@@ -1577,7 +1577,7 @@ COPY public.user_types (id, code, name, description) FROM stdin;
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: postgres
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: hophop
 --
 
 COPY public.users (id, email, phone, is_active, first_name, last_name, gender, address, company_id, user_type_id, created_at, password_hash) FROM stdin;
@@ -1586,179 +1586,180 @@ COPY public.users (id, email, phone, is_active, first_name, last_name, gender, a
 4	admin@test.com	+963123456789	t	Admin	User	male	\N	\N	\N	2025-12-16 14:39:29.812011	$2b$10$znN0zF2qsYzJAyJmMPHaTuXQKTHO5WeoMtPggr4TO8nC2/W8xIF7a
 5	agent@test.com	+963987654321	t	Agent	Company	male	\N	\N	\N	2025-12-16 14:39:29.853381	$2b$10$UNJIuGSZVwVfRmyoezVRROLEm91MmFJKgF6ck0JVdyrFy.08j36pK
 6	user@test.com	+963555123456	t	Test	User	female	\N	\N	\N	2025-12-16 14:39:29.857346	$2b$10$7NGjOvNSi4MaERnFGnXty.6lTYde5dNXZirC1MvV5p4Z5UCDrt23i
+7	osobaji@gmail.com	093338890	t	\N	\N	male	\N	\N	\N	2025-12-18 15:02:25.992879	$2b$10$dzAQWGU5WHuGlcbhBU7.suE0okGScJQzKe2vyREEE81/LW78VlcOS
 \.
 
 
 --
--- Name: accounts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: accounts_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.accounts_id_seq', 1, false);
 
 
 --
--- Name: activity_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: activity_logs_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.activity_logs_id_seq', 1, false);
 
 
 --
--- Name: booking_options_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: booking_options_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.booking_options_id_seq', 1, true);
 
 
 --
--- Name: bookings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: bookings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.bookings_id_seq', 2, true);
 
 
 --
--- Name: cities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: cities_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.cities_id_seq', 156, true);
 
 
 --
--- Name: fare_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: fare_categories_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.fare_categories_id_seq', 3, true);
 
 
 --
--- Name: favorites_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: favorites_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.favorites_id_seq', 1, false);
 
 
 --
--- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: invoices_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.invoices_id_seq', 1, false);
 
 
 --
--- Name: media_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: media_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.media_id_seq', 1, false);
 
 
 --
--- Name: media_relations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: media_relations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.media_relations_id_seq', 1, false);
 
 
 --
--- Name: notifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: notifications_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.notifications_id_seq', 1, false);
 
 
 --
--- Name: ratings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: ratings_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.ratings_id_seq', 1, false);
 
 
 --
--- Name: reviews_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: reviews_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.reviews_id_seq', 1, false);
 
 
 --
--- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.roles_id_seq', 6, true);
 
 
 --
--- Name: route_stops_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: route_stops_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.route_stops_id_seq', 1, false);
 
 
 --
--- Name: routes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: routes_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.routes_id_seq', 12, true);
 
 
 --
--- Name: stations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: stations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.stations_id_seq', 51, true);
 
 
 --
--- Name: transport_companies_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: transport_companies_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.transport_companies_id_seq', 1, true);
 
 
 --
--- Name: transport_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: transport_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.transport_types_id_seq', 2, true);
 
 
 --
--- Name: trip_fares_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: trip_fares_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.trip_fares_id_seq', 9, true);
 
 
 --
--- Name: trips_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: trips_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.trips_id_seq', 8, true);
 
 
 --
--- Name: user_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: user_roles_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.user_roles_id_seq', 3, true);
 
 
 --
--- Name: user_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: user_types_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
 SELECT pg_catalog.setval('public.user_types_id_seq', 1, false);
 
 
 --
--- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+-- Name: users_id_seq; Type: SEQUENCE SET; Schema: public; Owner: hophop
 --
 
-SELECT pg_catalog.setval('public.users_id_seq', 6, true);
+SELECT pg_catalog.setval('public.users_id_seq', 7, true);
 
 
 --
--- Name: accounts accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: accounts accounts_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.accounts
@@ -1766,7 +1767,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- Name: accounts accounts_username_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: accounts accounts_username_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.accounts
@@ -1774,7 +1775,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- Name: activity_logs activity_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: activity_logs activity_logs_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.activity_logs
@@ -1782,7 +1783,7 @@ ALTER TABLE ONLY public.activity_logs
 
 
 --
--- Name: booking_options booking_options_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_options booking_options_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.booking_options
@@ -1790,7 +1791,7 @@ ALTER TABLE ONLY public.booking_options
 
 
 --
--- Name: bookings bookings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bookings bookings_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.bookings
@@ -1798,7 +1799,7 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: cities cities_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: cities cities_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.cities
@@ -1806,7 +1807,7 @@ ALTER TABLE ONLY public.cities
 
 
 --
--- Name: fare_categories fare_categories_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: fare_categories fare_categories_code_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.fare_categories
@@ -1814,7 +1815,7 @@ ALTER TABLE ONLY public.fare_categories
 
 
 --
--- Name: fare_categories fare_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: fare_categories fare_categories_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.fare_categories
@@ -1822,7 +1823,7 @@ ALTER TABLE ONLY public.fare_categories
 
 
 --
--- Name: favorites favorites_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: favorites favorites_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.favorites
@@ -1830,7 +1831,7 @@ ALTER TABLE ONLY public.favorites
 
 
 --
--- Name: favorites favorites_user_id_trip_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: favorites favorites_user_id_trip_id_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.favorites
@@ -1838,7 +1839,7 @@ ALTER TABLE ONLY public.favorites
 
 
 --
--- Name: invoices invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: invoices invoices_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.invoices
@@ -1846,7 +1847,7 @@ ALTER TABLE ONLY public.invoices
 
 
 --
--- Name: media media_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: media media_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.media
@@ -1854,7 +1855,7 @@ ALTER TABLE ONLY public.media
 
 
 --
--- Name: media_relations media_relations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: media_relations media_relations_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.media_relations
@@ -1862,7 +1863,7 @@ ALTER TABLE ONLY public.media_relations
 
 
 --
--- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: notifications notifications_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.notifications
@@ -1870,7 +1871,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: ratings ratings_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: ratings ratings_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.ratings
@@ -1878,7 +1879,7 @@ ALTER TABLE ONLY public.ratings
 
 
 --
--- Name: ratings ratings_user_id_transport_company_id_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: ratings ratings_user_id_transport_company_id_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.ratings
@@ -1886,7 +1887,7 @@ ALTER TABLE ONLY public.ratings
 
 
 --
--- Name: reviews reviews_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: reviews reviews_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.reviews
@@ -1894,7 +1895,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: roles roles_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: roles roles_name_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.roles
@@ -1902,7 +1903,7 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: roles roles_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.roles
@@ -1910,7 +1911,7 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- Name: route_stops route_stops_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: route_stops route_stops_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.route_stops
@@ -1918,7 +1919,7 @@ ALTER TABLE ONLY public.route_stops
 
 
 --
--- Name: route_stops route_stops_route_id_stop_order_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: route_stops route_stops_route_id_stop_order_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.route_stops
@@ -1926,7 +1927,7 @@ ALTER TABLE ONLY public.route_stops
 
 
 --
--- Name: routes routes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: routes routes_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.routes
@@ -1934,7 +1935,7 @@ ALTER TABLE ONLY public.routes
 
 
 --
--- Name: stations stations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: stations stations_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.stations
@@ -1942,7 +1943,7 @@ ALTER TABLE ONLY public.stations
 
 
 --
--- Name: transport_companies transport_companies_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: transport_companies transport_companies_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.transport_companies
@@ -1950,7 +1951,7 @@ ALTER TABLE ONLY public.transport_companies
 
 
 --
--- Name: transport_types transport_types_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: transport_types transport_types_code_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.transport_types
@@ -1958,7 +1959,7 @@ ALTER TABLE ONLY public.transport_types
 
 
 --
--- Name: transport_types transport_types_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: transport_types transport_types_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.transport_types
@@ -1966,7 +1967,7 @@ ALTER TABLE ONLY public.transport_types
 
 
 --
--- Name: trip_fares trip_fares_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trip_fares trip_fares_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trip_fares
@@ -1974,7 +1975,7 @@ ALTER TABLE ONLY public.trip_fares
 
 
 --
--- Name: trips trips_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trips trips_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trips
@@ -1982,7 +1983,7 @@ ALTER TABLE ONLY public.trips
 
 
 --
--- Name: user_roles user_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_roles user_roles_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.user_roles
@@ -1990,7 +1991,7 @@ ALTER TABLE ONLY public.user_roles
 
 
 --
--- Name: user_types user_types_code_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_types user_types_code_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.user_types
@@ -1998,7 +1999,7 @@ ALTER TABLE ONLY public.user_types
 
 
 --
--- Name: user_types user_types_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_types user_types_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.user_types
@@ -2006,7 +2007,7 @@ ALTER TABLE ONLY public.user_types
 
 
 --
--- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_email_key; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.users
@@ -2014,7 +2015,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.users
@@ -2022,133 +2023,133 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: idx_activity_logs_created_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_activity_logs_created_at; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_activity_logs_created_at ON public.activity_logs USING btree (created_at DESC);
 
 
 --
--- Name: idx_activity_logs_entity; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_activity_logs_entity; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_activity_logs_entity ON public.activity_logs USING btree (entity_type, entity_id);
 
 
 --
--- Name: idx_activity_logs_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_activity_logs_user_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_activity_logs_user_id ON public.activity_logs USING btree (user_id);
 
 
 --
--- Name: idx_favorites_trip_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_favorites_trip_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_favorites_trip_id ON public.favorites USING btree (trip_id);
 
 
 --
--- Name: idx_favorites_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_favorites_user_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_favorites_user_id ON public.favorites USING btree (user_id);
 
 
 --
--- Name: idx_notifications_created_at; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_notifications_created_at; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_notifications_created_at ON public.notifications USING btree (created_at DESC);
 
 
 --
--- Name: idx_notifications_is_read; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_notifications_is_read; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_notifications_is_read ON public.notifications USING btree (is_read);
 
 
 --
--- Name: idx_notifications_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_notifications_user_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_notifications_user_id ON public.notifications USING btree (user_id);
 
 
 --
--- Name: idx_ratings_company_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_ratings_company_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_ratings_company_id ON public.ratings USING btree (transport_company_id);
 
 
 --
--- Name: idx_ratings_transport_company_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_ratings_transport_company_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_ratings_transport_company_id ON public.ratings USING btree (transport_company_id);
 
 
 --
--- Name: idx_ratings_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_ratings_user_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_ratings_user_id ON public.ratings USING btree (user_id);
 
 
 --
--- Name: idx_reviews_transport_company_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_reviews_transport_company_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_reviews_transport_company_id ON public.reviews USING btree (transport_company_id);
 
 
 --
--- Name: idx_reviews_trip_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_reviews_trip_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_reviews_trip_id ON public.reviews USING btree (trip_id);
 
 
 --
--- Name: idx_reviews_user_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_reviews_user_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_reviews_user_id ON public.reviews USING btree (user_id);
 
 
 --
--- Name: idx_route_stops_route_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_route_stops_route_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_route_stops_route_id ON public.route_stops USING btree (route_id);
 
 
 --
--- Name: idx_route_stops_station_id; Type: INDEX; Schema: public; Owner: postgres
+-- Name: idx_route_stops_station_id; Type: INDEX; Schema: public; Owner: hophop
 --
 
 CREATE INDEX idx_route_stops_station_id ON public.route_stops USING btree (station_id);
 
 
 --
--- Name: ratings update_ratings_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: ratings update_ratings_updated_at; Type: TRIGGER; Schema: public; Owner: hophop
 --
 
 CREATE TRIGGER update_ratings_updated_at BEFORE UPDATE ON public.ratings FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 --
--- Name: reviews update_reviews_updated_at; Type: TRIGGER; Schema: public; Owner: postgres
+-- Name: reviews update_reviews_updated_at; Type: TRIGGER; Schema: public; Owner: hophop
 --
 
 CREATE TRIGGER update_reviews_updated_at BEFORE UPDATE ON public.reviews FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 
 
 --
--- Name: activity_logs activity_logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: activity_logs activity_logs_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.activity_logs
@@ -2156,7 +2157,7 @@ ALTER TABLE ONLY public.activity_logs
 
 
 --
--- Name: favorites favorites_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: favorites favorites_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.favorites
@@ -2164,7 +2165,7 @@ ALTER TABLE ONLY public.favorites
 
 
 --
--- Name: favorites favorites_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: favorites favorites_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.favorites
@@ -2172,7 +2173,7 @@ ALTER TABLE ONLY public.favorites
 
 
 --
--- Name: accounts fk_accounts_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: accounts fk_accounts_user; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.accounts
@@ -2180,7 +2181,7 @@ ALTER TABLE ONLY public.accounts
 
 
 --
--- Name: booking_options fk_booking_options_type; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: booking_options fk_booking_options_type; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.booking_options
@@ -2188,7 +2189,7 @@ ALTER TABLE ONLY public.booking_options
 
 
 --
--- Name: bookings fk_bookings_trip; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bookings fk_bookings_trip; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.bookings
@@ -2196,7 +2197,7 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: bookings fk_bookings_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: bookings fk_bookings_user; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.bookings
@@ -2204,7 +2205,7 @@ ALTER TABLE ONLY public.bookings
 
 
 --
--- Name: invoices fk_invoices_booking; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: invoices fk_invoices_booking; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.invoices
@@ -2212,7 +2213,7 @@ ALTER TABLE ONLY public.invoices
 
 
 --
--- Name: media_relations fk_media_relations_media; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: media_relations fk_media_relations_media; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.media_relations
@@ -2220,7 +2221,7 @@ ALTER TABLE ONLY public.media_relations
 
 
 --
--- Name: media fk_media_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: media fk_media_user; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.media
@@ -2228,7 +2229,7 @@ ALTER TABLE ONLY public.media
 
 
 --
--- Name: routes fk_routes_from_city; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: routes fk_routes_from_city; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.routes
@@ -2236,7 +2237,7 @@ ALTER TABLE ONLY public.routes
 
 
 --
--- Name: routes fk_routes_to_city; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: routes fk_routes_to_city; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.routes
@@ -2244,7 +2245,7 @@ ALTER TABLE ONLY public.routes
 
 
 --
--- Name: stations fk_stations_city; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: stations fk_stations_city; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.stations
@@ -2252,7 +2253,7 @@ ALTER TABLE ONLY public.stations
 
 
 --
--- Name: trip_fares fk_trip_fares_category; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trip_fares fk_trip_fares_category; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trip_fares
@@ -2260,7 +2261,7 @@ ALTER TABLE ONLY public.trip_fares
 
 
 --
--- Name: trip_fares fk_trip_fares_option; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trip_fares fk_trip_fares_option; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trip_fares
@@ -2268,7 +2269,7 @@ ALTER TABLE ONLY public.trip_fares
 
 
 --
--- Name: trip_fares fk_trip_fares_trip; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trip_fares fk_trip_fares_trip; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trip_fares
@@ -2276,7 +2277,7 @@ ALTER TABLE ONLY public.trip_fares
 
 
 --
--- Name: trips fk_trips_arrival_station; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trips fk_trips_arrival_station; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trips
@@ -2284,7 +2285,7 @@ ALTER TABLE ONLY public.trips
 
 
 --
--- Name: trips fk_trips_company; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trips fk_trips_company; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trips
@@ -2292,7 +2293,7 @@ ALTER TABLE ONLY public.trips
 
 
 --
--- Name: trips fk_trips_departure_station; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trips fk_trips_departure_station; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trips
@@ -2300,7 +2301,7 @@ ALTER TABLE ONLY public.trips
 
 
 --
--- Name: trips fk_trips_route; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trips fk_trips_route; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trips
@@ -2308,7 +2309,7 @@ ALTER TABLE ONLY public.trips
 
 
 --
--- Name: trips fk_trips_type; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: trips fk_trips_type; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.trips
@@ -2316,7 +2317,7 @@ ALTER TABLE ONLY public.trips
 
 
 --
--- Name: user_roles fk_user_roles_role; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_roles fk_user_roles_role; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.user_roles
@@ -2324,7 +2325,7 @@ ALTER TABLE ONLY public.user_roles
 
 
 --
--- Name: user_roles fk_user_roles_user; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: user_roles fk_user_roles_user; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.user_roles
@@ -2332,7 +2333,7 @@ ALTER TABLE ONLY public.user_roles
 
 
 --
--- Name: users fk_users_company; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users fk_users_company; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.users
@@ -2340,7 +2341,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users fk_users_type; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: users fk_users_type; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.users
@@ -2348,7 +2349,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: notifications notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: notifications notifications_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.notifications
@@ -2356,7 +2357,7 @@ ALTER TABLE ONLY public.notifications
 
 
 --
--- Name: ratings ratings_transport_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: ratings ratings_transport_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.ratings
@@ -2364,7 +2365,7 @@ ALTER TABLE ONLY public.ratings
 
 
 --
--- Name: ratings ratings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: ratings ratings_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.ratings
@@ -2372,7 +2373,7 @@ ALTER TABLE ONLY public.ratings
 
 
 --
--- Name: reviews reviews_rating_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: reviews reviews_rating_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.reviews
@@ -2380,7 +2381,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: reviews reviews_transport_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: reviews reviews_transport_company_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.reviews
@@ -2388,7 +2389,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: reviews reviews_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: reviews reviews_trip_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.reviews
@@ -2396,7 +2397,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: reviews reviews_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: reviews reviews_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.reviews
@@ -2404,7 +2405,7 @@ ALTER TABLE ONLY public.reviews
 
 
 --
--- Name: route_stops route_stops_route_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: route_stops route_stops_route_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.route_stops
@@ -2412,7 +2413,7 @@ ALTER TABLE ONLY public.route_stops
 
 
 --
--- Name: route_stops route_stops_station_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: postgres
+-- Name: route_stops route_stops_station_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: hophop
 --
 
 ALTER TABLE ONLY public.route_stops
@@ -2423,4 +2424,5 @@ ALTER TABLE ONLY public.route_stops
 -- PostgreSQL database dump complete
 --
 
+\unrestrict a4Xqbw5Gi2UYU2ho7rFLvizs8ThzaSzUcvHHn4RuNULHkpUO1dxvedetFiGYnXr
 
