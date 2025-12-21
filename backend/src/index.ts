@@ -52,19 +52,34 @@ app.get("/api/trips", async (req, res) => {
     const conditions: string[] = [];
     const values: any[] = [];
 
-    if (from) {
+    if (from && typeof from === 'string' && from.trim() !== '') {
       conditions.push(`LOWER(c_from.name) LIKE LOWER($${values.length + 1})`);
-      values.push(`%${from}%`);
+      values.push(`%${from.trim()}%`);
     }
 
-    if (to) {
+    if (to && typeof to === 'string' && to.trim() !== '') {
       conditions.push(`LOWER(c_to.name) LIKE LOWER($${values.length + 1})`);
-      values.push(`%${to}%`);
+      values.push(`%${to.trim()}%`);
     }
 
-    if (date) {
-      conditions.push(`DATE(t.departure_time) = $${values.length + 1}`);
-      values.push(date);
+    if (date && typeof date === 'string' && date.trim() !== '') {
+      // Calculate date range: -2 days to +2 days (5 days total)
+      const dateStr = date.trim();
+      const searchDate = new Date(dateStr);
+      
+      // Validate date
+      if (isNaN(searchDate.getTime())) {
+        return res.status(400).json({ message: "Invalid date format", error: `Date '${dateStr}' is not a valid date` });
+      }
+      
+      const startDate = new Date(searchDate);
+      startDate.setDate(startDate.getDate() - 2);
+      const endDate = new Date(searchDate);
+      endDate.setDate(endDate.getDate() + 2);
+      
+      conditions.push(`DATE(t.departure_time) >= $${values.length + 1}::date AND DATE(t.departure_time) <= $${values.length + 2}::date`);
+      values.push(startDate.toISOString().split('T')[0]);
+      values.push(endDate.toISOString().split('T')[0]);
     }
 
     let query = `
@@ -113,7 +128,12 @@ app.get("/api/trips", async (req, res) => {
       LIMIT 100
     `;
 
+    console.log("Executing query:", query);
+    console.log("With values:", values);
+    
     const result = await pool.query(query, values);
+    
+    console.log(`Found ${result.rows.length} trips`);
     
     // Transform to match frontend Trip type
     const transformedTrips = result.rows.map((row: any) => {
@@ -173,9 +193,29 @@ app.get("/api/trips", async (req, res) => {
     });
 
     res.json(transformedTrips);
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching trips:", error);
-    res.status(500).json({ message: "Error fetching trips", error: String(error) });
+    const errorMessage = error?.message || String(error);
+    const errorStack = error?.stack || '';
+    const errorCode = error?.code;
+    const errorQuery = error?.query;
+    
+    console.error("Error details:", { 
+      errorMessage, 
+      errorStack, 
+      errorCode,
+      errorQuery: errorQuery ? { text: errorQuery.text, values: errorQuery.values } : undefined
+    });
+    
+    res.status(500).json({ 
+      message: "Error fetching trips", 
+      error: errorMessage,
+      code: errorCode,
+      details: process.env.NODE_ENV === 'development' ? {
+        stack: errorStack,
+        query: errorQuery
+      } : undefined
+    });
   }
 });
 
@@ -191,6 +231,7 @@ app.get("/api/trips/:id", async (req, res) => {
       `
       SELECT
         t.id,
+        t.route_id,
         t.departure_time,
         t.arrival_time,
         t.duration_minutes,
@@ -208,22 +249,23 @@ app.get("/api/trips/:id", async (req, res) => {
         s_to.id AS arrival_station_id,
         co.name AS company_name,
         co.id AS company_id,
-        tt.name AS transport_type,
+        tt.label AS transport_type,
+        tt.id AS transport_type_id,
         MIN(tf.price) AS price,
         MIN(tf.currency) AS currency
       FROM trips t
       JOIN routes r         ON t.route_id = r.id
       JOIN cities c_from    ON r.from_city_id = c_from.id
       JOIN cities c_to      ON r.to_city_id   = c_to.id
-      JOIN stations s_from  ON t.departure_station_id = s_from.id
-      JOIN stations s_to    ON t.arrival_station_id   = s_to.id
+      LEFT JOIN stations s_from  ON t.departure_station_id = s_from.id
+      LEFT JOIN stations s_to    ON t.arrival_station_id   = s_to.id
       LEFT JOIN transport_companies co ON t.company_id = co.id
       LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
       LEFT JOIN trip_fares tf ON tf.trip_id = t.id
       WHERE t.id = $1
       GROUP BY
-        t.id, c_from.name, c_to.name, s_from.name, s_from.id, s_to.name, s_to.id,
-        co.name, co.id, tt.name
+        t.id, t.route_id, c_from.name, c_to.name, s_from.name, s_from.id, s_to.name, s_to.id,
+        co.name, co.id, tt.label, tt.id
       `,
       [tripId]
     );
@@ -321,9 +363,16 @@ app.get("/api/trips/:id", async (req, res) => {
       busImages,
       stationImages,
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Error fetching trip details:", error);
-    res.status(500).json({ message: "Error fetching trip details", error: String(error) });
+    console.error("Error stack:", error.stack);
+    console.error("Error code:", error.code);
+    res.status(500).json({ 
+      message: "Error fetching trip details", 
+      error: error.message || String(error),
+      code: error.code,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

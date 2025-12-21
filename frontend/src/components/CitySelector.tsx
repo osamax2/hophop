@@ -162,7 +162,6 @@ export function CitySelector({
               !inputValue ? 'text-gray-400' : ''
             }`}
             style={{ paddingLeft: '1rem', paddingRight: '1.5rem', paddingTop: '0.875rem', paddingBottom: '0.875rem' }}
-            required={required}
           />
         </div>
 

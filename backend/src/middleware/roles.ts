@@ -31,9 +31,12 @@ export function requireRole(allowed: string[]) {
       if (!ok) return res.status(403).json({ message: "Forbidden" });
 
       return next();
-    } catch (e) {
+    } catch (e: any) {
       console.error("requireRole error:", e);
-      return res.status(500).json({ message: "Role check failed" });
+      console.error("requireRole error stack:", e?.stack);
+      console.error("requireRole error message:", e?.message);
+      // Return 403 instead of 500 to avoid masking authentication errors
+      return res.status(403).json({ message: "Role check failed", error: String(e) });
     }
   };
 }

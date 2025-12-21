@@ -45,6 +45,8 @@ const translations = {
     afternoon: 'Nachmittag (12-18)',
     evening: 'Abend (18-24)',
     night: 'Nacht (0-6)',
+    emptyFieldsError: 'Bitte geben Sie einen Abfahrts- und einen Ankunftsort ein',
+    loadError: 'Fehler beim Laden der Fahrten',
   },
   en: {
     results: 'Search Results',
@@ -67,6 +69,8 @@ const translations = {
     afternoon: 'Afternoon (12-18)',
     evening: 'Evening (18-24)',
     night: 'Night (0-6)',
+    emptyFieldsError: 'Please enter both departure and arrival locations',
+    loadError: 'Failed to load trips',
   },
   ar: {
     results: 'نتائج البحث',
@@ -89,6 +93,8 @@ const translations = {
     afternoon: 'بعد الظهر (12-18)',
     evening: 'مساء (18-24)',
     night: 'ليل (0-6)',
+    emptyFieldsError: 'يرجى إدخال مكان المغادرة ومكان الوصول',
+    loadError: 'فشل تحميل الرحلات',
   },
 } as const;
 
@@ -134,15 +140,34 @@ export function SearchResults({
         setLoading(true);
         setError(null);
 
+        // Get current translations based on language
+        const currentTranslations = translations[language];
+
+        // Check if both from and to are empty
+        const fromEmpty = !searchParams.from || searchParams.from.trim() === '';
+        const toEmpty = !searchParams.to || searchParams.to.trim() === '';
+        
+        if (fromEmpty && toEmpty) {
+          setError(currentTranslations.emptyFieldsError);
+          setLoading(false);
+          setTrips([]);
+          return;
+        }
+
         const params = new URLSearchParams({
-          from: searchParams.from,
-          to: searchParams.to,
+          from: searchParams.from || '',
+          to: searchParams.to || '',
           date: searchParams.date,
         });
 
-        const res = await fetch(`http://localhost:4000/api/trips?${params.toString()}`);
+        const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+        const url = `${API_BASE}/api/trips?${params.toString()}`;
+        const res = await fetch(url);
         if (!res.ok) {
-          throw new Error('Failed to fetch trips');
+          if (res.status === 404) {
+            throw new Error(`API endpoint not found: ${url}. Please make sure the backend server is running on ${API_BASE}`);
+          }
+          throw new Error(`Failed to fetch trips: ${res.status} ${res.statusText}`);
         }
 
         const data: Trip[] = await res.json();
@@ -155,14 +180,26 @@ export function SearchResults({
         }
       } catch (err) {
         console.error(err);
-        setError('Failed to load trips');
+        const currentTranslations = translations[language];
+        setError(currentTranslations.loadError);
       } finally {
         setLoading(false);
       }
     };
 
     fetchTrips();
-  }, [searchParams.from, searchParams.to, searchParams.date]);
+  }, [searchParams.from, searchParams.to, searchParams.date, language]);
+
+  // Update error message when language changes if fields are still empty
+  useEffect(() => {
+    const fromEmpty = !searchParams.from || searchParams.from.trim() === '';
+    const toEmpty = !searchParams.to || searchParams.to.trim() === '';
+    
+    if (fromEmpty && toEmpty) {
+      const currentTranslations = translations[language];
+      setError(currentTranslations.emptyFieldsError);
+    }
+  }, [language, searchParams.from, searchParams.to]);
 
   // Filter and sort trips
   let filteredTrips = trips.filter((trip) => {

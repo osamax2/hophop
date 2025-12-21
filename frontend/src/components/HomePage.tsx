@@ -40,6 +40,7 @@ const translations = {
     featureBookingText: 'Sichere Zahlungsmethoden und bestätigte Reservierungen',
     // Validation messages
     searchValidationError: 'Bitte füllen Sie alle erforderlichen Felder aus (Von, Nach, Datum)',
+    emptyFieldsError: 'Bitte geben Sie einen Abfahrts- und einen Ankunftsort ein',
     // Footer
     footerAbout: 'Über uns',
     footerContact: 'Kontakt',
@@ -82,6 +83,7 @@ const translations = {
     featureBookingText: 'Secure payment methods and confirmed reservations',
     // Validation messages
     searchValidationError: 'Please fill in all required fields (From, To, Date)',
+    emptyFieldsError: 'Please enter both departure and arrival locations',
     // Footer
     footerAbout: 'About Us',
     footerContact: 'Contact',
@@ -124,6 +126,7 @@ const translations = {
     featureBookingText: 'طرق دفع آمنة وحجوزات مؤكدة',
     // Validation messages
     searchValidationError: 'يرجى تعبئة جميع الحقول المطلوبة (من، إلى، التاريخ)',
+    emptyFieldsError: 'يرجى إدخال مكان المغادرة ومكان الوصول',
     // Footer
     footerAbout: 'من نحن',
     footerContact: 'اتصل بنا',
@@ -162,6 +165,12 @@ export function HomePage({ onSearch, language }: HomePageProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSearchError('');
+    
+    // Check if both from and to are empty
+    if ((!from || from.trim() === '') && (!to || to.trim() === '')) {
+      setSearchError(t.emptyFieldsError);
+      return;
+    }
     
     if (!from || !to || !date) {
       setSearchError(t.searchValidationError);
@@ -208,7 +217,7 @@ export function HomePage({ onSearch, language }: HomePageProps) {
 
       {/* Search Box - Floating Effect */}
       <div className="max-w-4xl mx-auto px-6 -mt-20 relative z-10">
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl p-8">
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-2xl p-8" noValidate>
           <div className="space-y-6 mb-6">
             {/* From and To with Swap Button */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -258,7 +267,6 @@ export function HomePage({ onSearch, language }: HomePageProps) {
                 onChange={(e) => setDate(e.target.value)}
                 min={new Date().toISOString().split('T')[0]}
                 className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
-                required
               />
             </div>
           </div>

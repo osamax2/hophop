@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X } from 'lucide-react';
 import type { Language, User } from '../App';
-import { adminApi, imagesApi } from '../lib/api';
+import { adminApi, imagesApi, tripsApi, citiesApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
 
 interface AdminDashboardProps {
@@ -69,6 +69,9 @@ const translations = {
     time: 'Zeit',
     duration: 'Dauer',
     arrival: 'Ankunft',
+    arrivalTimeAfterDeparture: 'Die Ankunftszeit muss nach der Abfahrtszeit liegen',
+    deletePermanently: 'Diese deaktivierte Fahrt dauerhaft löschen?',
+    deletePermanentlyConfirm: 'Möchten Sie diese deaktivierte Fahrt wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
   },
   en: {
     adminDashboard: 'Admin Dashboard',
@@ -129,6 +132,9 @@ const translations = {
     time: 'Time',
     duration: 'Duration',
     arrival: 'Arrival',
+    arrivalTimeAfterDeparture: 'Arrival time must be after departure time',
+    deletePermanently: 'Permanently delete this inactive trip?',
+    deletePermanentlyConfirm: 'Are you sure you want to permanently delete this inactive trip? This action cannot be undone.',
   },
   ar: {
     adminDashboard: 'لوحة الإدارة',
@@ -189,6 +195,9 @@ const translations = {
     time: 'الوقت',
     duration: 'المدة',
     arrival: 'الوصول',
+    arrivalTimeAfterDeparture: 'يجب أن يكون وقت الوصول بعد وقت المغادرة',
+    deletePermanently: 'حذف هذه الرحلة المعطلة نهائياً؟',
+    deletePermanentlyConfirm: 'هل أنت متأكد من حذف هذه الرحلة المعطلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
   },
 };
 
@@ -208,9 +217,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   
   // Users data
   const [users, setUsers] = useState<any[]>([]);
+  
+  // Change Role Dialog
+  const [showChangeRoleDialog, setShowChangeRoleDialog] = useState(false);
+  const [selectedUserForRoleChange, setSelectedUserForRoleChange] = useState<any>(null);
+  const [newRole, setNewRole] = useState<string>('');
 
-  // Add Trip Dialog
+  // Add/Edit Trip Dialog
   const [showAddTripDialog, setShowAddTripDialog] = useState(false);
+  const [editingTripId, setEditingTripId] = useState<number | null>(null);
   const [showAddRouteDialog, setShowAddRouteDialog] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
   const [transportTypes, setTransportTypes] = useState<any[]>([]);
@@ -244,6 +259,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // Load analytics data
   useEffect(() => {
     if (activeTab === 'analytics') {
+      console.log('Analytics tab activated, loading data...');
       loadAnalytics();
     }
   }, [activeTab]);
@@ -256,19 +272,34 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   }, [activeTab]);
 
+  // Load cities when Add Route Dialog opens
+  useEffect(() => {
+    if (showAddRouteDialog && cities.length === 0) {
+      loadTripFormData();
+    }
+  }, [showAddRouteDialog]);
+
+  // Load cities when Add Trip Dialog opens
+  useEffect(() => {
+    if (showAddTripDialog && cities.length === 0) {
+      loadTripFormData();
+    }
+  }, [showAddTripDialog]);
+
   const loadTripFormData = async () => {
     try {
       const [companiesData, transportTypesData, stationsData, citiesData] = await Promise.all([
         adminApi.getCompanies(),
         adminApi.getTransportTypes(),
         adminApi.getStations(),
-        adminApi.getCities(),
+        adminApi.getCities(), // Use adminApi.getCities()
       ]);
       console.log('Loaded cities:', citiesData?.length || 0);
+      console.log('Cities data:', citiesData);
       setCompanies(companiesData);
       setTransportTypes(transportTypesData);
       setStations(stationsData);
-      setCities(citiesData || []);
+      setCities(Array.isArray(citiesData) ? citiesData : []);
     } catch (err) {
       console.error('Error loading trip form data:', err);
       alert('فشل تحميل البيانات. تأكد من أن الخادم يعمل.');
@@ -316,30 +347,86 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const loadAnalytics = async () => {
     try {
       setLoading(true);
-      const [statsData, routesData] = await Promise.all([
-        adminApi.getStats(),
-        adminApi.getPopularRoutes(),
-      ]);
+      console.log('Loading analytics data...');
+      
+      // Try to load stats and routes separately to see which one fails
+      let statsData = { totalTrips: 0, totalUsers: 0, averageOccupancy: 0 };
+      let routesData: any[] = [];
+      
+      try {
+        statsData = await adminApi.getStats();
+        console.log('Stats data loaded:', statsData);
+      } catch (statsError: any) {
+        console.error('Error loading stats:', statsError);
+        // Set default values on error
+        statsData = { totalTrips: 0, totalUsers: 0, averageOccupancy: 0 };
+      }
+      
+      try {
+        routesData = await adminApi.getPopularRoutes();
+        console.log('Routes data loaded:', routesData);
+        routesData = Array.isArray(routesData) ? routesData : [];
+      } catch (routesError: any) {
+        console.error('Error loading popular routes:', routesError);
+        // Set empty array on error
+        routesData = [];
+      }
+      
       setStats(statsData);
       setPopularRoutes(routesData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading analytics:', err);
+      console.error('Error details:', {
+        status: err.status,
+        message: err.message,
+        details: err.details,
+        stack: err.stack
+      });
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        localStorage.removeItem("token");
+        window.location.reload();
+        return;
+      }
+      
+      // Set empty data on error to prevent display issues
+      setStats({ totalTrips: 0, totalUsers: 0, averageOccupancy: 0 });
+      setPopularRoutes([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const loadSchedules = async () => {
+  const loadSchedules = async (showAll: boolean = false) => {
     try {
       setLoading(true);
+      // Load all trips including inactive ones for admin management
       const [tripsData, routesData] = await Promise.all([
-        adminApi.getTrips(),
+        adminApi.getTrips(showAll),
         adminApi.getRoutes(),
       ]);
-      setTrips(tripsData);
+      
+      console.log('Loaded trips from server:', tripsData.length);
+      console.log('Trip IDs:', tripsData.map((t: any) => ({ id: t.id, is_active: t.is_active })));
+      
+      // Type assertion for tripsData
+      const typedTripsData = tripsData as any[];
+      setTrips(typedTripsData);
       setRoutes(routesData);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error loading schedules:', err);
+      alert(language === 'ar' 
+        ? `خطأ في تحميل الجداول: ${err.message || 'حدث خطأ غير معروف'}`
+        : language === 'de'
+        ? `Fehler beim Laden der Zeitpläne: ${err.message || 'Unbekannter Fehler'}`
+        : `Error loading schedules: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -352,6 +439,150 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setUsers(usersData);
     } catch (err) {
       console.error('Error loading users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBanUser = async (userId: number, currentIsActive: boolean) => {
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(language === 'ar' 
+        ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.'
+        : language === 'de' 
+        ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.'
+        : 'Session expired. Please log in again.');
+      window.location.reload();
+      return;
+    }
+
+    const confirmMessage = currentIsActive
+      ? (language === 'ar' ? 'هل أنت متأكد من حظر هذا المستخدم؟' : language === 'de' ? 'Sind Sie sicher, dass Sie diesen Benutzer sperren möchten?' : 'Are you sure you want to ban this user?')
+      : (language === 'ar' ? 'هل أنت متأكد من إلغاء حظر هذا المستخدم؟' : language === 'de' ? 'Sind Sie sicher, dass Sie diesen Benutzer entsperren möchten?' : 'Are you sure you want to unban this user?');
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminApi.banUser(userId, !currentIsActive);
+      alert(language === 'ar' 
+        ? (currentIsActive ? 'تم حظر المستخدم بنجاح' : 'تم إلغاء حظر المستخدم بنجاح')
+        : language === 'de' 
+        ? (currentIsActive ? 'Benutzer erfolgreich gesperrt' : 'Benutzer erfolgreich entsperrt')
+        : (currentIsActive ? 'User banned successfully' : 'User unbanned successfully'));
+      loadUsers(); // Refresh users list
+    } catch (err: any) {
+      console.error('Error banning user:', err);
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        localStorage.removeItem("token");
+        window.location.reload();
+        return;
+      }
+
+      alert(language === 'ar' 
+        ? 'فشل حظر المستخدم. يرجى المحاولة مرة أخرى.'
+        : language === 'de' 
+        ? 'Fehler beim Sperren des Benutzers. Bitte versuchen Sie es erneut.'
+        : 'Failed to ban user. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeRoleClick = (userItem: any) => {
+    console.log('handleChangeRoleClick called with user:', userItem);
+    try {
+      setSelectedUserForRoleChange(userItem);
+      // Set initial role based on current roles
+      const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
+      console.log('User roles:', roles);
+      if (roles.includes('Administrator') || roles.includes('ADMIN')) {
+        setNewRole('Administrator');
+      } else if (roles.includes('Agent') || roles.includes('AGENT')) {
+        setNewRole('Agent');
+      } else {
+        setNewRole('User');
+      }
+      setShowChangeRoleDialog(true);
+      console.log('Dialog should be shown now');
+    } catch (error) {
+      console.error('Error in handleChangeRoleClick:', error);
+    }
+  };
+
+  const handleConfirmRoleChange = async () => {
+    if (!selectedUserForRoleChange || !newRole) {
+      return;
+    }
+
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(language === 'ar' 
+        ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.'
+        : language === 'de' 
+        ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.'
+        : 'Session expired. Please log in again.');
+      window.location.reload();
+      return;
+    }
+
+    const confirmMessage = language === 'ar' 
+      ? `هل أنت متأكد من تغيير دور المستخدم إلى ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}؟`
+      : language === 'de' 
+      ? `Sind Sie sicher, dass Sie die Rolle dieses Benutzers zu ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'} ändern möchten?`
+      : `Are you sure you want to change this user's role to ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}?`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      // Backend expects role names like "Administrator", "Agent", "User"
+      const roleNames = [newRole];
+      await adminApi.changeUserRole(selectedUserForRoleChange.id, roleNames);
+      alert(language === 'ar' 
+        ? 'تم تغيير دور المستخدم بنجاح'
+        : language === 'de' 
+        ? 'Benutzerrolle erfolgreich geändert'
+        : 'User role changed successfully');
+      setShowChangeRoleDialog(false);
+      setSelectedUserForRoleChange(null);
+      setNewRole('');
+      loadUsers(); // Refresh users list
+    } catch (err: any) {
+      console.error('Error changing user role:', err);
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        localStorage.removeItem("token");
+        window.location.reload();
+        return;
+      }
+
+      alert(language === 'ar' 
+        ? 'فشل تغيير دور المستخدم. يرجى المحاولة مرة أخرى.'
+        : language === 'de' 
+        ? 'Fehler beim Ändern der Benutzerrolle. Bitte versuchen Sie es erneut.'
+        : 'Failed to change user role. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -410,10 +641,141 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
-  const handleAddTrip = async () => {
+  const handleEditTrip = async (tripId: number) => {
+    try {
+      setLoading(true);
+      console.log('Loading trip details for ID:', tripId);
+      
+      // Load trip details
+      const trip = await tripsApi.getById(tripId);
+      
+      console.log('Loaded trip data:', trip);
+      
+      if (!trip) {
+        throw new Error('Trip data is empty');
+      }
+      
+      // Find route to get city names
+      const route = routes.find((r: any) => r.id === trip.route_id);
+      
+      // Convert trip data to form format
+      setNewTrip({
+        from_city: route?.from_city || trip.from_city || '',
+        to_city: route?.to_city || trip.to_city || '',
+        route_id: String(trip.route_id || ''),
+        company_id: String(trip.company_id || ''),
+        transport_type_id: String(trip.transport_type_id || ''),
+        departure_station_id: String(trip.departure_station_id || ''),
+        arrival_station_id: String(trip.arrival_station_id || ''),
+        departure_time: trip.departure_time ? new Date(trip.departure_time).toISOString().slice(0, 16) : '',
+        arrival_time: trip.arrival_time ? new Date(trip.arrival_time).toISOString().slice(0, 16) : '',
+        duration_minutes: String(trip.duration_minutes || ''),
+        seats_total: String(trip.seats_total || ''),
+        equipment: trip.equipment || '',
+        cancellation_policy: trip.cancellation_policy || '',
+        extra_info: trip.extra_info || '',
+      });
+      
+      setEditingTripId(tripId);
+      setShowAddTripDialog(true);
+    } catch (err: any) {
+      console.error('Error loading trip:', err);
+      console.error('Error status:', err.status);
+      console.error('Error details:', err.details);
+      
+      let errorMsg = err.message || 'Failed to load trip data';
+      if (err.status === 404) {
+        errorMsg = language === 'ar' ? 'الرحلة غير موجودة' : 
+                   language === 'de' ? 'Fahrt nicht gefunden' : 
+                   'Trip not found';
+      } else if (err.status === 500) {
+        errorMsg = language === 'ar' ? 'خطأ في الخادم. يرجى المحاولة مرة أخرى.' : 
+                   language === 'de' ? 'Serverfehler. Bitte versuchen Sie es erneut.' : 
+                   'Server error. Please try again.';
+      }
+      
+      alert(language === 'ar' ? `خطأ في تحميل بيانات الرحلة: ${errorMsg}` : 
+            language === 'de' ? `Fehler beim Laden der Fahrtdaten: ${errorMsg}` : 
+            `Error loading trip data: ${errorMsg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveTrip = async () => {
     try {
       setLoading(true);
       
+      // Validate that arrival time is after departure time
+      if (newTrip.departure_time && newTrip.arrival_time) {
+        const dep = new Date(newTrip.departure_time);
+        const arr = new Date(newTrip.arrival_time);
+        
+        if (arr <= dep) {
+          alert(t.arrivalTimeAfterDeparture);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Find or create route based on selected cities
+      let routeId = newTrip.route_id;
+      
+      // If cities are selected but route_id is not set, find or create the route
+      if (!routeId && newTrip.from_city && newTrip.to_city) {
+        // Find existing route
+        const fromCity = cities.find((c: any) => c.name === newTrip.from_city);
+        const toCity = cities.find((c: any) => c.name === newTrip.to_city);
+        
+        if (!fromCity || !toCity) {
+          alert(language === 'ar' 
+            ? 'يرجى اختيار مدينة المغادرة ومدينة الوصول الصحيحة' 
+            : language === 'de' 
+            ? 'Bitte wählen Sie gültige Abfahrts- und Ankunftsstädte' 
+            : 'Please select valid departure and arrival cities');
+          setLoading(false);
+          return;
+        }
+
+        if (fromCity && toCity) {
+          const existingRoute = routes.find((r: any) => 
+            r.from_city_id === fromCity.id && r.to_city_id === toCity.id
+          );
+          
+          if (existingRoute) {
+            routeId = String(existingRoute.id);
+          } else {
+            // Create new route
+            try {
+              const createdRoute: any = await adminApi.createRoute(fromCity.id, toCity.id);
+              routeId = String(createdRoute.id || createdRoute.route_id || createdRoute);
+              // Reload routes to include the new one
+              const updatedRoutes: any = await adminApi.getRoutes();
+              setRoutes(updatedRoutes);
+            } catch (routeError: any) {
+              console.error('Error creating route:', routeError);
+              alert(language === 'ar' 
+                ? 'فشل إنشاء المسار. يرجى المحاولة مرة أخرى.' 
+                : language === 'de' 
+                ? 'Fehler beim Erstellen der Route. Bitte versuchen Sie es erneut.' 
+                : 'Failed to create route. Please try again.');
+              setLoading(false);
+              return;
+            }
+          }
+        }
+      }
+
+      if (!routeId) {
+        alert(language === 'ar' 
+          ? 'يرجى اختيار مدينة المغادرة ومدينة الوصول' 
+          : language === 'de' 
+          ? 'Bitte wählen Sie Abfahrts- und Ankunftsstadt' 
+          : 'Please select departure and arrival cities');
+        setLoading(false);
+        return;
+      }
+
       // Calculate duration if not provided
       let duration = parseInt(newTrip.duration_minutes);
       if (!duration && newTrip.departure_time && newTrip.arrival_time) {
@@ -423,7 +785,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       }
 
       const tripData = {
-        route_id: parseInt(newTrip.route_id),
+        route_id: parseInt(routeId),
         company_id: parseInt(newTrip.company_id),
         transport_type_id: parseInt(newTrip.transport_type_id),
         departure_station_id: parseInt(newTrip.departure_station_id),
@@ -437,10 +799,21 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         extra_info: newTrip.extra_info || null,
       };
 
-      await adminApi.createTrip(tripData);
-      alert(t.tripAdded || 'Trip added successfully!');
+      if (editingTripId) {
+        // Update existing trip
+        await adminApi.updateTrip(editingTripId, tripData);
+        alert(language === 'ar' ? 'تم تحديث الرحلة بنجاح' : language === 'de' ? 'Fahrt erfolgreich aktualisiert' : 'Trip updated successfully!');
+      } else {
+        // Create new trip
+        await adminApi.createTrip(tripData);
+        alert(t.tripAdded || 'Trip added successfully!');
+      }
+      
       setShowAddTripDialog(false);
+      setEditingTripId(null);
       setNewTrip({
+        from_city: '',
+        to_city: '',
         route_id: '',
         company_id: '',
         transport_type_id: '',
@@ -456,23 +829,108 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       });
       loadSchedules(); // Refresh trips list
     } catch (err: any) {
-      alert(err.message || 'Failed to add trip');
+      console.error('Error saving trip:', err);
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        // Redirect to login or reload page
+        window.location.href = '/';
+        return;
+      }
+      
+      const errorMessage = err.message || (editingTripId 
+        ? (language === 'ar' ? 'فشل تحديث الرحلة' : language === 'de' ? 'Fehler beim Aktualisieren der Fahrt' : 'Failed to update trip')
+        : (language === 'ar' ? 'فشل إضافة الرحلة' : language === 'de' ? 'Fehler beim Hinzufügen der Fahrt' : 'Failed to add trip'));
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleAddTrip = () => {
+    setEditingTripId(null);
+    setNewTrip({
+      route_id: '',
+      company_id: '',
+      transport_type_id: '',
+      departure_station_id: '',
+      arrival_station_id: '',
+      departure_time: '',
+      arrival_time: '',
+      duration_minutes: '',
+      seats_total: '',
+      equipment: '',
+      cancellation_policy: '',
+      extra_info: '',
+    });
+    setShowAddTripDialog(true);
+  };
+
   const handleDeleteTrip = async (tripId: number) => {
-    if (!confirm(t.confirmDelete || 'Are you sure you want to delete this trip?')) {
+    // Show confirmation message for permanent deletion
+    const confirmMessage = language === 'ar'
+      ? 'هل أنت متأكد من حذف هذه الرحلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'
+      : language === 'de'
+      ? 'Sind Sie sicher, dass Sie diese Fahrt dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+      : 'Are you sure you want to permanently delete this trip? This action cannot be undone.';
+    
+    if (!confirm(confirmMessage)) {
       return;
     }
 
     try {
-      await adminApi.deleteTrip(tripId);
-      alert(t.tripDeleted || 'Trip deleted successfully!');
-      loadSchedules(); // Refresh trips list
+      setLoading(true);
+      const result: any = await adminApi.deleteTrip(tripId);
+      
+      console.log('Delete successful, removing trip from list...');
+      
+      // Remove from local state immediately
+      setTrips(prevTrips => {
+        const filtered = prevTrips.filter((t: any) => t.id !== tripId);
+        console.log(`Removed trip ${tripId} from local state. Remaining trips:`, filtered.length);
+        return filtered;
+      });
+      
+      alert(language === 'ar' 
+        ? 'تم حذف الرحلة نهائياً' 
+        : language === 'de' 
+        ? 'Fahrt dauerhaft gelöscht' 
+        : 'Trip permanently deleted');
+      
+      // Refresh the list from server to ensure consistency
+      console.log('Refreshing trips list from server...');
+      await loadSchedules(false); // Only load active trips
+      console.log('Trips list refreshed');
     } catch (err: any) {
-      alert(err.message || 'Failed to delete trip');
+      console.error('Error deleting trip:', err);
+      console.error('Error status:', err.status);
+      console.error('Error message:', err.message);
+      console.error('Error details:', err.details);
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        // Redirect to login or reload page
+        window.location.href = '/';
+        return;
+      }
+      
+      const errorMessage = err.message || (language === 'ar' ? 'فشل حذف الرحلة' : language === 'de' ? 'Fehler beim Löschen der Fahrt' : 'Failed to delete trip');
+      const details = err.details ? `\n\nDetails: ${JSON.stringify(err.details)}` : '';
+      alert(`${errorMessage}${details}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -493,7 +951,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const tabs = [
     { id: 'analytics' as const, label: t.analytics, icon: BarChart3 },
     { id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar },
-    { id: 'users' as const, label: t.userManagement, icon: Users },
+    // Users management tab - Admin only
+    ...(user?.role === 'admin' ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
     { id: 'import' as const, label: t.dataImport, icon: Upload },
   ];
@@ -578,27 +1037,34 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl text-gray-900 mb-6">{t.popularRoutes}</h2>
                 {popularRoutes.length === 0 ? (
-                  <p className="text-gray-600 text-center py-8">No route data available</p>
+                  <p className="text-gray-600 text-center py-8">
+                    {language === 'ar' 
+                      ? 'لا توجد بيانات للمسارات الشائعة'
+                      : language === 'de'
+                      ? 'Keine Routendaten verfügbar'
+                      : 'No route data available'}
+                  </p>
                 ) : (
                   <div className="space-y-4">
-                    {popularRoutes.map((route, index) => {
-                      const maxTrips = Math.max(...popularRoutes.map(r => r.trip_count));
+                    {popularRoutes.map((route: any, index: number) => {
+                      const maxTrips = Math.max(...popularRoutes.map((r: any) => r.trip_count || 0), 1);
+                      const tripCount = route.trip_count || 0;
                       return (
                         <div key={index} className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
                               <MapPin className="w-5 h-5 text-green-600" />
                             </div>
-                            <span className="text-gray-900">{route.route}</span>
+                            <span className="text-gray-900">{route.route || 'Unknown Route'}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <div className="bg-gray-200 rounded-full h-2 w-32">
                               <div
                                 className="bg-green-600 h-2 rounded-full"
-                                style={{ width: `${(route.trip_count / maxTrips) * 100}%` }}
+                                style={{ width: `${(tripCount / maxTrips) * 100}%` }}
                               />
                             </div>
-                            <span className="text-sm text-gray-600 w-12 text-right">{route.trip_count}</span>
+                            <span className="text-sm text-gray-600 w-12 text-right">{tripCount}</span>
                           </div>
                         </div>
                       );
@@ -617,13 +1083,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-xl text-gray-900">{t.scheduleManagement}</h2>
               <div className="flex gap-2">
-                <button 
-                  onClick={() => setShowAddRouteDialog(true)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  إضافة مسار جديد
-                </button>
                 <button 
                   onClick={() => setShowAddTripDialog(true)}
                   className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
@@ -651,22 +1110,42 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 <tbody className="divide-y divide-gray-200">
                   {trips.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-gray-600">No trips found</td>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
+                        {language === 'ar' 
+                          ? 'لا توجد رحلات. يرجى إضافة رحلة جديدة أو التحقق من قاعدة البيانات.'
+                          : language === 'de'
+                          ? 'Es gibt keinen Zeitplan. Bitte überprüfen Sie alle Zeitpläne und passen Sie sie nach Bedarf an.'
+                          : 'No trips found. Please add a new trip or check the database.'}
+                      </td>
                     </tr>
                   ) : (
                     trips.slice(0, 20).map((trip: any) => (
-                      <tr key={trip.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 text-sm text-gray-900">{trip.from_city || 'N/A'}</td>
+                      <tr key={trip.id} className={`hover:bg-gray-50 ${trip.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {trip.from_city || 'N/A'}
+                          {trip.is_active === false && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({language === 'ar' ? 'معطل' : language === 'de' ? 'Deaktiviert' : 'Inactive'})
+                            </span>
+                          )}
+                        </td>
                         <td className="px-6 py-4 text-sm text-gray-900">{trip.to_city || 'N/A'}</td>
                         <td className="px-6 py-4 text-sm text-gray-900">
                           {trip.departure_time ? new Date(trip.departure_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                         </td>
                         <td className="px-6 py-4 text-sm">
                           <div className="flex gap-2">
-                            <button className="text-blue-600 hover:text-blue-700">{t.edit}</button>
+                            <button 
+                              onClick={() => handleEditTrip(trip.id)}
+                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={loading}
+                            >
+                              {t.edit}
+                            </button>
                             <button 
                               onClick={() => handleDeleteTrip(trip.id)}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={loading}
                             >
                               {t.delete}
                             </button>
@@ -686,7 +1165,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="text-2xl text-gray-900">{t.addSchedule}</h2>
+                  <h2 className="text-2xl text-gray-900">{editingTripId ? (language === 'ar' ? 'تعديل الرحلة' : language === 'de' ? 'Fahrt bearbeiten' : 'Edit Trip') : t.addSchedule}</h2>
                   <button
                     onClick={() => setShowAddTripDialog(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -696,20 +1175,83 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 </div>
 
                 <div className="p-6 space-y-4">
-                  {/* Route */}
+                  {/* From City */}
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.route}</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.from}</label>
                     <select
-                      value={newTrip.route_id}
-                      onChange={(e) => setNewTrip({ ...newTrip, route_id: e.target.value })}
+                      value={newTrip.from_city}
+                      onChange={(e) => {
+                        const fromCity = e.target.value;
+                        const fromCityObj = cities.find((c: any) => c.name === fromCity);
+                        setNewTrip((prev: any) => ({ ...prev, from_city: fromCity, route_id: '' }));
+                        // Auto-select route if to_city is already selected
+                        if (newTrip.to_city && fromCity && fromCityObj) {
+                          const toCityObj = cities.find((c: any) => c.name === newTrip.to_city);
+                          if (toCityObj) {
+                            const existingRoute = routes.find((r: any) => 
+                              r.from_city_id === fromCityObj.id && r.to_city_id === toCityObj.id
+                            );
+                            if (existingRoute) {
+                              setNewTrip((prev: any) => ({ ...prev, from_city: fromCity, route_id: String(existingRoute.id) }));
+                            }
+                          }
+                        }
+                      }}
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      required
                     >
-                      <option value="">{t.selectRoute || 'Select Route'}</option>
-                      {routes.map((route: any) => (
-                        <option key={route.id} value={route.id}>
-                          {route.from_city} → {route.to_city}
+                      <option value="">{language === 'ar' ? 'اختر مدينة المغادرة' : language === 'de' ? 'Abfahrtsstadt wählen' : 'Select departure city'}</option>
+                      {cities.length > 0 ? (
+                        cities.map((city: any) => (
+                          <option key={city.id} value={city.name}>
+                            {city.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          {language === 'ar' ? 'لا توجد مدن متاحة' : language === 'de' ? 'Keine Städte verfügbar' : 'No cities available'}
                         </option>
-                      ))}
+                      )}
+                    </select>
+                  </div>
+
+                  {/* To City */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.to}</label>
+                    <select
+                      value={newTrip.to_city}
+                      onChange={(e) => {
+                        const toCity = e.target.value;
+                        const toCityObj = cities.find((c: any) => c.name === toCity);
+                        setNewTrip((prev: any) => ({ ...prev, to_city: toCity, route_id: '' }));
+                        // Auto-select route if from_city is already selected
+                        if (newTrip.from_city && toCity && toCityObj) {
+                          const fromCityObj = cities.find((c: any) => c.name === newTrip.from_city);
+                          if (fromCityObj) {
+                            const existingRoute = routes.find((r: any) => 
+                              r.from_city_id === fromCityObj.id && r.to_city_id === toCityObj.id
+                            );
+                            if (existingRoute) {
+                              setNewTrip((prev: any) => ({ ...prev, to_city: toCity, route_id: String(existingRoute.id) }));
+                            }
+                          }
+                        }
+                      }}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">{language === 'ar' ? 'اختر مدينة الوصول' : language === 'de' ? 'Ankunftsstadt wählen' : 'Select arrival city'}</option>
+                      {cities.length > 0 ? (
+                        cities.map((city: any) => (
+                          <option key={city.id} value={city.name}>
+                            {city.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          {language === 'ar' ? 'لا توجد مدن متاحة' : language === 'de' ? 'Keine Städte verfügbar' : 'No cities available'}
+                        </option>
+                      )}
                     </select>
                   </div>
 
@@ -870,15 +1412,32 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   {/* Actions */}
                   <div className="flex gap-4 pt-4">
                     <button
-                      onClick={handleAddTrip}
+                      onClick={handleSaveTrip}
                       disabled={loading}
                       className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                      {t.add}
+                      {editingTripId ? (language === 'ar' ? 'حفظ التعديلات' : language === 'de' ? 'Änderungen speichern' : 'Save Changes') : t.add}
                     </button>
                     <button
-                      onClick={() => setShowAddTripDialog(false)}
+                      onClick={() => {
+                        setShowAddTripDialog(false);
+                        setEditingTripId(null);
+                        setNewTrip({
+                          route_id: '',
+                          company_id: '',
+                          transport_type_id: '',
+                          departure_station_id: '',
+                          arrival_station_id: '',
+                          departure_time: '',
+                          arrival_time: '',
+                          duration_minutes: '',
+                          seats_total: '',
+                          equipment: '',
+                          cancellation_policy: '',
+                          extra_info: '',
+                        });
+                      }}
                       className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                     >
                       {t.cancel}
@@ -894,7 +1453,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full">
                 <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="text-2xl text-gray-900">إضافة مسار جديد</h2>
+                  <h2 className="text-2xl text-gray-900">
+                    {language === 'ar' ? 'إضافة مسار جديد' : language === 'de' ? 'Neue Route hinzufügen' : 'Add New Route'}
+                  </h2>
                   <button
                     onClick={() => setShowAddRouteDialog(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -904,23 +1465,66 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 </div>
 
                 <div className="p-6 space-y-4">
+                  {cities.length === 0 && (
+                    <div className="text-sm text-gray-500 mb-2">
+                      {language === 'ar' ? 'جاري تحميل المدن...' : language === 'de' ? 'Städte werden geladen...' : 'Loading cities...'}
+                    </div>
+                  )}
                   {/* From City */}
-                  <CitySelector
-                    value={newRoute.from_city}
-                    onChange={(city) => setNewRoute({ ...newRoute, from_city: city })}
-                    placeholder="اختر مدينة المغادرة"
-                    label="من"
-                    required
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {language === 'ar' ? 'من' : language === 'de' ? 'Von' : 'From'}
+                    </label>
+                    <select
+                      value={newRoute.from_city}
+                      onChange={(e) => setNewRoute({ ...newRoute, from_city: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">
+                        {language === 'ar' ? 'اختر مدينة المغادرة' : language === 'de' ? 'Abfahrtsstadt wählen' : 'Select departure city'}
+                      </option>
+                      {cities.length > 0 ? (
+                        cities.map((city: any) => (
+                          <option key={city.id} value={city.name}>
+                            {city.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          {language === 'ar' ? 'لا توجد مدن متاحة' : language === 'de' ? 'Keine Städte verfügbar' : 'No cities available'}
+                        </option>
+                      )}
+                    </select>
+                  </div>
 
                   {/* To City */}
-                  <CitySelector
-                    value={newRoute.to_city}
-                    onChange={(city) => setNewRoute({ ...newRoute, to_city: city })}
-                    placeholder="اختر مدينة الوصول"
-                    label="إلى"
-                    required
-                  />
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {language === 'ar' ? 'إلى' : language === 'de' ? 'Nach' : 'To'}
+                    </label>
+                    <select
+                      value={newRoute.to_city}
+                      onChange={(e) => setNewRoute({ ...newRoute, to_city: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                    >
+                      <option value="">
+                        {language === 'ar' ? 'اختر مدينة الوصول' : language === 'de' ? 'Ankunftsstadt wählen' : 'Select arrival city'}
+                      </option>
+                      {cities.length > 0 ? (
+                        cities.map((city: any) => (
+                          <option key={city.id} value={city.name}>
+                            {city.name}
+                          </option>
+                        ))
+                      ) : (
+                        <option value="" disabled>
+                          {language === 'ar' ? 'لا توجد مدن متاحة' : language === 'de' ? 'Keine Städte verfügbar' : 'No cities available'}
+                        </option>
+                      )}
+                    </select>
+                  </div>
 
                   {/* Actions */}
                   <div className="flex gap-4 pt-4">
@@ -930,7 +1534,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
-                      إضافة
+                      {language === 'ar' ? 'إضافة' : language === 'de' ? 'Hinzufügen' : 'Add'}
                     </button>
                     <button
                       onClick={() => {
@@ -939,7 +1543,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       }}
                       className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                     >
-                      إلغاء
+                      {language === 'ar' ? 'إلغاء' : language === 'de' ? 'Abbrechen' : 'Cancel'}
                     </button>
                   </div>
                 </div>
@@ -949,7 +1553,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         </div>
       )}
 
-      {activeTab === 'users' && (
+      {activeTab === 'users' && user?.role === 'admin' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -975,22 +1579,47 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     users.map((userItem: any) => {
                       const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim() || userItem.email;
                       const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
-                      const isAdmin = roles.includes('ADMIN');
+                      const isAdmin = roles.includes('Administrator') || roles.includes('ADMIN');
+                      const isAgent = roles.includes('Agent') || roles.includes('AGENT');
+                      const roleDisplay = isAdmin ? 'admin' : isAgent ? 'agent' : 'user';
                       return (
-                        <tr key={userItem.id} className="hover:bg-gray-50">
+                        <tr key={userItem.id} className={`hover:bg-gray-50 ${userItem.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
                           <td className="px-6 py-4 text-sm text-gray-900">{userName}</td>
                           <td className="px-6 py-4 text-sm text-gray-900">{userItem.email}</td>
                           <td className="px-6 py-4">
                             <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                              isAdmin ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700'
+                              isAdmin ? 'bg-purple-100 text-purple-700' : isAgent ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
                             }`}>
-                              {isAdmin ? 'admin' : roles.includes('AGENT') ? 'agent' : 'user'}
+                              {roleDisplay}
+                              {userItem.is_active === false && (
+                                <span className="ml-1 text-xs">({language === 'ar' ? 'محظور' : language === 'de' ? 'Gesperrt' : 'Banned'})</span>
+                              )}
                             </span>
                           </td>
                           <td className="px-6 py-4 text-sm">
                             <div className="flex gap-2">
-                              <button className="text-blue-600 hover:text-blue-700">{t.changeRole}</button>
-                              <button className="text-red-600 hover:text-red-700">{t.blockUser}</button>
+                              <button 
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('Button clicked for user:', userItem.id);
+                                  handleChangeRoleClick(userItem);
+                                }}
+                                disabled={loading}
+                                className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                {t.changeRole}
+                              </button>
+                              <button 
+                                onClick={() => handleBanUser(userItem.id, userItem.is_active !== false)}
+                                disabled={loading}
+                                className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                {userItem.is_active === false 
+                                  ? (language === 'ar' ? 'إلغاء الحظر' : language === 'de' ? 'Entsperren' : 'Unban')
+                                  : t.blockUser}
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -1124,6 +1753,83 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 {t.importSuccess}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Change Role Dialog */}
+      {showChangeRoleDialog && selectedUserForRoleChange && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-2xl text-gray-900">
+                {language === 'ar' ? 'تغيير دور المستخدم' : language === 'de' ? 'Benutzerrolle ändern' : 'Change User Role'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowChangeRoleDialog(false);
+                  setSelectedUserForRoleChange(null);
+                  setNewRole('');
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-sm text-gray-600 mb-2">
+                  {language === 'ar' 
+                    ? `المستخدم: ${selectedUserForRoleChange.first_name || ''} ${selectedUserForRoleChange.last_name || ''}`.trim() || selectedUserForRoleChange.email
+                    : language === 'de' 
+                    ? `Benutzer: ${selectedUserForRoleChange.first_name || ''} ${selectedUserForRoleChange.last_name || ''}`.trim() || selectedUserForRoleChange.email
+                    : `User: ${selectedUserForRoleChange.first_name || ''} ${selectedUserForRoleChange.last_name || ''}`.trim() || selectedUserForRoleChange.email}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'اختر الدور الجديد' : language === 'de' ? 'Neue Rolle wählen' : 'Select New Role'}
+                </label>
+                <select
+                  value={newRole}
+                  onChange={(e) => setNewRole(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="User">
+                    {language === 'ar' ? 'User (مستخدم)' : language === 'de' ? 'User (Benutzer)' : 'User'}
+                  </option>
+                  <option value="Agent">
+                    {language === 'ar' ? 'Agent (وكيل)' : language === 'de' ? 'Agent' : 'Agent'}
+                  </option>
+                  <option value="Administrator">
+                    {language === 'ar' ? 'Admin (مدير)' : language === 'de' ? 'Admin (Administrator)' : 'Admin (Administrator)'}
+                  </option>
+                </select>
+              </div>
+
+              <div className="flex gap-4 pt-4">
+                <button
+                  onClick={handleConfirmRoleChange}
+                  disabled={loading || !newRole}
+                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                  {language === 'ar' ? 'تأكيد' : language === 'de' ? 'Bestätigen' : 'Confirm'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowChangeRoleDialog(false);
+                    setSelectedUserForRoleChange(null);
+                    setNewRole('');
+                  }}
+                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                >
+                  {language === 'ar' ? 'إلغاء' : language === 'de' ? 'Abbrechen' : 'Cancel'}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

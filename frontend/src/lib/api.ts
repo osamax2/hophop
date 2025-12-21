@@ -2,6 +2,9 @@ const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("token");
+  if (!token) {
+    console.warn("No authentication token found in localStorage");
+  }
   return {
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -10,8 +13,35 @@ function getAuthHeaders(): HeadersInit {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "Request failed" }));
-    throw new Error(error.message || `HTTP ${response.status}`);
+    let errorMessage = `HTTP ${response.status}`;
+    let errorDetails: any = null;
+    
+    try {
+      const errorText = await response.text();
+      if (errorText) {
+        try {
+          errorDetails = JSON.parse(errorText);
+          errorMessage = errorDetails.message || errorDetails.error || errorMessage;
+        } catch {
+          errorMessage = errorText || errorMessage;
+        }
+      }
+    } catch (err) {
+      // If we can't read the response, use default message
+      errorMessage = `Request failed with status ${response.status}`;
+    }
+    
+    // Provide more descriptive error messages
+    if (response.status === 401) {
+      if (!errorMessage || errorMessage.includes('HTTP 401')) {
+        errorMessage = 'Missing token';
+      }
+    }
+    
+    const error: any = new Error(errorMessage);
+    error.status = response.status;
+    error.details = errorDetails;
+    throw error;
   }
   return response.json();
 }
@@ -262,8 +292,11 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  getTrips: async () => {
-    const response = await fetch(`${API_BASE}/api/admin/trips`, {
+  getTrips: async (showAll: boolean = false) => {
+    const url = showAll 
+      ? `${API_BASE}/api/admin/trips?showAll=true`
+      : `${API_BASE}/api/admin/trips`;
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
@@ -391,6 +424,28 @@ export const adminApi = {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify({ from_city_id: fromCityId, to_city_id: toCityId }),
+    });
+    return handleResponse(response);
+  },
+
+  banUser: async (userId: number, isActive: boolean) => {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    const response = await fetch(`${API_BASE}/api/admin/users/${userId}/active`, {
+      method: "PATCH",
+      headers: headers,
+      body: JSON.stringify({ is_active: isActive }),
+    });
+    return handleResponse(response);
+  },
+
+  changeUserRole: async (userId: number, roleNames: string[]) => {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    const response = await fetch(`${API_BASE}/api/admin/users/${userId}/roles`, {
+      method: "PUT",
+      headers: headers,
+      body: JSON.stringify({ role_names: roleNames }),
     });
     return handleResponse(response);
   },

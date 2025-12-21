@@ -40,6 +40,47 @@ export default function App() {
 
   const isRTL = language === 'ar';
 
+  // Auto-login on page load if token exists
+  useEffect(() => {
+    const autoLogin = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        return;
+      }
+
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+        const meRes = await fetch(`${API_BASE}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (meRes.ok) {
+          const meData = await meRes.json();
+          const userRole = meData?.user?.role ?? meData?.role ?? "user";
+          
+          const userObj: User = {
+            id: String(meData?.user?.id ?? meData?.id ?? "1"),
+            name: meData?.user?.name ?? meData?.name ?? "",
+            email: meData?.user?.email ?? meData?.email ?? "",
+            phone: meData?.user?.phone ?? meData?.phone ?? "",
+            role: userRole as UserRole,
+            language: (meData?.user?.language ?? meData?.language ?? 'ar') as Language,
+          };
+          
+          setUser(userObj);
+        } else {
+          // Token is invalid, remove it
+          localStorage.removeItem("token");
+        }
+      } catch (err) {
+        console.error("Auto-login failed:", err);
+        localStorage.removeItem("token");
+      }
+    };
+
+    autoLogin();
+  }, []);
+
   const handleSearch = (params: SearchParams) => {
     setSearchParams(params);
     setCurrentPage('search-results');
@@ -99,6 +140,7 @@ export default function App() {
     setUser(null);
     setFavorites([]);
     setCurrentPage('home');
+    localStorage.removeItem("token");
   };
 
   return (

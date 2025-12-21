@@ -85,33 +85,51 @@ router.post("/register", async (req, res) => {
 router.post("/login", async (req, res) => {
   const { email, password } = req.body;
 
+  console.log("Login attempt for email:", email);
+
   if (!email || !password) {
+    console.log("Missing email or password");
     return res.status(400).json({
       message: "Email and password are required",
     });
   }
 
   try {
-    const result = await pool.query(
+    // First check if user exists (with or without is_active check)
+    const userCheck = await pool.query(
       `
-      SELECT id, password_hash
+      SELECT id, email, password_hash, is_active
       FROM users
-      WHERE email = $1 AND is_active = true
+      WHERE email = $1
       `,
       [email]
     );
 
-    if (result.rows.length === 0) {
+    console.log("User check result:", userCheck.rows.length > 0 ? "User found" : "User not found");
+    
+    if (userCheck.rows.length === 0) {
+      console.log("User not found in database");
       return res.status(401).json({
         message: "Invalid email or password",
       });
     }
 
-    const user = result.rows[0];
+    const user = userCheck.rows[0];
+    console.log("User found - is_active:", user.is_active);
 
+    if (!user.is_active) {
+      console.log("User account is inactive");
+      return res.status(401).json({
+        message: "Account is inactive. Please contact administrator.",
+      });
+    }
+
+    console.log("Comparing password...");
     const isMatch = await bcrypt.compare(password, user.password_hash);
+    console.log("Password match:", isMatch);
 
     if (!isMatch) {
+      console.log("Password mismatch");
       return res.status(401).json({
         message: "Invalid email or password",
       });
@@ -119,16 +137,19 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id },
-      process.env.JWT_SECRET!,
+      process.env.JWT_SECRET || "dev_secret_change_me",
       { expiresIn: "7d" }
     );
 
+    console.log("Login successful for user ID:", user.id);
     res.json({ token });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Login error:", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       message: "Login failed",
-       error: String(error),
+      error: String(error),
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined,
     });
   }
 });
