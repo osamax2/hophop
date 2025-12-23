@@ -113,7 +113,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
     language: language,
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+  const API_BASE = import.meta.env.VITE_API_BASE || "";
 
   // Update formData.language when language prop changes
   useEffect(() => {

@@ -295,7 +295,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                       {busImages.map((img: any) => (
                         <div key={img.id} className="aspect-video rounded-lg overflow-hidden">
                           <ImageWithFallback
-                            src={`http://localhost:4000${img.image_url}`}
+                            src={img.image_url}
                             alt={img.file_name || 'Bus photo'}
                             className="w-full h-full object-cover hover:scale-105 transition-transform"
                           />
@@ -315,7 +315,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                       {stationImages.map((img: any) => (
                         <div key={img.id} className="aspect-video rounded-lg overflow-hidden">
                           <ImageWithFallback
-                            src={`http://localhost:4000${img.image_url}`}
+                            src={img.image_url}
                             alt={img.file_name || 'Station photo'}
                             className="w-full h-full object-cover hover:scale-105 transition-transform"
                           />

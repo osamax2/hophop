@@ -97,7 +97,7 @@ app.get("/api/trips", async (req, res) => {
         s_from.name AS departure_station,
         s_to.name   AS arrival_station,
         COALESCE(comp.name, 'Unknown') AS company_name,
-        COALESCE(tt.type_name, 'normal') AS transport_type,
+        COALESCE(tt.label, 'normal') AS transport_type,
         MIN(tf.price)    AS price,
         MIN(tf.currency) AS currency,
         COALESCE((
@@ -123,7 +123,7 @@ app.get("/api/trips", async (req, res) => {
     query += `
       GROUP BY
         t.id, c_from.name, c_to.name, s_from.name, s_to.name,
-        comp.name, tt.type_name, t.equipment, t.route_id
+        comp.name, tt.label, t.equipment, t.route_id
       ORDER BY t.id
       LIMIT 100
     `;

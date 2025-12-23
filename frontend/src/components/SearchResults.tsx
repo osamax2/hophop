@@ -160,7 +160,7 @@ export function SearchResults({
           date: searchParams.date,
         });
 
-        const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+        const API_BASE = import.meta.env.VITE_API_BASE || "";
         const url = `${API_BASE}/api/trips?${params.toString()}`;
         const res = await fetch(url);
         if (!res.ok) {
