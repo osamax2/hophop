@@ -87,6 +87,7 @@ const translations = {
     userEmail: 'E-Mail',
     userRole: 'Kontotyp',
     changeRole: 'Kontotyp ändern',
+    editProfile: 'Profil bearbeiten',
     blockUser: 'Benutzer sperren',
     photoType: 'Foto-Typ',
     busPhoto: 'Bus',
@@ -166,6 +167,7 @@ const translations = {
     userEmail: 'Email',
     userRole: 'Account Type',
     changeRole: 'Change Account Type',
+    editProfile: 'Edit Profile',
     blockUser: 'Block User',
     photoType: 'Photo Type',
     busPhoto: 'Bus',
@@ -245,6 +247,7 @@ const translations = {
     userEmail: 'البريد الإلكتروني',
     userRole: 'نوع الحساب',
     changeRole: 'تغيير نوع الحساب',
+    editProfile: 'تعديل الملف',
     blockUser: 'حظر المستخدم',
     photoType: 'نوع الصورة',
     busPhoto: 'باص',
@@ -311,11 +314,18 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   
   // Users data
   const [users, setUsers] = useState<any[]>([]);
+  const [showDeletedUsers, setShowDeletedUsers] = useState(false);
   
-  // Change Role Dialog
-  const [showChangeRoleDialog, setShowChangeRoleDialog] = useState(false);
-  const [selectedUserForRoleChange, setSelectedUserForRoleChange] = useState<any>(null);
-  const [newRole, setNewRole] = useState<string>('');
+  // Edit Profile Dialog
+  const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
+  const [selectedUserForEdit, setSelectedUserForEdit] = useState<any>(null);
+  const [editProfileData, setEditProfileData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    role: 'User'
+  });
 
   // Add/Edit Trip Dialog
   const [showAddTripDialog, setShowAddTripDialog] = useState(false);
@@ -468,7 +478,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     if (activeTab === 'users') {
       loadUsers();
     }
-  }, [activeTab]);
+  }, [activeTab, showDeletedUsers]);
 
   const loadAnalytics = async () => {
     try {
@@ -804,7 +814,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const usersData = await adminApi.getUsers();
+      const usersData = await adminApi.getUsers(showDeletedUsers);
       setUsers(usersData);
     } catch (err) {
       console.error('Error loading users:', err);
@@ -869,29 +879,104 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
-  const handleChangeRoleClick = (userItem: any) => {
-    console.log('handleChangeRoleClick called with user:', userItem);
+  const handleEditProfileClick = (userItem: any) => {
+    console.log('handleEditProfileClick called with user:', userItem);
     try {
-      setSelectedUserForRoleChange(userItem);
-      // Set initial role based on current roles
+      // Set initial data based on current user data
       const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
-      console.log('User roles:', roles);
+      let currentRole = 'User';
       if (roles.includes('Administrator') || roles.includes('ADMIN')) {
-        setNewRole('Administrator');
+        currentRole = 'Administrator';
       } else if (roles.includes('Agent') || roles.includes('AGENT')) {
-        setNewRole('Agent');
-      } else {
-        setNewRole('User');
+        currentRole = 'Agent';
       }
-      setShowChangeRoleDialog(true);
-      console.log('Dialog should be shown now');
+      
+      setEditProfileData({
+        first_name: userItem.first_name || '',
+        last_name: userItem.last_name || '',
+        email: userItem.email || '',
+        password: '',
+        role: currentRole
+      });
+      setSelectedUserForEdit(userItem);
+      setShowEditProfileDialog(true);
+      console.log('Edit profile dialog should be shown now, showEditProfileDialog:', true);
     } catch (error) {
-      console.error('Error in handleChangeRoleClick:', error);
+      console.error('Error in handleEditProfileClick:', error);
     }
   };
 
-  const handleConfirmRoleChange = async () => {
-    if (!selectedUserForRoleChange || !newRole) {
+  const handleDeleteUser = async (userId: number) => {
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(language === 'ar' 
+        ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.'
+        : language === 'de' 
+        ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.'
+        : 'Session expired. Please log in again.');
+      window.location.reload();
+      return;
+    }
+
+    const confirmMessage = language === 'ar' 
+      ? 'هل أنت متأكد من حذف هذا الحساب؟ لا يمكن التراجع عن هذا الإجراء.'
+      : language === 'de' 
+      ? 'Sind Sie sicher, dass Sie dieses Konto löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+      : 'Are you sure you want to delete this account? This action cannot be undone.';
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminApi.deleteUser(userId);
+      alert(language === 'ar' 
+        ? 'تم حذف الحساب بنجاح'
+        : language === 'de' 
+        ? 'Konto erfolgreich gelöscht'
+        : 'Account deleted successfully');
+      
+      setShowEditProfileDialog(false);
+      setSelectedUserForEdit(null);
+      setEditProfileData({
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+        role: 'User'
+      });
+      loadUsers(); // Refresh users list
+    } catch (err: any) {
+      console.error('Error deleting user:', err);
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        localStorage.removeItem("token");
+        window.location.reload();
+        return;
+      }
+
+      const errorMsg = err.message || (language === 'ar' 
+        ? 'فشل حذف الحساب. يرجى المحاولة مرة أخرى.'
+        : language === 'de' 
+        ? 'Fehler beim Löschen des Kontos. Bitte versuchen Sie es erneut.'
+        : 'Failed to delete account. Please try again.');
+      alert(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveProfileEdit = async () => {
+    if (!selectedUserForEdit) {
       return;
     }
 
@@ -907,32 +992,52 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       return;
     }
 
-    const confirmMessage = language === 'ar' 
-      ? `هل أنت متأكد من تغيير نوع حساب المستخدم إلى ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}؟`
-      : language === 'de' 
-      ? `Sind Sie sicher, dass Sie den Kontotyp dieses Benutzers zu ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'} ändern möchten?`
-      : `Are you sure you want to change this user's account type to ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}?`;
-
-    if (!window.confirm(confirmMessage)) {
+    // Validate required fields
+    if (!editProfileData.email) {
+      alert(language === 'ar' 
+        ? 'البريد الإلكتروني مطلوب'
+        : language === 'de' 
+        ? 'E-Mail ist erforderlich'
+        : 'Email is required');
       return;
     }
 
     try {
       setLoading(true);
-      // Backend expects role names like "Administrator", "Agent", "User"
-      const roleNames = [newRole];
-      await adminApi.changeUserRole(selectedUserForRoleChange.id, roleNames);
+      
+      // Prepare update data
+      const updateData: any = {
+        first_name: editProfileData.first_name || null,
+        last_name: editProfileData.last_name || null,
+        email: editProfileData.email,
+        role_names: [editProfileData.role]
+      };
+
+      // Only include password if it's not empty
+      if (editProfileData.password && editProfileData.password.trim() !== '') {
+        updateData.password = editProfileData.password;
+      }
+
+      await adminApi.updateUserProfile(selectedUserForEdit.id, updateData);
+      
       alert(language === 'ar' 
-        ? 'تم تغيير نوع حساب المستخدم بنجاح'
+        ? 'تم تحديث ملف المستخدم بنجاح'
         : language === 'de' 
-        ? 'Benutzerkontotyp erfolgreich geändert'
-        : 'User account type changed successfully');
-      setShowChangeRoleDialog(false);
-      setSelectedUserForRoleChange(null);
-      setNewRole('');
+        ? 'Benutzerprofil erfolgreich aktualisiert'
+        : 'User profile updated successfully');
+      
+      setShowEditProfileDialog(false);
+      setSelectedUserForEdit(null);
+      setEditProfileData({
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+        role: 'User'
+      });
       loadUsers(); // Refresh users list
     } catch (err: any) {
-      console.error('Error changing user role:', err);
+      console.error('Error updating user profile:', err);
       
       // Handle 401 Unauthorized - token expired or missing
       if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
@@ -947,11 +1052,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         return;
       }
 
-      alert(language === 'ar' 
-        ? 'فشل تغيير نوع حساب المستخدم. يرجى المحاولة مرة أخرى.'
+      const errorMsg = err.message || (language === 'ar' 
+        ? 'فشل تحديث ملف المستخدم. يرجى المحاولة مرة أخرى.'
         : language === 'de' 
-        ? 'Fehler beim Ändern des Benutzerkontotyps. Bitte versuchen Sie es erneut.'
-        : 'Failed to change user account type. Please try again.');
+        ? 'Fehler beim Aktualisieren des Benutzerprofils. Bitte versuchen Sie es erneut.'
+        : 'Failed to update user profile. Please try again.');
+      alert(errorMsg);
     } finally {
       setLoading(false);
     }
@@ -2439,6 +2545,20 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
       {activeTab === 'users' && user?.role === 'admin' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {language === 'ar' ? 'المستخدمون' : language === 'de' ? 'Benutzer' : 'Users'}
+            </h3>
+            <button
+              onClick={() => setShowDeletedUsers(!showDeletedUsers)}
+              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              {showDeletedUsers 
+                ? (language === 'ar' ? 'إخفاء المحذوفة' : language === 'de' ? 'Gelöschte ausblenden' : 'Hide Deleted')
+                : (language === 'ar' ? 'إظهار المحذوفة' : language === 'de' ? 'Gelöschte anzeigen' : 'Show Deleted')
+              }
+            </button>
+          </div>
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 animate-spin text-green-600" />
@@ -2488,12 +2608,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                                   e.preventDefault();
                                   e.stopPropagation();
                                   console.log('Button clicked for user:', userItem.id);
-                                  handleChangeRoleClick(userItem);
+                                  if (!loading) {
+                                    handleEditProfileClick(userItem);
+                                  }
                                 }}
                                 disabled={loading}
-                                className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                                className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
                               >
-                                {t.changeRole}
+                                {t.editProfile}
                               </button>
                               <button 
                                 onClick={() => handleBanUser(userItem.id, userItem.is_active !== false)}
@@ -2641,78 +2763,162 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         </div>
       )}
 
-      {/* Change Role Dialog */}
-      {showChangeRoleDialog && selectedUserForRoleChange && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-2xl text-gray-900">
-                {language === 'ar' ? 'تغيير نوع حساب المستخدم' : language === 'de' ? 'Benutzerkontotyp ändern' : 'Change User Account Type'}
-              </h2>
-              <button
-                onClick={() => {
-                  setShowChangeRoleDialog(false);
-                  setSelectedUserForRoleChange(null);
-                  setNewRole('');
-                }}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-sm text-gray-600 mb-2">
-                  {language === 'ar' 
-                    ? `المستخدم: ${selectedUserForRoleChange.first_name || ''} ${selectedUserForRoleChange.last_name || ''}`.trim() || selectedUserForRoleChange.email
-                    : language === 'de' 
-                    ? `Benutzer: ${selectedUserForRoleChange.first_name || ''} ${selectedUserForRoleChange.last_name || ''}`.trim() || selectedUserForRoleChange.email
-                    : `User: ${selectedUserForRoleChange.first_name || ''} ${selectedUserForRoleChange.last_name || ''}`.trim() || selectedUserForRoleChange.email}
-                </p>
-              </div>
-
+      {/* Edit Profile Dialog */}
+      {showEditProfileDialog && selectedUserForEdit && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[10000] p-4 backdrop-blur-md"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          onClick={(e) => {
+            // Close dialog when clicking on backdrop
+            if (e.target === e.currentTarget) {
+              setShowEditProfileDialog(false);
+              setSelectedUserForEdit(null);
+              setEditProfileData({
+                first_name: '',
+                last_name: '',
+                email: '',
+                password: '',
+                role: 'User'
+              });
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200 relative z-[10001] border border-gray-200"
+            style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+          {/* Content - Scrollable */}
+          <div className="overflow-y-auto flex-1 p-6">
+            <div className="space-y-4">
+              {/* First Name */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {language === 'ar' ? 'اختر نوع الحساب الجديد' : language === 'de' ? 'Neuen Kontotyp wählen' : 'Select New Account Type'}
+                  {language === 'ar' ? 'الاسم الأول' : language === 'de' ? 'Vorname' : 'First Name'}
+                </label>
+                <input
+                  type="text"
+                  value={editProfileData.first_name}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, first_name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={language === 'ar' ? 'أدخل الاسم الأول' : language === 'de' ? 'Vorname eingeben' : 'Enter first name'}
+                />
+              </div>
+
+              {/* Last Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'الاسم الأخير' : language === 'de' ? 'Nachname' : 'Last Name'}
+                </label>
+                <input
+                  type="text"
+                  value={editProfileData.last_name}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, last_name: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={language === 'ar' ? 'أدخل الاسم الأخير' : language === 'de' ? 'Nachname eingeben' : 'Enter last name'}
+                />
+              </div>
+
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'البريد الإلكتروني' : language === 'de' ? 'E-Mail' : 'Email'} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={editProfileData.email}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, email: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={language === 'ar' ? 'أدخل البريد الإلكتروني' : language === 'de' ? 'E-Mail eingeben' : 'Enter email'}
+                  required
+                />
+              </div>
+
+              {/* Role */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'الدور' : language === 'de' ? 'Rolle' : 'Role'}
                 </label>
                 <select
-                  value={newRole}
-                  onChange={(e) => setNewRole(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={editProfileData.role}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, role: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 >
                   <option value="User">
-                    {language === 'ar' ? 'User (مستخدم)' : language === 'de' ? 'User (Benutzer)' : 'User'}
+                    {language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User'}
                   </option>
                   <option value="Agent">
-                    {language === 'ar' ? 'Agent (وكيل)' : language === 'de' ? 'Agent' : 'Agent'}
+                    {language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent'}
                   </option>
                   <option value="Administrator">
-                    {language === 'ar' ? 'Admin (مدير)' : language === 'de' ? 'Admin (Administrator)' : 'Admin (Administrator)'}
+                    {language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Administrator'}
                   </option>
                 </select>
               </div>
 
-              <div className="flex gap-4 pt-4">
-                <button
-                  onClick={handleConfirmRoleChange}
-                  disabled={loading || !newRole}
-                  className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-                  {language === 'ar' ? 'تأكيد' : language === 'de' ? 'Bestätigen' : 'Confirm'}
-                </button>
+              {/* Password */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'كلمة المرور (اتركها فارغة للاحتفاظ بالكلمة الحالية)' : language === 'de' ? 'Passwort (leer lassen, um das aktuelle beizubehalten)' : 'Password (leave empty to keep current password)'}
+                </label>
+                <input
+                  type="password"
+                  value={editProfileData.password}
+                  onChange={(e) => setEditProfileData({ ...editProfileData, password: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  placeholder={language === 'ar' ? 'أدخل كلمة مرور جديدة (اختياري)' : language === 'de' ? 'Neues Passwort eingeben (optional)' : 'Enter new password (optional)'}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="bg-gray-50 border-t border-gray-200 p-6 flex flex-col gap-3 rounded-b-2xl">
+              <div className="flex gap-4">
                 <button
                   onClick={() => {
-                    setShowChangeRoleDialog(false);
-                    setSelectedUserForRoleChange(null);
-                    setNewRole('');
+                    setShowEditProfileDialog(false);
+                    setSelectedUserForEdit(null);
+                    setEditProfileData({
+                      first_name: '',
+                      last_name: '',
+                      email: '',
+                      password: '',
+                      role: 'User'
+                    });
                   }}
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   {language === 'ar' ? 'إلغاء' : language === 'de' ? 'Abbrechen' : 'Cancel'}
                 </button>
+                <button
+                  onClick={handleSaveProfileEdit}
+                  disabled={loading || !editProfileData.email}
+                  className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                  {language === 'ar' ? 'حفظ' : language === 'de' ? 'Speichern' : 'Save'}
+                </button>
               </div>
+              <button
+                onClick={() => selectedUserForEdit && handleDeleteUser(selectedUserForEdit.id)}
+                disabled={loading || !selectedUserForEdit}
+                className="w-full px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
+                onMouseEnter={(e) => {
+                  if (!loading && selectedUserForEdit) {
+                    e.currentTarget.style.backgroundColor = '#b91c1c';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading && selectedUserForEdit) {
+                    e.currentTarget.style.backgroundColor = '#dc2626';
+                  }
+                }}
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {language === 'ar' ? 'حذف الحساب' : language === 'de' ? 'Konto löschen' : 'Delete Account'}
+              </button>
             </div>
           </div>
         </div>

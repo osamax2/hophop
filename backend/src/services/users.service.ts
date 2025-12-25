@@ -162,10 +162,10 @@ export class UsersService {
   }
 
   /**
-   * حذف مستخدم
+   * حذف مستخدم (soft delete - تعطيل الحساب)
    */
   async delete(id: number): Promise<boolean> {
-    const result = await pool.query(`DELETE FROM users WHERE id = $1`, [id]);
+    const result = await pool.query(`UPDATE users SET is_active = false WHERE id = $1`, [id]);
     return result.rowCount !== null && result.rowCount > 0;
   }
 
