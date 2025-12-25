@@ -55,15 +55,16 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [languageMenuOpen, setLanguageMenuOpen] = useState(false);
   const t = translations[language];
+  const isRTL = language === 'ar';
 
   // Debug: Log user role
   console.log("Navigation - User object:", user);
   console.log("Navigation - User role:", user?.role);
 
   const menuItems = [
-    { id: 'home', label: t.home, icon: Home },
     { id: 'reviews', label: t.reviews, icon: Star },
     { id: 'favorites', label: t.favorites, icon: Star },
+    { id: 'home', label: t.home, icon: Home },
   ];
 
   if (user?.role === 'admin' || user?.role === 'agent') {
@@ -74,10 +75,13 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   }
 
   return (
-    <nav className="bg-white shadow-md sticky top-0 z-50">
+    <nav className="bg-white shadow-md sticky top-0 z-50" dir="ltr">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center h-16">
-          {/* Logo - Left Side */}
+        <div className={`flex items-center h-16 gap-4 ${isRTL ? 'flex-row-reverse' : 'flex-row'}`}>
+          {/* Order in code: Logo, Menu, Language, Login */}
+          {/* With flex-row-reverse in RTL, displays as: Login, Language, Menu, Logo (right to left) */}
+          
+          {/* Logo - First in code, appears leftmost in RTL (last visually) */}
           <div className="flex-shrink-0">
             <button
               onClick={() => setCurrentPage('home')}
@@ -87,98 +91,98 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
             </button>
           </div>
 
-          {/* Spacer */}
+          {/* Spacer - Left side */}
           <div className="flex-1"></div>
 
-          {/* Right Side - Menu, Language, Login */}
-          <div className="flex items-center gap-4">
-            {/* Desktop Menu */}
-            <div className="hidden md:flex items-center gap-4">
-              {menuItems.map(item => {
-                const Icon = item.icon;
-                return (
+          {/* Desktop Menu Items - Home, Favorites, Reviews - Centered */}
+          <div className="hidden md:flex items-center gap-4">
+            {menuItems.map(item => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setCurrentPage(item.id)}
+                  className={`flex items-center ${isRTL ? 'flex-row-reverse gap-2' : 'gap-2'} px-3 py-2 rounded-lg transition-colors ${
+                    currentPage === item.id
+                      ? 'bg-green-50 text-green-600'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Spacer - Right side */}
+          <div className="flex-1"></div>
+
+          {/* Language Selector */}
+          <div className={`relative ${isRTL ? 'mr-6' : 'ml-6'}`}>
+            <button
+              onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
+              className={`flex items-center ${isRTL ? 'flex-row-reverse gap-2' : 'gap-2'} px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors`}
+            >
+              <Globe className="w-4 h-4" />
+              <span className="uppercase">{language}</span>
+            </button>
+            
+            {languageMenuOpen && (
+              <div className={`absolute ${isRTL ? 'left-0' : 'right-0'} mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50`}>
+                {(['de', 'en', 'ar'] as Language[]).map(lang => (
                   <button
-                    key={item.id}
-                    onClick={() => setCurrentPage(item.id)}
-                    className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
-                      currentPage === item.id
-                        ? 'bg-green-50 text-green-600'
-                        : 'text-gray-700 hover:bg-gray-50'
+                    key={lang}
+                    onClick={() => {
+                      setLanguage(lang);
+                      setLanguageMenuOpen(false);
+                    }}
+                    className={`w-full px-4 py-2 ${isRTL ? 'text-right' : 'text-left'} hover:bg-gray-50 transition-colors ${
+                      language === lang ? 'bg-green-50 text-green-600' : 'text-gray-700'
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
-                    {item.label}
+                    {lang === 'de' ? 'Deutsch' : lang === 'en' ? 'English' : 'العربية'}
                   </button>
-                );
-              })}
-            </div>
-            
-            {/* Language Selector */}
-            <div className="relative">
-              <button
-                onClick={() => setLanguageMenuOpen(!languageMenuOpen)}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                <Globe className="w-4 h-4" />
-                <span className="uppercase">{language}</span>
-              </button>
-              
-              {languageMenuOpen && (
-                <div className="absolute right-0 mt-2 w-32 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
-                  {(['de', 'en', 'ar'] as Language[]).map(lang => (
-                    <button
-                      key={lang}
-                      onClick={() => {
-                        setLanguage(lang);
-                        setLanguageMenuOpen(false);
-                      }}
-                      className={`w-full px-4 py-2 text-left hover:bg-gray-50 transition-colors ${
-                        language === lang ? 'bg-green-50 text-green-600' : 'text-gray-700'
-                      }`}
-                    >
-                      {lang === 'de' ? 'Deutsch' : lang === 'en' ? 'English' : 'العربية'}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* User Menu */}
-            {user ? (
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setCurrentPage('profile')}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="hidden sm:inline">{user.name}</span>
-                </button>
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 text-red-600 transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">{t.logout}</span>
-                </button>
+                ))}
               </div>
-            ) : (
+            )}
+          </div>
+
+          {/* Login/User Menu - Last in code, appears rightmost in RTL (first visually) */}
+          {user ? (
+            <div className={`flex items-center gap-3 ${isRTL ? 'flex-row-reverse' : ''}`}>
               <button
-                onClick={() => setCurrentPage('login')}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                onClick={() => setCurrentPage('profile')}
+                className={`flex items-center ${isRTL ? 'flex-row-reverse gap-2' : 'gap-2'} px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors`}
               >
                 <User className="w-4 h-4" />
-                {t.login}
+                <span className="hidden sm:inline">{user.name}</span>
               </button>
-            )}
-
-            {/* Mobile Menu Button */}
+              <button
+                onClick={onLogout}
+                className={`flex items-center ${isRTL ? 'flex-row-reverse gap-2' : 'gap-2'} px-3 py-2 rounded-lg hover:bg-gray-50 text-red-600 transition-colors`}
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">{t.logout}</span>
+              </button>
+            </div>
+          ) : (
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg hover:bg-gray-50"
+              onClick={() => setCurrentPage('login')}
+              className={`flex items-center ${isRTL ? 'flex-row-reverse gap-2' : 'gap-2'} px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors`}
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              <User className="w-4 h-4" />
+              {t.login}
             </button>
-          </div>
+          )}
+
+          {/* Mobile Menu Button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 rounded-lg hover:bg-gray-50"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
 
         {/* Mobile Menu */}
@@ -193,7 +197,7 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
                     setCurrentPage(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`w-full flex items-center ${isRTL ? 'flex-row-reverse gap-3' : 'gap-3'} px-4 py-3 rounded-lg transition-colors ${
                     currentPage === item.id
                       ? 'bg-green-50 text-green-600'
                       : 'text-gray-700 hover:bg-gray-50'

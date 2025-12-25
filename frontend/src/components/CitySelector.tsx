@@ -64,17 +64,19 @@ export function CitySelector({
     setInputValue(value || '');
   }, [value]);
 
-  // Filter cities based on input value - show suggestions immediately
+  // Filter cities based on input value - show suggestions only when typing
   useEffect(() => {
     if (!inputValue.trim()) {
+      // Don't show cities when field is empty
       setFilteredCities([]);
       setIsOpen(false);
       return;
     }
 
+    // Filter cities that start with the input value (even if it's just one character)
     const filtered = cities.filter(city =>
       city.name.toLowerCase().startsWith(inputValue.toLowerCase())
-    ).slice(0, 10); // Limit to 10 suggestions
+    ).slice(0, 50); // Show up to 50 cities that match
     
     setFilteredCities(filtered);
     setIsOpen(filtered.length > 0);
@@ -99,6 +101,10 @@ export function CitySelector({
     const newValue = e.target.value;
     setInputValue(newValue);
     onChange(newValue);
+    // Keep dropdown open when typing to show filtered results
+    if (newValue.trim() && cities.length > 0) {
+      setIsOpen(true);
+    }
   };
 
   const handleSelect = (city: City) => {
@@ -153,7 +159,8 @@ export function CitySelector({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => {
-              if (filteredCities.length > 0) {
+              // Only open dropdown if there's text and filtered cities
+              if (inputValue.trim() && filteredCities.length > 0) {
                 setIsOpen(true);
               }
             }}
@@ -182,8 +189,14 @@ export function CitySelector({
                 >
                   <MapPin className="w-4 h-4 text-green-600 flex-shrink-0" />
                   <span className="text-gray-900">
-                    <span className="font-medium">{inputValue}</span>
-                    <span>{city.name.substring(inputValue.length)}</span>
+                    {inputValue.trim() ? (
+                      <>
+                        <span className="font-medium">{inputValue}</span>
+                        <span>{city.name.substring(inputValue.length)}</span>
+                      </>
+                    ) : (
+                      <span>{city.name}</span>
+                    )}
                   </span>
                 </button>
               ))}

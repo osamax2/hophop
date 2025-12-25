@@ -44,6 +44,42 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Backend is running ✅");
 });
 
+// City name mapping for Arabic/English support
+const cityNameMapping: { [key: string]: string[] } = {
+  'دمشق': ['Damascus', 'دمشق'],
+  'حلب': ['Aleppo', 'حلب'],
+  'حمص': ['Homs', 'حمص'],
+  'اللاذقية': ['Latakia', 'اللاذقية', 'Lattakia'],
+  'طرطوس': ['Tartus', 'طرطوس', 'Tartous'],
+  'دير الزور': ['Deir ez-Zor', 'دير الزور', 'Deir Ezzor'],
+  'الحسكة': ['Al-Hasakah', 'الحسكة', 'Hasakah'],
+  'الرقة': ['Ar-Raqqah', 'الرقة', 'Raqqa'],
+  'السويداء': ['As-Suwayda', 'السويداء', 'Suwayda'],
+  'درعا': ['Daraa', 'درعا', 'Dara'],
+  'إدلب': ['Idlib', 'إدلب'],
+  'حماة': ['Hama', 'حماة'],
+  'القنيطرة': ['Quneitra', 'القنيطرة'],
+  'دوما': ['Douma', 'دوما'],
+};
+
+// Helper function to get city name variations
+function getCityNameVariations(searchTerm: string): string[] {
+  const normalized = searchTerm.trim().toLowerCase();
+  const variations: string[] = [normalized];
+  
+  // Check if search term is in mapping
+  for (const [key, values] of Object.entries(cityNameMapping)) {
+    if (key.toLowerCase() === normalized || values.some(v => v.toLowerCase() === normalized)) {
+      variations.push(...values.map(v => v.toLowerCase()));
+      variations.push(key.toLowerCase());
+      break;
+    }
+  }
+  
+  // Remove duplicates and return
+  return [...new Set(variations)];
+}
+
 // ====== GET /api/trips - البحث عن الرحلات ======
 app.get("/api/trips", async (req, res) => {
   try {
@@ -52,14 +88,37 @@ app.get("/api/trips", async (req, res) => {
     const conditions: string[] = [];
     const values: any[] = [];
 
+    // Always filter for active trips only
+    conditions.push(`t.is_active = true`);
+
     if (from && typeof from === 'string' && from.trim() !== '') {
-      conditions.push(`LOWER(c_from.name) LIKE LOWER($${values.length + 1})`);
-      values.push(`%${from.trim()}%`);
+      // Get city name variations (Arabic/English)
+      const fromVariations = getCityNameVariations(from);
+      const fromConditions: string[] = [];
+      
+      fromVariations.forEach((variation, index) => {
+        fromConditions.push(`LOWER(c_from.name) LIKE LOWER($${values.length + 1})`);
+        values.push(`${variation}%`);
+      });
+      
+      if (fromConditions.length > 0) {
+        conditions.push(`(${fromConditions.join(' OR ')})`);
+      }
     }
 
     if (to && typeof to === 'string' && to.trim() !== '') {
-      conditions.push(`LOWER(c_to.name) LIKE LOWER($${values.length + 1})`);
-      values.push(`%${to.trim()}%`);
+      // Get city name variations (Arabic/English)
+      const toVariations = getCityNameVariations(to);
+      const toConditions: string[] = [];
+      
+      toVariations.forEach((variation) => {
+        toConditions.push(`LOWER(c_to.name) LIKE LOWER($${values.length + 1})`);
+        values.push(`${variation}%`);
+      });
+      
+      if (toConditions.length > 0) {
+        conditions.push(`(${toConditions.join(' OR ')})`);
+      }
     }
 
     if (date && typeof date === 'string' && date.trim() !== '') {
@@ -97,7 +156,7 @@ app.get("/api/trips", async (req, res) => {
         s_from.name AS departure_station,
         s_to.name   AS arrival_station,
         COALESCE(comp.name, 'Unknown') AS company_name,
-        COALESCE(tt.type_name, 'normal') AS transport_type,
+        COALESCE(tt.label, tt.code, 'normal') AS transport_type,
         MIN(tf.price)    AS price,
         MIN(tf.currency) AS currency,
         COALESCE((
@@ -123,7 +182,7 @@ app.get("/api/trips", async (req, res) => {
     query += `
       GROUP BY
         t.id, c_from.name, c_to.name, s_from.name, s_to.name,
-        comp.name, tt.type_name, t.equipment, t.route_id
+        comp.name, tt.label, tt.code, t.equipment, t.route_id
       ORDER BY t.id
       LIMIT 100
     `;
@@ -640,12 +699,25 @@ app.get("/api/transport-types", async (req, res) => {
     const existingColumns = columnsResult.rows.map(r => r.column_name.toLowerCase());
     
     let selectFields = ['id'];
+    
+    // Always include code if it exists
+    if (existingColumns.includes('code')) {
+      selectFields.push('code');
+    }
+    
+    // Include name or label
     if (existingColumns.includes('name')) {
       selectFields.push('name');
     } else if (existingColumns.includes('label')) {
       selectFields.push('label as name');
     }
     
+    // Also include label separately if it exists (for fallback)
+    if (existingColumns.includes('label') && !existingColumns.includes('name')) {
+      selectFields.push('label');
+    }
+    
+    // Include type_name alias for backward compatibility
     if (existingColumns.includes('type_name')) {
       selectFields.push('type_name');
     } else if (existingColumns.includes('code')) {

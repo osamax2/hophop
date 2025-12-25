@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
@@ -8,6 +8,52 @@ interface AdminDashboardProps {
   user: User | null;
   language: Language;
 }
+
+// Transport type translations
+const getTransportTypeName = (code: string, language: Language): string => {
+  const translations: Record<string, Record<Language, string>> = {
+    'BUS': {
+      en: 'Bus',
+      de: 'Bus',
+      ar: 'باص',
+    },
+    'VAN': {
+      en: 'Van',
+      de: 'Van',
+      ar: 'فان',
+    },
+    'VIP_VAN': {
+      en: 'VIP Van',
+      de: 'VIP Van',
+      ar: 'فان VIP',
+    },
+    'VIP-VAN': {
+      en: 'VIP Van',
+      de: 'VIP Van',
+      ar: 'فان VIP',
+    },
+    'SHIP': {
+      en: 'Ship',
+      de: 'Schiff',
+      ar: 'سفينة',
+    },
+    'TRAIN': {
+      en: 'Train',
+      de: 'Zug',
+      ar: 'قطار',
+    },
+  };
+
+  const normalizedCode = code?.toUpperCase() || '';
+  const typeTranslations = translations[normalizedCode];
+  
+  if (typeTranslations && typeTranslations[language]) {
+    return typeTranslations[language];
+  }
+  
+  // Fallback to original code if no translation found
+  return code || '';
+};
 
 const translations = {
   de: {
@@ -39,8 +85,8 @@ const translations = {
     popularRoutes: 'Beliebte Routen',
     userName: 'Name',
     userEmail: 'E-Mail',
-    userRole: 'Rolle',
-    changeRole: 'Rolle ändern',
+    userRole: 'Kontotyp',
+    changeRole: 'Kontotyp ändern',
     blockUser: 'Benutzer sperren',
     photoType: 'Foto-Typ',
     busPhoto: 'Bus',
@@ -72,6 +118,22 @@ const translations = {
     arrivalTimeAfterDeparture: 'Die Ankunftszeit muss nach der Abfahrtszeit liegen',
     deletePermanently: 'Diese deaktivierte Fahrt dauerhaft löschen?',
     deletePermanentlyConfirm: 'Möchten Sie diese deaktivierte Fahrt wirklich dauerhaft löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
+    welcomeMessage: 'Willkommen',
+    filterTrips: 'Reisen filtern',
+    exportTrips: 'Reisen exportieren',
+    filterByTime: 'Nach Zeit filtern',
+    filterByDate: 'Nach Datum filtern',
+    filterByCity: 'Nach Stadt filtern',
+    filterByCompany: 'Nach Unternehmen filtern',
+    fromTime: 'Von Zeit',
+    toTime: 'Bis Zeit',
+    fromDate: 'Von Datum',
+    toDate: 'Bis Datum',
+    selectCity: 'Stadt auswählen',
+    selectCompany: 'Unternehmen auswählen',
+    clearFilters: 'Filter löschen',
+    exportToCSV: 'Als CSV exportieren',
+    noTripsMatch: 'Keine Reisen entsprechen den Filtern',
   },
   en: {
     adminDashboard: 'Admin Dashboard',
@@ -102,8 +164,8 @@ const translations = {
     popularRoutes: 'Popular Routes',
     userName: 'Name',
     userEmail: 'Email',
-    userRole: 'Role',
-    changeRole: 'Change Role',
+    userRole: 'Account Type',
+    changeRole: 'Change Account Type',
     blockUser: 'Block User',
     photoType: 'Photo Type',
     busPhoto: 'Bus',
@@ -135,6 +197,22 @@ const translations = {
     arrivalTimeAfterDeparture: 'Arrival time must be after departure time',
     deletePermanently: 'Permanently delete this inactive trip?',
     deletePermanentlyConfirm: 'Are you sure you want to permanently delete this inactive trip? This action cannot be undone.',
+    welcomeMessage: 'Welcome',
+    filterTrips: 'Filter Trips',
+    exportTrips: 'Export Trips',
+    filterByTime: 'Filter by Time',
+    filterByDate: 'Filter by Date',
+    filterByCity: 'Filter by City',
+    filterByCompany: 'Filter by Company',
+    fromTime: 'From Time',
+    toTime: 'To Time',
+    fromDate: 'From Date',
+    toDate: 'To Date',
+    selectCity: 'Select City',
+    selectCompany: 'Select Company',
+    clearFilters: 'Clear Filters',
+    exportToCSV: 'Export to CSV',
+    noTripsMatch: 'No trips match the filters',
   },
   ar: {
     adminDashboard: 'لوحة الإدارة',
@@ -165,8 +243,8 @@ const translations = {
     popularRoutes: 'الطرق الشائعة',
     userName: 'الاسم',
     userEmail: 'البريد الإلكتروني',
-    userRole: 'الدور',
-    changeRole: 'تغيير الدور',
+    userRole: 'نوع الحساب',
+    changeRole: 'تغيير نوع الحساب',
     blockUser: 'حظر المستخدم',
     photoType: 'نوع الصورة',
     busPhoto: 'باص',
@@ -193,11 +271,27 @@ const translations = {
     selectTransportType: 'اختر نوع النقل',
     selectStation: 'اختر المحطة',
     time: 'الوقت',
-    duration: 'المدة',
+    duration: 'المدة المتوقعة',
     arrival: 'الوصول',
     arrivalTimeAfterDeparture: 'يجب أن يكون وقت الوصول بعد وقت المغادرة',
     deletePermanently: 'حذف هذه الرحلة المعطلة نهائياً؟',
     deletePermanentlyConfirm: 'هل أنت متأكد من حذف هذه الرحلة المعطلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
+    welcomeMessage: 'أهلاً',
+    filterTrips: 'فلترة الرحلات',
+    exportTrips: 'تصدير الرحلات',
+    filterByTime: 'فلترة حسب الوقت',
+    filterByDate: 'فلترة حسب التاريخ',
+    filterByCity: 'فلترة حسب المدينة',
+    filterByCompany: 'فلترة حسب الشركة',
+    fromTime: 'من الوقت',
+    toTime: 'إلى الوقت',
+    fromDate: 'من التاريخ',
+    toDate: 'إلى التاريخ',
+    selectCity: 'اختر المدينة',
+    selectCompany: 'اختر الشركة',
+    clearFilters: 'مسح الفلاتر',
+    exportToCSV: 'تصدير كملف CSV',
+    noTripsMatch: 'لا توجد رحلات تطابق الفلاتر',
   },
 };
 
@@ -242,6 +336,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     arrival_time: '',
     duration_minutes: '',
     seats_total: '',
+    price: '',
+    currency: 'SYP',
+    bus_number: '',
+    driver_name: '',
     equipment: '',
     cancellation_policy: '',
     extra_info: '',
@@ -255,6 +353,21 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // CSV import
   const [csvFile, setCsvFile] = useState<File | null>(null);
   const [csvPreview, setCsvPreview] = useState<any>(null);
+
+  // Filters for trips
+  const [filterTimeFrom, setFilterTimeFrom] = useState<string>('');
+  const [filterTimeTo, setFilterTimeTo] = useState<string>('');
+  const [filterDateFrom, setFilterDateFrom] = useState<string>('');
+  const [filterDateTo, setFilterDateTo] = useState<string>('');
+  const [filterCity, setFilterCity] = useState<string>('');
+  const [filterCompany, setFilterCompany] = useState<string>('');
+  const [allCities, setAllCities] = useState<any[]>([]);
+  const [showTripsList, setShowTripsList] = useState<boolean>(false);
+  
+  // Filters for users
+  const [showUsersList, setShowUsersList] = useState<boolean>(false);
+  const [filterRole, setFilterRole] = useState<string>('');
+  const [filterName, setFilterName] = useState<string>('');
 
   // Load analytics data
   useEffect(() => {
@@ -285,6 +398,19 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       loadTripFormData();
     }
   }, [showAddTripDialog]);
+
+  // Auto-calculate duration when departure_time or arrival_time changes
+  useEffect(() => {
+    if (newTrip.departure_time && newTrip.arrival_time) {
+      const dep = new Date(newTrip.departure_time);
+      const arr = new Date(newTrip.arrival_time);
+      
+      if (!isNaN(dep.getTime()) && !isNaN(arr.getTime()) && arr > dep) {
+        const durationMinutes = Math.round((arr.getTime() - dep.getTime()) / (1000 * 60));
+        setNewTrip(prev => ({ ...prev, duration_minutes: String(durationMinutes) }));
+      }
+    }
+  }, [newTrip.departure_time, newTrip.arrival_time]);
 
   const loadTripFormData = async () => {
     try {
@@ -432,6 +558,249 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
+  // Filter trips based on filters
+  const getFilteredTrips = () => {
+    let filtered = [...trips];
+
+    // Filter by date
+    if (filterDateFrom) {
+      filtered = filtered.filter((trip: any) => {
+        if (!trip.departure_time) return false;
+        const tripDate = new Date(trip.departure_time);
+        tripDate.setHours(0, 0, 0, 0);
+        const filterFrom = new Date(filterDateFrom);
+        filterFrom.setHours(0, 0, 0, 0);
+        return tripDate >= filterFrom;
+      });
+    }
+    if (filterDateTo) {
+      filtered = filtered.filter((trip: any) => {
+        if (!trip.departure_time) return false;
+        const tripDate = new Date(trip.departure_time);
+        tripDate.setHours(0, 0, 0, 0);
+        const filterTo = new Date(filterDateTo);
+        filterTo.setHours(23, 59, 59, 999);
+        return tripDate <= filterTo;
+      });
+    }
+
+    // Filter by time
+    if (filterTimeFrom) {
+      filtered = filtered.filter((trip: any) => {
+        if (!trip.departure_time) return false;
+        const tripTime = new Date(trip.departure_time).getHours() * 60 + new Date(trip.departure_time).getMinutes();
+        const filterFrom = parseInt(filterTimeFrom.split(':')[0]) * 60 + parseInt(filterTimeFrom.split(':')[1] || '0');
+        return tripTime >= filterFrom;
+      });
+    }
+    if (filterTimeTo) {
+      filtered = filtered.filter((trip: any) => {
+        if (!trip.departure_time) return false;
+        const tripTime = new Date(trip.departure_time).getHours() * 60 + new Date(trip.departure_time).getMinutes();
+        const filterTo = parseInt(filterTimeTo.split(':')[0]) * 60 + parseInt(filterTimeTo.split(':')[1] || '0');
+        return tripTime <= filterTo;
+      });
+    }
+
+    // Filter by city (from or to)
+    if (filterCity) {
+      filtered = filtered.filter((trip: any) => {
+        return (trip.from_city && trip.from_city.toLowerCase().includes(filterCity.toLowerCase())) ||
+               (trip.to_city && trip.to_city.toLowerCase().includes(filterCity.toLowerCase()));
+      });
+    }
+
+    // Filter by company
+    if (filterCompany) {
+      filtered = filtered.filter((trip: any) => {
+        const companyName = trip.company_name || '';
+        return companyName.toLowerCase().includes(filterCompany.toLowerCase());
+      });
+    }
+
+    return filtered;
+  };
+
+  // Export filtered trips to CSV
+  const exportTripsToCSV = () => {
+    const filteredTrips = getFilteredTrips();
+    
+    if (filteredTrips.length === 0) {
+      alert(language === 'ar' 
+        ? 'لا توجد رحلات للتصدير'
+        : language === 'de'
+        ? 'Keine Reisen zum Exportieren'
+        : 'No trips to export');
+      return;
+    }
+
+    // Prepare CSV headers
+    const headers = [
+      'ID',
+      language === 'ar' ? 'من' : language === 'de' ? 'Von' : 'From',
+      language === 'ar' ? 'إلى' : language === 'de' ? 'Nach' : 'To',
+      language === 'ar' ? 'وقت المغادرة' : language === 'de' ? 'Abfahrtszeit' : 'Departure Time',
+      language === 'ar' ? 'وقت الوصول' : language === 'de' ? 'Ankunftszeit' : 'Arrival Time',
+      language === 'ar' ? 'الشركة' : language === 'de' ? 'Unternehmen' : 'Company',
+      language === 'ar' ? 'المقاعد المتاحة' : language === 'de' ? 'Verfügbare Plätze' : 'Available Seats',
+      language === 'ar' ? 'الحالة' : language === 'de' ? 'Status' : 'Status',
+    ];
+
+    // Prepare CSV rows
+    const rows = filteredTrips.map((trip: any) => {
+      const departureTime = trip.departure_time 
+        ? new Date(trip.departure_time).toLocaleString('en-US', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        : 'N/A';
+      const arrivalTime = trip.arrival_time 
+        ? new Date(trip.arrival_time).toLocaleString('en-US', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          })
+        : 'N/A';
+      
+      return [
+        trip.id || '',
+        trip.from_city || 'N/A',
+        trip.to_city || 'N/A',
+        departureTime,
+        arrivalTime,
+        trip.company_name || 'N/A',
+        trip.seats_available || '0',
+        trip.is_active ? (language === 'ar' ? 'نشط' : language === 'de' ? 'Aktiv' : 'Active') : (language === 'ar' ? 'معطل' : language === 'de' ? 'Inaktiv' : 'Inactive'),
+      ];
+    });
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `trips_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const clearFilters = () => {
+    setFilterTimeFrom('');
+    setFilterTimeTo('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterCity('');
+    setFilterCompany('');
+  };
+
+  // Filter users by role and name
+  const getFilteredUsers = () => {
+    let filtered = [...users];
+
+    // Filter by name
+    if (filterName) {
+      const nameFilter = filterName.toLowerCase();
+      filtered = filtered.filter((user: any) => {
+        const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim().toLowerCase();
+        const email = (user.email || '').toLowerCase();
+        return fullName.includes(nameFilter) || email.includes(nameFilter);
+      });
+    }
+
+    // Filter by role
+    if (filterRole) {
+      filtered = filtered.filter((user: any) => {
+        const roles = Array.isArray(user.roles) ? user.roles : [];
+        if (filterRole === 'Administrator') {
+          return roles.includes('Administrator') || roles.includes('ADMIN');
+        } else if (filterRole === 'Agent') {
+          return roles.includes('Agent') || roles.includes('AGENT');
+        } else if (filterRole === 'User') {
+          return !roles.includes('Administrator') && !roles.includes('ADMIN') && !roles.includes('Agent') && !roles.includes('AGENT');
+        }
+        return true;
+      });
+    }
+
+    return filtered;
+  };
+
+  // Export users to CSV
+  const exportUsersToCSV = () => {
+    const filteredUsers = getFilteredUsers();
+    
+    if (filteredUsers.length === 0) {
+      alert(language === 'ar' 
+        ? 'لا يوجد مستخدمون للتصدير'
+        : language === 'de'
+        ? 'Keine Benutzer zum Exportieren'
+        : 'No users to export');
+      return;
+    }
+
+    // Prepare CSV headers
+    const headers = [
+      language === 'ar' ? 'الاسم' : language === 'de' ? 'Name' : 'Name',
+      language === 'ar' ? 'البريد الإلكتروني' : language === 'de' ? 'E-Mail' : 'Email',
+      language === 'ar' ? 'رقم الهاتف' : language === 'de' ? 'Telefonnummer' : 'Phone',
+      language === 'ar' ? 'نوع الحساب' : language === 'de' ? 'Kontotyp' : 'Account Type',
+    ];
+
+    // Prepare CSV rows
+    const rows = filteredUsers.map((user: any) => {
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.email || 'N/A';
+      const roles = Array.isArray(user.roles) ? user.roles : [];
+      let roleDisplay = 'User';
+      if (roles.includes('Administrator') || roles.includes('ADMIN')) {
+        roleDisplay = 'Administrator';
+      } else if (roles.includes('Agent') || roles.includes('AGENT')) {
+        roleDisplay = 'Agent';
+      }
+      
+      return [
+        fullName,
+        user.email || 'N/A',
+        user.phone || 'N/A',
+        roleDisplay,
+      ];
+    });
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `users_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const clearUserFilters = () => {
+    setFilterRole('');
+    setFilterName('');
+  };
+
   const loadUsers = async () => {
     try {
       setLoading(true);
@@ -539,10 +908,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
 
     const confirmMessage = language === 'ar' 
-      ? `هل أنت متأكد من تغيير دور المستخدم إلى ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}؟`
+      ? `هل أنت متأكد من تغيير نوع حساب المستخدم إلى ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}؟`
       : language === 'de' 
-      ? `Sind Sie sicher, dass Sie die Rolle dieses Benutzers zu ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'} ändern möchten?`
-      : `Are you sure you want to change this user's role to ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}?`;
+      ? `Sind Sie sicher, dass Sie den Kontotyp dieses Benutzers zu ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'} ändern möchten?`
+      : `Are you sure you want to change this user's account type to ${newRole === 'Administrator' ? 'Admin' : newRole === 'Agent' ? 'Agent' : 'User'}?`;
 
     if (!window.confirm(confirmMessage)) {
       return;
@@ -554,10 +923,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       const roleNames = [newRole];
       await adminApi.changeUserRole(selectedUserForRoleChange.id, roleNames);
       alert(language === 'ar' 
-        ? 'تم تغيير دور المستخدم بنجاح'
+        ? 'تم تغيير نوع حساب المستخدم بنجاح'
         : language === 'de' 
-        ? 'Benutzerrolle erfolgreich geändert'
-        : 'User role changed successfully');
+        ? 'Benutzerkontotyp erfolgreich geändert'
+        : 'User account type changed successfully');
       setShowChangeRoleDialog(false);
       setSelectedUserForRoleChange(null);
       setNewRole('');
@@ -579,10 +948,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       }
 
       alert(language === 'ar' 
-        ? 'فشل تغيير دور المستخدم. يرجى المحاولة مرة أخرى.'
+        ? 'فشل تغيير نوع حساب المستخدم. يرجى المحاولة مرة أخرى.'
         : language === 'de' 
-        ? 'Fehler beim Ändern der Benutzerrolle. Bitte versuchen Sie es erneut.'
-        : 'Failed to change user role. Please try again.');
+        ? 'Fehler beim Ändern des Benutzerkontotyps. Bitte versuchen Sie es erneut.'
+        : 'Failed to change user account type. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -659,6 +1028,22 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       const route = routes.find((r: any) => r.id === trip.route_id);
       
       // Convert trip data to form format
+      // Get trip price from trip_fares if available
+      let tripPrice = '';
+      let tripCurrency = 'SYP';
+      if (trip.id) {
+        try {
+          const tripIdNum = typeof trip.id === 'string' ? parseInt(trip.id) : trip.id;
+          const fares = await adminApi.getFares(tripIdNum);
+          if (fares && Array.isArray(fares) && fares.length > 0) {
+            tripPrice = String(fares[0].price || '');
+            tripCurrency = fares[0].currency || 'SYP';
+          }
+        } catch (e) {
+          console.log('Could not load trip fares:', e);
+        }
+      }
+
       setNewTrip({
         from_city: route?.from_city || trip.from_city || '',
         to_city: route?.to_city || trip.to_city || '',
@@ -671,6 +1056,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         arrival_time: trip.arrival_time ? new Date(trip.arrival_time).toISOString().slice(0, 16) : '',
         duration_minutes: String(trip.duration_minutes || ''),
         seats_total: String(trip.seats_total || ''),
+        price: tripPrice,
+        currency: tripCurrency,
+        bus_number: trip.bus_number || '',
+        driver_name: trip.driver_name || '',
         equipment: trip.equipment || '',
         cancellation_policy: trip.cancellation_policy || '',
         extra_info: trip.extra_info || '',
@@ -794,6 +1183,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         arrival_time: newTrip.arrival_time,
         duration_minutes: duration,
         seats_total: parseInt(newTrip.seats_total),
+        price: newTrip.price ? parseFloat(newTrip.price) : null,
+        currency: newTrip.currency || 'SYP',
+        bus_number: newTrip.bus_number || null,
+        driver_name: newTrip.driver_name || null,
         equipment: newTrip.equipment || null,
         cancellation_policy: newTrip.cancellation_policy || null,
         extra_info: newTrip.extra_info || null,
@@ -823,6 +1216,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         arrival_time: '',
         duration_minutes: '',
         seats_total: '',
+        price: '',
+        currency: 'SYP',
+        bus_number: '',
+        driver_name: '',
         equipment: '',
         cancellation_policy: '',
         extra_info: '',
@@ -865,6 +1262,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       arrival_time: '',
       duration_minutes: '',
       seats_total: '',
+      price: '',
+      currency: 'SYP',
+      bus_number: '',
+      driver_name: '',
       equipment: '',
       cancellation_policy: '',
       extra_info: '',
@@ -962,7 +1363,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl text-gray-900 mb-2">{t.adminDashboard}</h1>
-        <p className="text-gray-600">Willkommen, {user.name}</p>
+        <p className="text-gray-600">{t.welcomeMessage}, {user.name}</p>
       </div>
 
       {/* Tabs */}
@@ -999,7 +1400,24 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             <>
               {/* Stats Cards */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
+                <div 
+                  className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200 cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => {
+                    setShowTripsList(!showTripsList);
+                    if (!showTripsList) {
+                      // Load trips when opening
+                      adminApi.getTrips(true).then((tripsData) => {
+                        setTrips(Array.isArray(tripsData) ? tripsData : []);
+                      }).catch(console.error);
+                      // Load cities for filtering
+                      if (allCities.length === 0) {
+                        adminApi.getCities().then((citiesData) => {
+                          setAllCities(Array.isArray(citiesData) ? citiesData : []);
+                        }).catch(console.error);
+                      }
+                    }
+                  }}
+                >
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
                       <Calendar className="w-6 h-6 text-white" />
@@ -1008,9 +1426,27 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   </div>
                   <div className="text-3xl text-gray-900 mb-1">{stats.totalTrips}</div>
                   <div className="text-sm text-gray-700">{t.totalTrips}</div>
+                  <div className="text-xs text-blue-600 mt-2">
+                    {language === 'ar' 
+                      ? showTripsList ? 'انقر لإخفاء القائمة' : 'انقر لعرض القائمة'
+                      : language === 'de'
+                      ? showTripsList ? 'Klicken zum Ausblenden' : 'Klicken zum Anzeigen'
+                      : showTripsList ? 'Click to hide' : 'Click to view'}
+                  </div>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
+                <div 
+                  className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200 cursor-pointer hover:shadow-lg transition-shadow"
+                  onClick={() => {
+                    setShowUsersList(!showUsersList);
+                    if (!showUsersList) {
+                      // Load users when opening
+                      adminApi.getUsers().then((usersData) => {
+                        setUsers(Array.isArray(usersData) ? usersData : []);
+                      }).catch(console.error);
+                    }
+                  }}
+                >
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 bg-green-600 rounded-xl flex items-center justify-center">
                       <Users className="w-6 h-6 text-white" />
@@ -1019,6 +1455,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   </div>
                   <div className="text-3xl text-gray-900 mb-1">{stats.totalUsers}</div>
                   <div className="text-sm text-gray-700">{t.totalUsers}</div>
+                  <div className="text-xs text-green-600 mt-2">
+                    {language === 'ar' 
+                      ? showUsersList ? 'انقر لإخفاء القائمة' : 'انقر لعرض القائمة'
+                      : language === 'de'
+                      ? showUsersList ? 'Klicken zum Ausblenden' : 'Klicken zum Anzeigen'
+                      : showUsersList ? 'Click to hide' : 'Click to view'}
+                  </div>
                 </div>
 
                 <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-2xl p-6 border border-purple-200">
@@ -1072,6 +1515,327 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   </div>
                 )}
               </div>
+
+              {/* All Users with Filtering and Export - Shown when clicking on Total Users card */}
+              {showUsersList && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h2 className="text-xl text-gray-900">{t.totalUsers}</h2>
+                    <button 
+                      onClick={exportUsersToCSV}
+                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      {language === 'ar' ? 'تصدير المستخدمين' : language === 'de' ? 'Benutzer exportieren' : 'Export Users'}
+                    </button>
+                  </div>
+
+                  {/* Filters Section */}
+                  <div className="p-6 border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Filter className="w-5 h-5 text-gray-600" />
+                      <h3 className="text-lg text-gray-900">
+                        {language === 'ar' ? 'فلترة المستخدمين' : language === 'de' ? 'Benutzer filtern' : 'Filter Users'}
+                      </h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Name Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {language === 'ar' ? 'البحث بالاسم' : language === 'de' ? 'Nach Name suchen' : 'Search by Name'}
+                        </label>
+                        <input
+                          type="text"
+                          value={filterName}
+                          onChange={(e) => setFilterName(e.target.value)}
+                          placeholder={language === 'ar' ? 'أدخل الاسم أو البريد الإلكتروني' : language === 'de' ? 'Name oder E-Mail eingeben' : 'Enter name or email'}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      </div>
+
+                      {/* Role Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {language === 'ar' ? 'فلترة حسب نوع الحساب' : language === 'de' ? 'Nach Kontotyp filtern' : 'Filter by Account Type'}
+                        </label>
+                        <select
+                          value={filterRole}
+                          onChange={(e) => setFilterRole(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">
+                            {language === 'ar' ? 'جميع أنواع الحسابات' : language === 'de' ? 'Alle Kontotypen' : 'All Account Types'}
+                          </option>
+                          <option value="Administrator">
+                            {language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Administrator'}
+                          </option>
+                          <option value="Agent">
+                            {language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent'}
+                          </option>
+                          <option value="User">
+                            {language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User'}
+                          </option>
+                        </select>
+                      </div>
+
+                      {/* Clear Filters Button */}
+                      <div className="flex items-end">
+                        <button
+                          onClick={clearUserFilters}
+                          className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                          {language === 'ar' ? 'مسح الفلاتر' : language === 'de' ? 'Filter löschen' : 'Clear Filters'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Users Table */}
+                  {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                      <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
+                              {language === 'ar' ? 'الاسم' : language === 'de' ? 'Name' : 'Name'}
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>
+                              {language === 'ar' ? 'البريد الإلكتروني' : language === 'de' ? 'E-Mail' : 'Email'}
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
+                              {language === 'ar' ? 'رقم الهاتف' : language === 'de' ? 'Telefonnummer' : 'Phone'}
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
+                              {language === 'ar' ? 'نوع الحساب' : language === 'de' ? 'Kontotyp' : 'Account Type'}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {(() => {
+                            const filteredUsers = getFilteredUsers();
+                            if (filteredUsers.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
+                                    {users.length === 0
+                                      ? (language === 'ar' 
+                                          ? 'لا يوجد مستخدمون.'
+                                          : language === 'de'
+                                          ? 'Keine Benutzer vorhanden.'
+                                          : 'No users available.')
+                                      : (language === 'ar' 
+                                          ? 'لا يوجد مستخدمون يطابقون الفلاتر'
+                                          : language === 'de'
+                                          ? 'Keine Benutzer entsprechen den Filtern'
+                                          : 'No users match the filters')}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return filteredUsers.map((userItem: any) => {
+                              const fullName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim() || userItem.email || 'N/A';
+                              const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
+                              let roleDisplay = language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User';
+                              if (roles.includes('Administrator') || roles.includes('ADMIN')) {
+                                roleDisplay = language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Administrator';
+                              } else if (roles.includes('Agent') || roles.includes('AGENT')) {
+                                roleDisplay = language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent';
+                              }
+                              return (
+                                <tr key={userItem.id} className={`hover:bg-gray-50 ${userItem.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
+                                  <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
+                                    {fullName}
+                                    {userItem.is_active === false && (
+                                      <span className="ml-2 text-xs text-gray-500">
+                                        ({language === 'ar' ? 'معطل' : language === 'de' ? 'Deaktiviert' : 'Inactive'})
+                                      </span>
+                                    )}
+                                  </td>
+                                  <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{userItem.email || 'N/A'}</td>
+                                  <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{userItem.phone || 'N/A'}</td>
+                                  <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{roleDisplay}</td>
+                                </tr>
+                              );
+                            });
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* All Trips with Filtering and Export - Shown when clicking on Total Trips card */}
+              {showTripsList && (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+                    <h2 className="text-xl text-gray-900">{t.totalTrips}</h2>
+                    <button 
+                      onClick={exportTripsToCSV}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                    >
+                      <Download className="w-4 h-4" />
+                      {t.exportTrips}
+                    </button>
+                  </div>
+
+                  {/* Filters Section */}
+                  <div className="p-6 border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Filter className="w-5 h-5 text-gray-600" />
+                      <h3 className="text-lg text-gray-900">{t.filterTrips}</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {/* Date Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByDate}</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="date"
+                            value={filterDateFrom}
+                            onChange={(e) => setFilterDateFrom(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                          <input
+                            type="date"
+                            value={filterDateTo}
+                            onChange={(e) => setFilterDateTo(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Time Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByTime}</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="time"
+                            value={filterTimeFrom}
+                            onChange={(e) => setFilterTimeFrom(e.target.value)}
+                            placeholder={t.fromTime}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                          <input
+                            type="time"
+                            value={filterTimeTo}
+                            onChange={(e) => setFilterTimeTo(e.target.value)}
+                            placeholder={t.toTime}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                          />
+                        </div>
+                      </div>
+
+                      {/* City Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByCity}</label>
+                        <select
+                          value={filterCity}
+                          onChange={(e) => setFilterCity(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">{t.selectCity}</option>
+                          {allCities.map((city: any) => (
+                            <option key={city.id} value={city.name}>
+                              {city.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Company Filter */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByCompany}</label>
+                        <select
+                          value={filterCompany}
+                          onChange={(e) => setFilterCompany(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">{t.selectCompany}</option>
+                          {Array.from(new Set(trips.map((t: any) => t.company_name).filter(Boolean))).map((company: string) => (
+                            <option key={company} value={company}>
+                              {company}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Clear Filters Button */}
+                      <div className="flex items-end">
+                        <button
+                          onClick={clearFilters}
+                          className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                        >
+                          {t.clearFilters}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Trips Table */}
+                  {loading ? (
+                    <div className="flex items-center justify-center h-64">
+                      <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
+                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.company}</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-200">
+                          {(() => {
+                            const filteredTrips = getFilteredTrips();
+                            if (filteredTrips.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
+                                    {trips.length === 0
+                                      ? (language === 'ar' 
+                                          ? 'لا توجد رحلات.'
+                                          : language === 'de'
+                                          ? 'Keine Reisen vorhanden.'
+                                          : 'No trips available.')
+                                      : t.noTripsMatch}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            return filteredTrips.map((trip: any) => (
+                              <tr key={trip.id} className={`hover:bg-gray-50 ${trip.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
+                                <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
+                                  {trip.from_city || 'N/A'}
+                                  {trip.is_active === false && (
+                                    <span className="ml-2 text-xs text-gray-500">
+                                      ({language === 'ar' ? 'معطل' : language === 'de' ? 'Deaktiviert' : 'Inactive'})
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{trip.to_city || 'N/A'}</td>
+                                <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>
+                                  {trip.departure_time ? new Date(trip.departure_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                                </td>
+                                <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>
+                                  {trip.company_name || 'N/A'}
+                                </td>
+                              </tr>
+                            ));
+                          })()}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1098,13 +1862,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.from}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.to}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.departure}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.actions}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1121,7 +1885,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   ) : (
                     trips.slice(0, 20).map((trip: any) => (
                       <tr key={trip.id} className={`hover:bg-gray-50 ${trip.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
                           {trip.from_city || 'N/A'}
                           {trip.is_active === false && (
                             <span className="ml-2 text-xs text-gray-500">
@@ -1129,11 +1893,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                             </span>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">{trip.to_city || 'N/A'}</td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
+                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{trip.to_city || 'N/A'}</td>
+                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>
                           {trip.departure_time ? new Date(trip.departure_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
                         </td>
-                        <td className="px-6 py-4 text-sm">
+                        <td className="px-6 py-3 text-sm" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>
                           <div className="flex gap-2">
                             <button 
                               onClick={() => handleEditTrip(trip.id)}
@@ -1160,21 +1924,49 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           )}
           </div>
 
-          {/* Add Trip Dialog */}
+          {/* Add Trip Dialog - Popup Window */}
           {showAddTripDialog && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-              <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-                <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="text-2xl text-gray-900">{editingTripId ? (language === 'ar' ? 'تعديل الرحلة' : language === 'de' ? 'Fahrt bearbeiten' : 'Edit Trip') : t.addSchedule}</h2>
+            <div 
+              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
+              onClick={(e) => {
+                // Close dialog when clicking on backdrop
+                if (e.target === e.currentTarget) {
+                  setShowAddTripDialog(false);
+                  setEditingTripId(null);
+                }
+              }}
+            >
+              <div 
+                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Header - Sticky */}
+                <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+                  <h2 className="text-2xl font-bold flex items-center gap-3">
+                    {editingTripId ? (
+                      <>
+                        <span>{language === 'ar' ? 'تعديل الرحلة' : language === 'de' ? 'Fahrt bearbeiten' : 'Edit Trip'}</span>
+                        <span className="text-sm font-normal bg-white/20 px-2 py-1 rounded">ID: {editingTripId}</span>
+                      </>
+                    ) : (
+                      <span>{t.addSchedule}</span>
+                    )}
+                  </h2>
                   <button
-                    onClick={() => setShowAddTripDialog(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    onClick={() => {
+                      setShowAddTripDialog(false);
+                      setEditingTripId(null);
+                    }}
+                    className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                    title={language === 'ar' ? 'إغلاق' : language === 'de' ? 'Schließen' : 'Close'}
                   >
                     <X className="w-6 h-6" />
                   </button>
                 </div>
 
-                <div className="p-6 space-y-4">
+                {/* Content - Scrollable */}
+                <div className="overflow-y-auto flex-1 p-6">
+                  <div className="space-y-4">
                   {/* From City */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t.from}</label>
@@ -1281,11 +2073,20 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     >
                       <option value="">{t.selectTransportType || 'Select Transport Type'}</option>
-                      {transportTypes.map((type: any) => (
-                        <option key={type.id} value={type.id}>
-                          {type.name}
-                        </option>
-                      ))}
+                      {transportTypes.map((type: any) => {
+                        // Get the transport type code (could be in type_name, code, or type.code)
+                        const typeCode = type.type_name || type.code || type.name || '';
+                        // Get translated name based on code and language
+                        const translatedName = getTransportTypeName(typeCode, language);
+                        // Fallback to original name if translation not found
+                        const displayName = translatedName || type.name || type.label || typeCode;
+                        
+                        return (
+                          <option key={type.id} value={type.id}>
+                            {displayName}
+                          </option>
+                        );
+                      })}
                     </select>
                   </div>
 
@@ -1352,13 +2153,27 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   <div className="grid grid-cols-2 gap-4">
                     {/* Duration */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.duration || 'Duration'} (دقائق)</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.duration || 'Duration'} (دقائق)
+                        {newTrip.departure_time && newTrip.arrival_time && (
+                          <span className="text-xs text-gray-500 ml-2">
+                            {language === 'ar' ? '(محسوبة تلقائياً)' : language === 'de' ? '(automatisch berechnet)' : '(auto-calculated)'}
+                          </span>
+                        )}
+                      </label>
                       <input
                         type="number"
                         value={newTrip.duration_minutes}
                         onChange={(e) => setNewTrip({ ...newTrip, duration_minutes: e.target.value })}
                         placeholder="240"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        readOnly={newTrip.departure_time && newTrip.arrival_time ? true : false}
+                        className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                          newTrip.departure_time && newTrip.arrival_time ? 'bg-gray-50 cursor-not-allowed' : ''
+                        }`}
+                        title={newTrip.departure_time && newTrip.arrival_time ? 
+                          (language === 'ar' ? 'المدة محسوبة تلقائياً من وقت المغادرة والوصول' : 
+                           language === 'de' ? 'Dauer wird automatisch aus Abfahrts- und Ankunftszeit berechnet' : 
+                           'Duration is auto-calculated from departure and arrival times') : ''}
                       />
                     </div>
 
@@ -1370,6 +2185,69 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                         value={newTrip.seats_total}
                         onChange={(e) => setNewTrip({ ...newTrip, seats_total: e.target.value })}
                         placeholder="50"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Price */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {language === 'ar' ? 'السعر' : language === 'de' ? 'Preis' : 'Price'}
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newTrip.price}
+                        onChange={(e) => setNewTrip({ ...newTrip, price: e.target.value })}
+                        placeholder="1000"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Currency */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {language === 'ar' ? 'العملة' : language === 'de' ? 'Währung' : 'Currency'}
+                      </label>
+                      <select
+                        value={newTrip.currency}
+                        onChange={(e) => setNewTrip({ ...newTrip, currency: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      >
+                        <option value="SYP">SYP (ليرة سورية)</option>
+                        <option value="USD">USD (دولار أمريكي)</option>
+                        <option value="EUR">EUR (يورو)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Bus Number */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {language === 'ar' ? 'رقم الباص' : language === 'de' ? 'Busnummer' : 'Bus Number'}
+                      </label>
+                      <input
+                        type="text"
+                        value={newTrip.bus_number}
+                        onChange={(e) => setNewTrip({ ...newTrip, bus_number: e.target.value })}
+                        placeholder={language === 'ar' ? 'مثال: 1234' : language === 'de' ? 'z.B. 1234' : 'e.g. 1234'}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Driver Name */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {language === 'ar' ? 'اسم السائق' : language === 'de' ? 'Fahrername' : 'Driver Name'}
+                      </label>
+                      <input
+                        type="text"
+                        value={newTrip.driver_name}
+                        onChange={(e) => setNewTrip({ ...newTrip, driver_name: e.target.value })}
+                        placeholder={language === 'ar' ? 'مثال: أحمد محمد' : language === 'de' ? 'z.B. Ahmed Mohammed' : 'e.g. Ahmed Mohammed'}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       />
                     </div>
@@ -1409,14 +2287,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     />
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-4 pt-4">
+                  </div>
+
+                  {/* Actions - Sticky Footer */}
+                  <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 -mx-6 -mb-6 mt-6 flex gap-4 shadow-lg">
                     <button
                       onClick={handleSaveTrip}
                       disabled={loading}
-                      className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium shadow-md hover:shadow-lg"
                     >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : editingTripId ? <Save className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                       {editingTripId ? (language === 'ar' ? 'حفظ التعديلات' : language === 'de' ? 'Änderungen speichern' : 'Save Changes') : t.add}
                     </button>
                     <button
@@ -1433,12 +2313,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                           arrival_time: '',
                           duration_minutes: '',
                           seats_total: '',
+                          price: '',
+                          currency: 'SYP',
+                          bus_number: '',
+                          driver_name: '',
                           equipment: '',
                           cancellation_policy: '',
                           extra_info: '',
                         });
                       }}
-                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                      className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
                     >
                       {t.cancel}
                     </button>
@@ -1561,13 +2445,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.userName}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.userEmail}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.userRole}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.actions}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.userName}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{t.userEmail}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.userRole}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -1584,9 +2468,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       const roleDisplay = isAdmin ? 'admin' : isAgent ? 'agent' : 'user';
                       return (
                         <tr key={userItem.id} className={`hover:bg-gray-50 ${userItem.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
-                          <td className="px-6 py-4 text-sm text-gray-900">{userName}</td>
-                          <td className="px-6 py-4 text-sm text-gray-900">{userItem.email}</td>
-                          <td className="px-6 py-4">
+                          <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{userName}</td>
+                          <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{userItem.email}</td>
+                          <td className="px-6 py-3" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                             <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
                               isAdmin ? 'bg-purple-100 text-purple-700' : isAgent ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
                             }`}>
@@ -1596,7 +2480,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                               )}
                             </span>
                           </td>
-                          <td className="px-6 py-4 text-sm">
+                          <td className="px-6 py-3 text-sm" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                             <div className="flex gap-2">
                               <button 
                                 type="button"
@@ -1763,7 +2647,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-2xl text-gray-900">
-                {language === 'ar' ? 'تغيير دور المستخدم' : language === 'de' ? 'Benutzerrolle ändern' : 'Change User Role'}
+                {language === 'ar' ? 'تغيير نوع حساب المستخدم' : language === 'de' ? 'Benutzerkontotyp ändern' : 'Change User Account Type'}
               </h2>
               <button
                 onClick={() => {
@@ -1790,7 +2674,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {language === 'ar' ? 'اختر الدور الجديد' : language === 'de' ? 'Neue Rolle wählen' : 'Select New Role'}
+                  {language === 'ar' ? 'اختر نوع الحساب الجديد' : language === 'de' ? 'Neuen Kontotyp wählen' : 'Select New Account Type'}
                 </label>
                 <select
                   value={newRole}

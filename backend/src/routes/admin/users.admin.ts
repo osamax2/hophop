@@ -8,7 +8,7 @@ router.get("/", async (_req, res) => {
   const r = await pool.query(
     `
     SELECT
-      u.id, u.email, u.first_name, u.last_name, u.is_active,
+      u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active,
       COALESCE(array_agg(r.name) FILTER (WHERE r.name IS NOT NULL), '{}') AS roles
     FROM users u
     LEFT JOIN user_roles ur ON ur.user_id = u.id

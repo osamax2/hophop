@@ -368,6 +368,10 @@ export const adminApi = {
     arrival_time: string;
     duration_minutes: number;
     seats_total: number;
+    price?: number | null;
+    currency?: string;
+    bus_number?: string | null;
+    driver_name?: string | null;
     status?: string;
     is_active?: boolean;
     equipment?: string;
@@ -416,6 +420,13 @@ export const adminApi = {
 
   getCities: async () => {
     const response = await fetch(`${API_BASE}/api/cities`);
+    return handleResponse(response);
+  },
+
+  getFares: async (tripId: number) => {
+    const response = await fetch(`${API_BASE}/api/admin/fares?trip_id=${tripId}`, {
+      headers: getAuthHeaders(),
+    });
     return handleResponse(response);
   },
 
