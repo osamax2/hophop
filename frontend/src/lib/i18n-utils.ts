@@ -1,6 +1,14 @@
 import type { Language } from '../App';
 
 /**
+ * Convert Western numerals to Arabic-Indic numerals
+ */
+function toArabicNumerals(str: string): string {
+  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return str.replace(/\d/g, (digit) => arabicNumerals[parseInt(digit)]);
+}
+
+/**
  * Format date according to locale
  */
 export function formatDate(date: Date | string, language: Language): string {
@@ -95,9 +103,11 @@ export function formatNumber(value: number, language: Language, options?: Intl.N
   };
 
   try {
-    return new Intl.NumberFormat(locales[language], defaultOptions).format(value);
+    const formatted = new Intl.NumberFormat(locales[language], defaultOptions).format(value);
+    return language === 'ar' ? toArabicNumerals(formatted) : formatted;
   } catch (e) {
-    return value.toString();
+    const fallback = value.toString();
+    return language === 'ar' ? toArabicNumerals(fallback) : fallback;
   }
 }
 
@@ -111,16 +121,42 @@ export function formatCurrency(value: number, language: Language, currency: stri
     ar: 'ar-SA',
   };
 
+  const currencyTranslations: Record<string, Record<Language, string>> = {
+    'SYP': {
+      en: 'SYP',
+      de: 'SYP',
+      ar: 'ليرة',
+    },
+    'USD': {
+      en: 'USD',
+      de: 'USD',
+      ar: 'دولار',
+    },
+    'EUR': {
+      en: 'EUR',
+      de: 'EUR',
+      ar: 'يورو',
+    },
+  };
+
   try {
-    return new Intl.NumberFormat(locales[language], {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
+    if (language === 'ar') {
+      // For Arabic, use custom format with Arabic numerals and translated currency
+      const formattedNumber = formatNumber(value, language);
+      const translatedCurrency = currencyTranslations[currency]?.[language] || currency;
+      return `${formattedNumber} ${translatedCurrency}`;
+    } else {
+      return new Intl.NumberFormat(locales[language], {
+        style: 'currency',
+        currency: currency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
   } catch (e) {
     // Fallback if currency not supported
-    return `${formatNumber(value, language)} ${currency}`;
+    const translatedCurrency = currencyTranslations[currency]?.[language] || currency;
+    return `${formatNumber(value, language)} ${translatedCurrency}`;
   }
 }
 
@@ -150,12 +186,15 @@ export function formatDuration(minutes: number, language: Language): string {
   const parts: string[] = [];
 
   if (hours > 0) {
-    parts.push(`${hours} ${t.hour}`);
+    const hourNum = language === 'ar' ? toArabicNumerals(hours.toString()) : hours.toString();
+    parts.push(`${hourNum} ${t.hour}`);
   }
   if (mins > 0) {
-    parts.push(`${mins} ${t.minute}`);
+    const minNum = language === 'ar' ? toArabicNumerals(mins.toString()) : mins.toString();
+    parts.push(`${minNum} ${t.minute}`);
   }
 
-  return parts.join(' ') || '0 ' + t.minute;
+  const zero = language === 'ar' ? '٠' : '0';
+  return parts.join(' ') || `${zero} ${t.minute}`;
 }
 

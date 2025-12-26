@@ -44,15 +44,12 @@ router.get("/stats", async (req, res) => {
     const result = await pool.query(`
       SELECT
         COALESCE(
-          ROUND(
-            AVG(
-              CASE
-                WHEN seats_total > 0 THEN
-                  ((seats_total - COALESCE(seats_available, 0))::FLOAT / seats_total::FLOAT) * 100
-                ELSE 0
-              END
-            ),
-            0
+          AVG(
+            CASE
+              WHEN seats_total > 0 THEN
+                ((seats_total - COALESCE(seats_available, 0))::FLOAT / seats_total::FLOAT) * 100
+              ELSE 0
+            END
           ),
           0
         ) as avg_occupancy

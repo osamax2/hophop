@@ -113,12 +113,29 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
     language: language,
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+  const API_BASE = import.meta.env.VITE_API_BASE || "";
 
   // Update formData.language when language prop changes
   useEffect(() => {
     setFormData(prev => ({ ...prev, language }));
   }, [language]);
+
+  // Convert numbers to Arabic numerals
+  const toArabicNumerals = (num: string | number): string => {
+    const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return String(num).replace(/\d/g, (digit) => arabicNumerals[parseInt(digit)]);
+  };
+
+  // Format date for display based on language
+  const formatDateForDisplay = (dateStr: string): string => {
+    if (!dateStr) return '';
+    if (language === 'ar') {
+      // Convert date to Arabic format with Arabic numerals
+      const [year, month, day] = dateStr.split('-');
+      return `${toArabicNumerals(day)}/${toArabicNumerals(month)}/${toArabicNumerals(year)}`;
+    }
+    return dateStr;
+  };
 
   // Validation functions
   const validateEmail = (email: string): boolean => {
@@ -309,28 +326,125 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
                     <Calendar className="w-4 h-4 inline mr-1" />
                     {t.birthDate}
                   </label>
-                  <input
-                    type="date"
-                    value={formData.birthDate}
-                    onChange={(e) => {
-                      const newBirthDate = e.target.value;
-                      setFormData({ ...formData, birthDate: newBirthDate });
-                      
-                      // Validate age immediately when date changes
-                      if (newBirthDate && !validateAge(newBirthDate)) {
-                        setErrors({ ...errors, birthDate: translations[language].ageRestriction });
-                      } else {
-                        // Clear error if age is valid
-                        const newErrors = { ...errors };
-                        delete newErrors.birthDate;
-                        setErrors(newErrors);
-                      }
-                    }}
-                    max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
-                      errors.birthDate ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
+                  {language === 'ar' ? (
+                    // Arabic date with dropdowns and Arabic numerals
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-3 gap-2" dir="rtl">
+                        {/* Day */}
+                        <select
+                          value={formData.birthDate ? new Date(formData.birthDate).getDate() : ''}
+                          onChange={(e) => {
+                            const day = e.target.value;
+                            const currentDate = formData.birthDate ? new Date(formData.birthDate) : new Date();
+                            currentDate.setDate(parseInt(day) || 1);
+                            const newDate = currentDate.toISOString().split('T')[0];
+                            setFormData({ ...formData, birthDate: newDate });
+                            if (newDate && !validateAge(newDate)) {
+                              setErrors({ ...errors, birthDate: translations[language].ageRestriction });
+                            } else {
+                              const newErrors = { ...errors };
+                              delete newErrors.birthDate;
+                              setErrors(newErrors);
+                            }
+                          }}
+                          className={`w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                            errors.birthDate ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">يوم</option>
+                          {Array.from({ length: 31 }, (_, i) => i + 1).map(day => (
+                            <option key={day} value={day}>{toArabicNumerals(day)}</option>
+                          ))}
+                        </select>
+                        
+                        {/* Month */}
+                        <select
+                          value={formData.birthDate ? new Date(formData.birthDate).getMonth() + 1 : ''}
+                          onChange={(e) => {
+                            const month = e.target.value;
+                            const currentDate = formData.birthDate ? new Date(formData.birthDate) : new Date();
+                            currentDate.setMonth(parseInt(month) - 1 || 0);
+                            const newDate = currentDate.toISOString().split('T')[0];
+                            setFormData({ ...formData, birthDate: newDate });
+                            if (newDate && !validateAge(newDate)) {
+                              setErrors({ ...errors, birthDate: translations[language].ageRestriction });
+                            } else {
+                              const newErrors = { ...errors };
+                              delete newErrors.birthDate;
+                              setErrors(newErrors);
+                            }
+                          }}
+                          className={`w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                            errors.birthDate ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">شهر</option>
+                          {[
+                            'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
+                            'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر'
+                          ].map((month, idx) => (
+                            <option key={idx + 1} value={idx + 1}>{month}</option>
+                          ))}
+                        </select>
+                        
+                        {/* Year */}
+                        <select
+                          value={formData.birthDate ? new Date(formData.birthDate).getFullYear() : ''}
+                          onChange={(e) => {
+                            const year = e.target.value;
+                            const currentDate = formData.birthDate ? new Date(formData.birthDate) : new Date();
+                            currentDate.setFullYear(parseInt(year) || 2000);
+                            const newDate = currentDate.toISOString().split('T')[0];
+                            setFormData({ ...formData, birthDate: newDate });
+                            if (newDate && !validateAge(newDate)) {
+                              setErrors({ ...errors, birthDate: translations[language].ageRestriction });
+                            } else {
+                              const newErrors = { ...errors };
+                              delete newErrors.birthDate;
+                              setErrors(newErrors);
+                            }
+                          }}
+                          className={`w-full px-3 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                            errors.birthDate ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        >
+                          <option value="">سنة</option>
+                          {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - 18 - i).map(year => (
+                            <option key={year} value={year}>{toArabicNumerals(year)}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {formData.birthDate && (
+                        <div className="text-sm text-gray-600 text-right">
+                          {formatDateForDisplay(formData.birthDate)}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Standard date input for non-Arabic languages
+                    <input
+                      type="date"
+                      value={formData.birthDate}
+                      onChange={(e) => {
+                        const newBirthDate = e.target.value;
+                        setFormData({ ...formData, birthDate: newBirthDate });
+                        
+                        // Validate age immediately when date changes
+                        if (newBirthDate && !validateAge(newBirthDate)) {
+                          setErrors({ ...errors, birthDate: translations[language].ageRestriction });
+                        } else {
+                          // Clear error if age is valid
+                          const newErrors = { ...errors };
+                          delete newErrors.birthDate;
+                          setErrors(newErrors);
+                        }
+                      }}
+                      max={new Date(new Date().setFullYear(new Date().getFullYear() - 18)).toISOString().split('T')[0]}
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                        errors.birthDate ? 'border-red-500' : 'border-gray-300'
+                      }`}
+                    />
+                  )}
                   {errors.birthDate && (
                     <p className="mt-1 text-sm text-red-600">{errors.birthDate}</p>
                   )}
@@ -445,6 +559,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
                   setFormData({ ...formData, password: e.target.value });
                   if (errors.password) setErrors({ ...errors, password: '' });
                 }}
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
                   errors.password ? 'border-red-500' : 'border-gray-300'
                 }`}

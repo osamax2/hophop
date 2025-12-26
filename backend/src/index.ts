@@ -643,9 +643,10 @@ app.get("/api/me", requireAuth, async (req: AuthedRequest, res) => {
     console.log("User ID:", userId, "Role names from DB:", roleNames);
     
     let role: string = "user";
-    if (roleNames.includes("Administrator")) {
+    const roleNamesLower = roleNames.map((r: string) => r?.toLowerCase());
+    if (roleNamesLower.includes("administrator") || roleNamesLower.includes("admin")) {
       role = "admin";
-    } else if (roleNames.includes("Agent")) {
+    } else if (roleNamesLower.includes("agent")) {
       role = "agent";
     }
     

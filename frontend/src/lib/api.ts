@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("token");
@@ -64,13 +64,61 @@ export const tripsApi = {
   },
 };
 
+// Auth APIs
+export const authApi = {
+  register: async (data: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone?: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  login: async (email: string, password: string) => {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    return handleResponse(response);
+  },
+};
+
 // User APIs
 export const usersApi = {
   getMe: async () => {
-    const response = await fetch(`${API_BASE}/api/users/me`, {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse(response);
+    const data = await handleResponse<{ user: any }>(response);
+    // Convert snake_case to camelCase for frontend
+    const user = data.user;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone,
+      gender: user.gender,
+      birthDate: user.birth_date,
+      address: user.address,
+      role: user.role,
+      roles: user.roles,
+      is_active: user.is_active,
+      created_at: user.created_at,
+    };
   },
 
   updateMe: async (data: {
@@ -81,10 +129,19 @@ export const usersApi = {
     birthDate?: string;
     address?: string;
   }) => {
-    const response = await fetch(`${API_BASE}/api/users/me`, {
+    // Convert camelCase to snake_case for backend
+    const backendData: any = {};
+    if (data.firstName !== undefined) backendData.first_name = data.firstName;
+    if (data.lastName !== undefined) backendData.last_name = data.lastName;
+    if (data.phone !== undefined) backendData.phone = data.phone;
+    if (data.gender !== undefined) backendData.gender = data.gender;
+    if (data.birthDate !== undefined) backendData.birth_date = data.birthDate;
+    if (data.address !== undefined) backendData.address = data.address;
+
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
       method: "PATCH",
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(backendData),
     });
     return handleResponse(response);
   },
@@ -187,6 +244,14 @@ export const ratingsApi = {
 
 // Images APIs
 export const imagesApi = {
+  getAll: async () => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/api/admin/images/all`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return handleResponse(response);
+  },
+
   getByEntity: async (entityType: string, entityId: number) => {
     const response = await fetch(`${API_BASE}/api/images?entity_type=${entityType}&entity_id=${entityId}`);
     return handleResponse(response);

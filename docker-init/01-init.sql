@@ -849,7 +849,9 @@ CREATE TABLE public.trips (
     is_active boolean DEFAULT true NOT NULL,
     equipment text,
     cancellation_policy text,
-    extra_info text
+    extra_info text,
+    bus_number character varying(50),
+    driver_name character varying(100)
 );
 
 
@@ -960,10 +962,12 @@ CREATE TABLE public.users (
     first_name character varying(100),
     last_name character varying(100),
     gender character varying(20),
+    birth_date date,
     address character varying(255),
     company_id integer,
     user_type_id integer,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now(),
     password_hash text
 );
 
@@ -2418,6 +2422,23 @@ ALTER TABLE ONLY public.route_stops
 
 ALTER TABLE ONLY public.route_stops
     ADD CONSTRAINT route_stops_station_id_fkey FOREIGN KEY (station_id) REFERENCES public.stations(id) ON DELETE CASCADE;
+
+
+--
+-- Name: images; Type: TABLE; Schema: public; Owner: hophop
+--
+
+CREATE TABLE IF NOT EXISTS public.images (
+    id SERIAL PRIMARY KEY,
+    entity_type VARCHAR(50) NOT NULL,
+    entity_id INTEGER NOT NULL,
+    image_url TEXT NOT NULL,
+    uploaded_by INTEGER,
+    created_at TIMESTAMP DEFAULT NOW(),
+    FOREIGN KEY (uploaded_by) REFERENCES public.users(id)
+);
+
+ALTER TABLE public.images OWNER TO hophop;
 
 
 --

@@ -22,6 +22,8 @@ const translations = {
     loginButton: 'Jetzt anmelden',
     viewDetails: 'Details anzeigen',
     remove: 'Entfernen',
+    availability: 'Verfügbarkeit',
+    seatsFree: 'Plätze frei',
   },
   en: {
     favorites: 'My Favorites',
@@ -32,6 +34,8 @@ const translations = {
     loginButton: 'Sign In Now',
     viewDetails: 'View Details',
     remove: 'Remove',
+    availability: 'Availability',
+    seatsFree: 'seats available',
   },
   ar: {
     favorites: 'المفضلة',
@@ -42,11 +46,20 @@ const translations = {
     loginButton: 'سجل الدخول الآن',
     viewDetails: 'عرض التفاصيل',
     remove: 'إزالة',
+    availability: 'التوفر',
+    seatsFree: 'مقاعد متاحة',
   },
 };
 
 export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNavigateToLogin }: FavoritesProps) {
   const t = translations[language];
+  
+  // Helper to convert to Arabic numerals
+  const toArabicNumerals = (num: string | number): string => {
+    const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return String(num).replace(/\d/g, (digit) => arabicNumerals[parseInt(digit)]);
+  };
+  
   const [favoriteTrips, setFavoriteTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -207,9 +220,9 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
               {/* Availability Badge */}
               <div className="bg-green-50 rounded-lg px-3 py-2 mb-4">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-green-700">Verfügbarkeit</span>
+                  <span className="text-green-700">{t.availability}</span>
                   <span className="text-green-900">
-                    {trip.seatsAvailable} Plätze frei
+                    {language === 'ar' ? toArabicNumerals(trip.seatsAvailable) : trip.seatsAvailable} {t.seatsFree}
                   </span>
                 </div>
               </div>

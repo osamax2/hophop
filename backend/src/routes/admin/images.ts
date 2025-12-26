@@ -99,6 +99,36 @@ router.post("/", requireAuth, upload.single("image"), async (req: MulterRequest,
   }
 });
 
+// GET /api/admin/images/all - Get all images (Admin/Agent only)
+router.get("/all", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const result = await pool.query(
+      `
+      SELECT 
+        i.id,
+        i.entity_type,
+        i.entity_id,
+        i.image_url,
+        i.file_name,
+        i.file_size,
+        i.mime_type,
+        i.uploaded_by,
+        i.created_at,
+        u.first_name || ' ' || u.last_name as uploaded_by_name,
+        u.email as uploaded_by_email
+      FROM images i
+      LEFT JOIN users u ON i.uploaded_by = u.id
+      ORDER BY i.created_at DESC
+      `
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching images:", error);
+    res.status(500).json({ message: "Error fetching images", error: String(error) });
+  }
+});
+
 // DELETE /api/admin/images/:id - Delete an image (Admin/Agent only)
 router.delete("/:id", requireAuth, async (req: AuthedRequest, res) => {
   try {
