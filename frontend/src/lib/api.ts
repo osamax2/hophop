@@ -285,8 +285,11 @@ export const adminApi = {
     return handleResponse(response);
   },
 
-  getUsers: async () => {
-    const response = await fetch(`${API_BASE}/api/admin/users`, {
+  getUsers: async (showDeleted: boolean = false) => {
+    const url = showDeleted 
+      ? `${API_BASE}/api/admin/users?showDeleted=true`
+      : `${API_BASE}/api/admin/users`;
+    const response = await fetch(url, {
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
@@ -368,6 +371,10 @@ export const adminApi = {
     arrival_time: string;
     duration_minutes: number;
     seats_total: number;
+    price?: number | null;
+    currency?: string;
+    bus_number?: string | null;
+    driver_name?: string | null;
     status?: string;
     is_active?: boolean;
     equipment?: string;
@@ -419,6 +426,13 @@ export const adminApi = {
     return handleResponse(response);
   },
 
+  getFares: async (tripId: number) => {
+    const response = await fetch(`${API_BASE}/api/admin/fares?trip_id=${tripId}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   createRoute: async (fromCityId: number, toCityId: number) => {
     const response = await fetch(`${API_BASE}/api/admin/routes`, {
       method: "POST",
@@ -446,6 +460,32 @@ export const adminApi = {
       method: "PUT",
       headers: headers,
       body: JSON.stringify({ role_names: roleNames }),
+    });
+    return handleResponse(response);
+  },
+
+  updateUserProfile: async (userId: number, data: {
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    password?: string;
+    role_names?: string[];
+  }) => {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    const response = await fetch(`${API_BASE}/api/admin/users/${userId}/profile`, {
+      method: "PATCH",
+      headers: headers,
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  deleteUser: async (userId: number) => {
+    const headers = getAuthHeaders();
+    const response = await fetch(`${API_BASE}/api/users/${userId}`, {
+      method: "DELETE",
+      headers: headers,
     });
     return handleResponse(response);
   },

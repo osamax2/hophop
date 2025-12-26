@@ -16,11 +16,13 @@ router.get("/", async (req, res) => {
     SELECT
       t.*,
       c1.name as from_city,
-      c2.name as to_city
+      c2.name as to_city,
+      COALESCE(comp.name, 'Unknown') AS company_name
     FROM trips t
     JOIN routes r ON r.id = t.route_id
     JOIN cities c1 ON c1.id = r.from_city_id
     JOIN cities c2 ON c2.id = r.to_city_id
+    LEFT JOIN transport_companies comp ON t.company_id = comp.id
     ${whereClause}
     ORDER BY t.id DESC
     LIMIT 200
@@ -43,6 +45,10 @@ router.post("/", async (req, res) => {
     arrival_time,   // timestamp string
     duration_minutes,
     seats_total,
+    price,
+    currency = "SYP",
+    bus_number = null,
+    driver_name = null,
     status = "scheduled",
     is_active = true,
     equipment = null,
@@ -59,42 +65,96 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
-  const r = await pool.query(
-    `
-    INSERT INTO trips (
-      route_id, company_id, transport_type_id,
-      departure_station_id, arrival_station_id,
-      departure_time, arrival_time, duration_minutes,
-      seats_total, seats_available,
-      status, is_active,
-      equipment, cancellation_policy, extra_info
-    )
-    VALUES (
-      $1,$2,$3,
-      $4,$5,
-      $6::timestamp,$7::timestamp,$8,
-      $9,$9,
-      $10,$11,
-      $12,$13,$14
-    )
-    RETURNING *
-    `,
-    [
-      route_id, company_id, transport_type_id,
-      departure_station_id, arrival_station_id,
-      departure_time, arrival_time, duration_minutes,
-      seats_total,
-      status, is_active,
-      equipment, cancellation_policy, extra_info
-    ]
-  );
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
 
-  res.status(201).json(r.rows[0]);
+    // Insert trip
+    const tripResult = await client.query(
+      `
+      INSERT INTO trips (
+        route_id, company_id, transport_type_id,
+        departure_station_id, arrival_station_id,
+        departure_time, arrival_time, duration_minutes,
+        seats_total, seats_available,
+        status, is_active,
+        bus_number, driver_name,
+        equipment, cancellation_policy, extra_info
+      )
+      VALUES (
+        $1,$2,$3,
+        $4,$5,
+        $6::timestamp,$7::timestamp,$8,
+        $9,$9,
+        $10,$11,
+        $12,$13,$14,
+        $15,$16,$17
+      )
+      RETURNING *
+      `,
+      [
+        route_id, company_id, transport_type_id,
+        departure_station_id, arrival_station_id,
+        departure_time, arrival_time, duration_minutes,
+        seats_total,
+        status, is_active,
+        bus_number, driver_name,
+        equipment, cancellation_policy, extra_info
+      ]
+    );
+
+    const trip = tripResult.rows[0];
+
+    // Create trip_fare if price is provided
+    if (price !== null && price !== undefined && price !== '') {
+      // Get STANDARD fare_category_id and DEFAULT booking_option_id
+      const fareCategoryResult = await client.query(
+        `SELECT id FROM fare_categories WHERE code = 'STANDARD' LIMIT 1`
+      );
+      const bookingOptionResult = await client.query(
+        `SELECT id FROM booking_options WHERE code = 'DEFAULT' AND transport_type_id = $1 LIMIT 1`,
+        [transport_type_id]
+      );
+
+      if (fareCategoryResult.rows.length > 0 && bookingOptionResult.rows.length > 0) {
+        const fareCategoryId = fareCategoryResult.rows[0].id;
+        const bookingOptionId = bookingOptionResult.rows[0].id;
+
+        await client.query(
+          `
+          INSERT INTO trip_fares (
+            trip_id, fare_category_id, booking_option_id,
+            price, currency, seats_available
+          )
+          VALUES ($1, $2, $3, $4, $5, $6)
+          `,
+          [
+            trip.id,
+            fareCategoryId,
+            bookingOptionId,
+            parseFloat(price),
+            currency,
+            seats_total
+          ]
+        );
+      }
+    }
+
+    await client.query("COMMIT");
+    res.status(201).json(trip);
+  } catch (error: any) {
+    await client.query("ROLLBACK");
+    console.error("Error creating trip:", error);
+    res.status(500).json({ message: "Error creating trip", error: String(error) });
+  } finally {
+    client.release();
+  }
 });
 
 // PATCH /api/admin/trips/:id
 router.patch("/:id", async (req, res) => {
   const id = Number(req.params.id);
+  const { price, currency } = req.body;
 
   // تحديثات بسيطة شائعة
   const allowed = [
@@ -105,6 +165,8 @@ router.patch("/:id", async (req, res) => {
     "seats_available",
     "status",
     "is_active",
+    "bus_number",
+    "driver_name",
     "equipment",
     "cancellation_policy",
     "extra_info",
@@ -121,15 +183,76 @@ router.patch("/:id", async (req, res) => {
     }
   }
 
-  if (updates.length === 0) {
-    return res.status(400).json({ message: "No valid fields to update" });
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    // Update trip if there are updates
+    if (updates.length > 0) {
+      values.push(id);
+      const q = `UPDATE trips SET ${updates.join(", ")} WHERE id = $${idx} RETURNING *`;
+      await client.query(q, values);
+    }
+
+    // Update or create trip_fare if price is provided
+    if (price !== null && price !== undefined && price !== '') {
+      // Get trip to find transport_type_id
+      const tripResult = await client.query(`SELECT transport_type_id FROM trips WHERE id = $1`, [id]);
+      if (tripResult.rows.length > 0) {
+        const transportTypeId = tripResult.rows[0].transport_type_id;
+
+        // Get STANDARD fare_category_id and DEFAULT booking_option_id
+        const fareCategoryResult = await client.query(
+          `SELECT id FROM fare_categories WHERE code = 'STANDARD' LIMIT 1`
+        );
+        const bookingOptionResult = await client.query(
+          `SELECT id FROM booking_options WHERE code = 'DEFAULT' AND transport_type_id = $1 LIMIT 1`,
+          [transportTypeId]
+        );
+
+        if (fareCategoryResult.rows.length > 0 && bookingOptionResult.rows.length > 0) {
+          const fareCategoryId = fareCategoryResult.rows[0].id;
+          const bookingOptionId = bookingOptionResult.rows[0].id;
+
+          // Check if fare exists
+          const existingFare = await client.query(
+            `SELECT id FROM trip_fares WHERE trip_id = $1 AND fare_category_id = $2 AND booking_option_id = $3`,
+            [id, fareCategoryId, bookingOptionId]
+          );
+
+          if (existingFare.rows.length > 0) {
+            // Update existing fare
+            await client.query(
+              `UPDATE trip_fares SET price = $1, currency = $2 WHERE id = $3`,
+              [parseFloat(price), currency || 'SYP', existingFare.rows[0].id]
+            );
+          } else {
+            // Create new fare
+            const seatsResult = await client.query(`SELECT seats_total FROM trips WHERE id = $1`, [id]);
+            const seatsTotal = seatsResult.rows[0]?.seats_total || 0;
+            
+            await client.query(
+              `INSERT INTO trip_fares (trip_id, fare_category_id, booking_option_id, price, currency, seats_available)
+               VALUES ($1, $2, $3, $4, $5, $6)`,
+              [id, fareCategoryId, bookingOptionId, parseFloat(price), currency || 'SYP', seatsTotal]
+            );
+          }
+        }
+      }
+    }
+
+    await client.query("COMMIT");
+
+    // Get updated trip
+    const tripResult = await client.query(`SELECT * FROM trips WHERE id = $1`, [id]);
+    res.json(tripResult.rows[0]);
+  } catch (error: any) {
+    await client.query("ROLLBACK");
+    console.error("Error updating trip:", error);
+    res.status(500).json({ message: "Error updating trip", error: String(error) });
+  } finally {
+    client.release();
   }
-
-  values.push(id);
-  const q = `UPDATE trips SET ${updates.join(", ")} WHERE id = $${idx} RETURNING *`;
-  const r = await pool.query(q, values);
-
-  res.json(r.rows[0]);
 });
 
 // DELETE /api/admin/trips/:id (Hard Delete - permanently deletes trip)
