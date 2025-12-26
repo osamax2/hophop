@@ -783,6 +783,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     setFilterCompany('');
   };
 
+  // Clear user filters
+  const clearUserFilters = () => {
+    setFilterRole('');
+    setFilterName('');
+  };
+
   // Filter users by role and name
   const getFilteredUsers = () => {
     let filtered = [...users];
@@ -871,11 +877,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const clearUserFilters = () => {
-    setFilterRole('');
-    setFilterName('');
   };
 
   const loadUsers = async () => {
@@ -2712,6 +2713,53 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               }
             </button>
           </div>
+
+          {/* Filters Section */}
+          <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Name/Email Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'البحث بالاسم أو البريد الإلكتروني' : language === 'de' ? 'Suche nach Name oder E-Mail' : 'Search by Name or Email'}
+                </label>
+                <input
+                  type="text"
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  placeholder={language === 'ar' ? 'ابحث...' : language === 'de' ? 'Suchen...' : 'Search...'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* Role Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'فلتر حسب الدور' : language === 'de' ? 'Nach Rolle filtern' : 'Filter by Role'}
+                </label>
+                <select
+                  value={filterRole}
+                  onChange={(e) => setFilterRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                >
+                  <option value="">{language === 'ar' ? 'جميع الأدوار' : language === 'de' ? 'Alle Rollen' : 'All Roles'}</option>
+                  <option value="Administrator">{language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Administrator'}</option>
+                  <option value="Agent">{language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent'}</option>
+                  <option value="User">{language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User'}</option>
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              <div className="flex items-end">
+                <button
+                  onClick={clearUserFilters}
+                  className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                >
+                  {language === 'ar' ? 'مسح الفلاتر' : language === 'de' ? 'Filter löschen' : 'Clear Filters'}
+                </button>
+              </div>
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 animate-spin text-green-600" />
@@ -2728,12 +2776,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {users.length === 0 ? (
+                  {getFilteredUsers().length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-8 text-center text-gray-600">No users found</td>
                     </tr>
                   ) : (
-                    users.map((userItem: any) => {
+                    getFilteredUsers().map((userItem: any) => {
                       const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim() || userItem.email;
                       const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
                       const isAdmin = roles.includes('Administrator') || roles.includes('ADMIN');
