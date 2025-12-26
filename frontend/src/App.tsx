@@ -134,7 +134,12 @@ export default function App() {
 
   const handleLogin = (userData: User) => {
     setUser(userData);
-    setCurrentPage('home');
+    // Redirect admin users to admin dashboard, others to home
+    if (userData.role === 'admin') {
+      setCurrentPage('admin');
+    } else {
+      setCurrentPage('home');
+    }
   };
 
   const handleLogout = () => {

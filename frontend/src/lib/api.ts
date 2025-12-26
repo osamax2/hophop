@@ -213,6 +213,14 @@ export const ratingsApi = {
 
 // Images APIs
 export const imagesApi = {
+  getAll: async () => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`${API_BASE}/api/admin/images/all`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    return handleResponse(response);
+  },
+
   getByEntity: async (entityType: string, entityId: number) => {
     const response = await fetch(`${API_BASE}/api/images?entity_type=${entityType}&entity_id=${entityId}`);
     return handleResponse(response);

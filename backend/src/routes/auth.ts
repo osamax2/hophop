@@ -204,6 +204,7 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
     // Determine primary role (admin > driver > user)
     let role = "user";
     const roleNames = user.roles.map((r: any) => r.name?.toLowerCase()).filter(Boolean);
+    
     if (roleNames.includes("admin") || roleNames.includes("administrator")) {
       role = "admin";
     } else if (roleNames.includes("driver")) {

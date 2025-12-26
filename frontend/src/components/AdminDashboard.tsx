@@ -3,6 +3,7 @@ import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clo
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
+import { ScheduleManagement } from './ScheduleManagement';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -135,6 +136,24 @@ const translations = {
     clearFilters: 'Filter löschen',
     exportToCSV: 'Als CSV exportieren',
     noTripsMatch: 'Keine Reisen entsprechen den Filtern',
+    showTrash: 'Papierkorb anzeigen',
+    hideTrash: 'Papierkorb ausblenden',
+    restore: 'Wiederherstellen',
+    permanentDelete: 'Dauerhaft löschen',
+    inTrash: 'Im Papierkorb',
+    viewStops: 'Stopps anzeigen',
+    manageStops: 'Stopps verwalten',
+    addStop: 'Stopp hinzufügen',
+    stopOrder: 'Reihenfolge',
+    stationName: 'Haltestelle',
+    arrivalTime: 'Ankunftszeit',
+    departureTime: 'Abfahrtszeit',
+    noStops: 'Keine Zwischenstopps',
+    type: 'Typ',
+    status: 'Status',
+    scheduled: 'Geplant',
+    completed: 'Abgeschlossen',
+    cancelled: 'Storniert',
   },
   en: {
     adminDashboard: 'Admin Dashboard',
@@ -215,6 +234,24 @@ const translations = {
     clearFilters: 'Clear Filters',
     exportToCSV: 'Export to CSV',
     noTripsMatch: 'No trips match the filters',
+    showTrash: 'Show Trash',
+    hideTrash: 'Hide Trash',
+    restore: 'Restore',
+    permanentDelete: 'Delete Permanently',
+    inTrash: 'In Trash',
+    viewStops: 'View Stops',
+    manageStops: 'Manage Stops',
+    addStop: 'Add Stop',
+    stopOrder: 'Order',
+    stationName: 'Station',
+    arrivalTime: 'Arrival Time',
+    departureTime: 'Departure Time',
+    noStops: 'No intermediate stops',
+    type: 'Type',
+    status: 'Status',
+    scheduled: 'Scheduled',
+    completed: 'Completed',
+    cancelled: 'Cancelled',
   },
   ar: {
     adminDashboard: 'لوحة الإدارة',
@@ -277,6 +314,24 @@ const translations = {
     duration: 'المدة المتوقعة',
     arrival: 'الوصول',
     arrivalTimeAfterDeparture: 'يجب أن يكون وقت الوصول بعد وقت المغادرة',
+    showTrash: 'عرض سلة المهملات',
+    hideTrash: 'إخفاء سلة المهملات',
+    restore: 'استعادة',
+    permanentDelete: 'حذف نهائي',
+    inTrash: 'في سلة المهملات',
+    viewStops: 'عرض المحطات',
+    manageStops: 'إدارة المحطات',
+    addStop: 'إضافة محطة',
+    stopOrder: 'الترتيب',
+    stationName: 'المحطة',
+    arrivalTime: 'وقت الوصول',
+    departureTime: 'وقت المغادرة',
+    noStops: 'لا توجد محطات متوسطة',
+    type: 'النوع',
+    status: 'الحالة',
+    scheduled: 'مجدولة',
+    completed: 'مكتملة',
+    cancelled: 'ملغاة',
     deletePermanently: 'حذف هذه الرحلة المعطلة نهائياً؟',
     deletePermanentlyConfirm: 'هل أنت متأكد من حذف هذه الرحلة المعطلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
     welcomeMessage: 'أهلاً',
@@ -311,6 +366,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // Schedules data
   const [trips, setTrips] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
+  const [showTrash, setShowTrash] = useState(false);
+  const [showStepsDialog, setShowStepsDialog] = useState(false);
+  const [selectedTripForSteps, setSelectedTripForSteps] = useState<any>(null);
+  const [tripSteps, setTripSteps] = useState<any[]>([]);
   
   // Users data
   const [users, setUsers] = useState<any[]>([]);
@@ -331,6 +390,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [showAddTripDialog, setShowAddTripDialog] = useState(false);
   const [editingTripId, setEditingTripId] = useState<number | null>(null);
   const [showAddRouteDialog, setShowAddRouteDialog] = useState(false);
+  const [scheduleRefreshTrigger, setScheduleRefreshTrigger] = useState(0);
+  
+  // Photo Upload Dialog
+  const [showPhotoUploadDialog, setShowPhotoUploadDialog] = useState(false);
+  
+  // CSV Import Dialog
+  const [showCSVImportDialog, setShowCSVImportDialog] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
   const [transportTypes, setTransportTypes] = useState<any[]>([]);
   const [stations, setStations] = useState<any[]>([]);
@@ -359,6 +425,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [photoType, setPhotoType] = useState<'bus' | 'station'>('bus');
   const [entityId, setEntityId] = useState<string>('');
+  const [images, setImages] = useState<any[]>([]);
+  const [editingImage, setEditingImage] = useState<any>(null);
   
   // CSV import
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -392,6 +460,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     if (activeTab === 'schedules') {
       loadSchedules();
       loadTripFormData();
+    }
+  }, [activeTab, showTrash]);
+
+  // Load images when photos tab is active
+  useEffect(() => {
+    if (activeTab === 'photos') {
+      loadImages();
     }
   }, [activeTab]);
 
@@ -543,18 +618,26 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const loadSchedules = async (showAll: boolean = false) => {
     try {
       setLoading(true);
-      // Load all trips including inactive ones for admin management
-      const [tripsData, routesData] = await Promise.all([
-        adminApi.getTrips(showAll),
-        adminApi.getRoutes(),
-      ]);
+      // Load trips based on showTrash state
+      const url = showTrash 
+        ? `/api/admin/trips?showTrash=true`
+        : `/api/admin/trips?showAll=${showAll}`;
       
-      console.log('Loaded trips from server:', tripsData.length);
-      console.log('Trip IDs:', tripsData.map((t: any) => ({ id: t.id, is_active: t.is_active })));
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
       
-      // Type assertion for tripsData
-      const typedTripsData = tripsData as any[];
-      setTrips(typedTripsData);
+      const response = await fetch(`${API_BASE}${url}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      
+      if (!response.ok) throw new Error('Failed to load trips');
+      const tripsData = await response.json();
+      
+      const routesData = await adminApi.getRoutes();
+      
+      console.log('Loaded trips from server:', tripsData.length, 'showTrash:', showTrash);
+      
+      setTrips(tripsData);
       setRoutes(routesData);
     } catch (err: any) {
       console.error('Error loading schedules:', err);
@@ -1070,15 +1153,71 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
 
     try {
+      setLoading(true);
       setUploadStatus('idle');
       await adminApi.uploadImage(selectedFile, photoType, parseInt(entityId));
       setUploadStatus('success');
       setSelectedFile(null);
       setEntityId('');
-      setTimeout(() => setUploadStatus('idle'), 3000);
+      
+      // Reload images to show the new upload
+      await loadImages();
+      
+      // Close dialog after successful upload
+      setTimeout(() => {
+        setUploadStatus('idle');
+        setShowPhotoUploadDialog(false);
+      }, 2000);
     } catch (err: any) {
       setUploadStatus('error');
       alert(err.message || 'Failed to upload image');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadImages = async () => {
+    try {
+      setLoading(true);
+      const imagesData = await imagesApi.getAll();
+      setImages(Array.isArray(imagesData) ? imagesData : []);
+    } catch (err: any) {
+      console.error('Error loading images:', err);
+      setImages([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditImage = (image: any) => {
+    setEditingImage(image);
+    setPhotoType(image.entity_type as 'bus' | 'station');
+    setEntityId(String(image.entity_id));
+    setSelectedFile(null);
+    setShowPhotoUploadDialog(true);
+  };
+
+  const handleDeleteImage = async (imageId: number) => {
+    const confirmMsg = language === 'ar' 
+      ? 'هل أنت متأكد من حذف هذه الصورة؟' 
+      : language === 'de' 
+      ? 'Sind Sie sicher, dass Sie dieses Bild löschen möchten?' 
+      : 'Are you sure you want to delete this image?';
+    
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminApi.deleteImage(imageId);
+      await loadImages();
+      alert(language === 'ar' ? 'تم حذف الصورة' : language === 'de' ? 'Bild gelöscht' : 'Image deleted');
+    } catch (err: any) {
+      console.error('Error deleting image:', err);
+      alert(err.message || 'Failed to delete image');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1121,6 +1260,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setLoading(true);
       console.log('Loading trip details for ID:', tripId);
       
+      // Load trip form data first if not already loaded
+      if (cities.length === 0 || companies.length === 0 || transportTypes.length === 0 || stations.length === 0) {
+        console.log('Loading trip form data first...');
+        await loadTripFormData();
+      }
+      
       // Load trip details
       const trip = await tripsApi.getById(tripId);
       
@@ -1130,8 +1275,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         throw new Error('Trip data is empty');
       }
       
-      // Find route to get city names
-      const route = routes.find((r: any) => r.id === trip.route_id);
+      // The backend already returns from_city and to_city from the JOIN
+      const fromCity = trip.from_city || '';
+      const toCity = trip.to_city || '';
+      
+      console.log('Cities from trip:', { fromCity, toCity });
       
       // Convert trip data to form format
       // Get trip price from trip_fares if available
@@ -1151,8 +1299,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       }
 
       setNewTrip({
-        from_city: route?.from_city || trip.from_city || '',
-        to_city: route?.to_city || trip.to_city || '',
+        from_city: fromCity,
+        to_city: toCity,
         route_id: String(trip.route_id || ''),
         company_id: String(trip.company_id || ''),
         transport_type_id: String(trip.transport_type_id || ''),
@@ -1171,6 +1319,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         extra_info: trip.extra_info || '',
       });
       
+      console.log('Setting editingTripId and opening dialog...');
       setEditingTripId(tripId);
       setShowAddTripDialog(true);
     } catch (err: any) {
@@ -1216,11 +1365,21 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       // Find or create route based on selected cities
       let routeId = newTrip.route_id;
       
-      // If cities are selected but route_id is not set, find or create the route
-      if (!routeId && newTrip.from_city && newTrip.to_city) {
+      console.log('handleSaveTrip - Starting save process');
+      console.log('handleSaveTrip - newTrip:', newTrip);
+      console.log('handleSaveTrip - cities array length:', cities.length);
+      console.log('handleSaveTrip - routes array length:', routes.length);
+      
+      // ALWAYS find or create the route based on selected cities
+      // This ensures that when cities are changed, the route_id is updated
+      if (newTrip.from_city && newTrip.to_city) {
+        console.log('handleSaveTrip - Looking for route:', newTrip.from_city, '->', newTrip.to_city);
         // Find existing route
         const fromCity = cities.find((c: any) => c.name === newTrip.from_city);
         const toCity = cities.find((c: any) => c.name === newTrip.to_city);
+        
+        console.log('handleSaveTrip - fromCity found:', fromCity);
+        console.log('handleSaveTrip - toCity found:', toCity);
         
         if (!fromCity || !toCity) {
           alert(language === 'ar' 
@@ -1298,13 +1457,37 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         extra_info: newTrip.extra_info || null,
       };
 
+      console.log('handleSaveTrip - tripData prepared:', tripData);
+      console.log('handleSaveTrip - editingTripId:', editingTripId);
+
       if (editingTripId) {
         // Update existing trip
-        await adminApi.updateTrip(editingTripId, tripData);
+        console.log('handleSaveTrip - Calling adminApi.updateTrip with ID:', editingTripId);
+        const updatedTrip = await adminApi.updateTrip(editingTripId, tripData);
+        console.log('handleSaveTrip - updateTrip response:', updatedTrip);
+        
+        // The backend returns the complete trip with JOIN data (from_city, to_city, company_name)
+        // Replace the entire trip object to ensure all fields are updated
+        setTrips(prevTrips => 
+          prevTrips.map(trip => 
+            trip.id === editingTripId ? updatedTrip : trip
+          )
+        );
+        
+        // Trigger ScheduleManagement to refresh its data
+        setScheduleRefreshTrigger(prev => prev + 1);
+        
         alert(language === 'ar' ? 'تم تحديث الرحلة بنجاح' : language === 'de' ? 'Fahrt erfolgreich aktualisiert' : 'Trip updated successfully!');
       } else {
         // Create new trip
-        await adminApi.createTrip(tripData);
+        const newCreatedTrip = await adminApi.createTrip(tripData);
+        
+        // Add the new trip to the local state instead of reloading all trips
+        setTrips(prevTrips => [...prevTrips, newCreatedTrip]);
+        
+        // Trigger ScheduleManagement to refresh its data
+        setScheduleRefreshTrigger(prev => prev + 1);
+        
         alert(t.tripAdded || 'Trip added successfully!');
       }
       
@@ -1330,7 +1513,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         cancellation_policy: '',
         extra_info: '',
       });
-      loadSchedules(); // Refresh trips list
     } catch (err: any) {
       console.error('Error saving trip:', err);
       
@@ -1379,65 +1561,150 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     setShowAddTripDialog(true);
   };
 
-  const handleDeleteTrip = async (tripId: number) => {
-    // Show confirmation message for permanent deletion
-    const confirmMessage = language === 'ar'
-      ? 'هل أنت متأكد من حذف هذه الرحلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'
-      : language === 'de'
-      ? 'Sind Sie sicher, dass Sie diese Fahrt dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
-      : 'Are you sure you want to permanently delete this trip? This action cannot be undone.';
+  const handleDeleteTrip = async (tripId: number, permanent: boolean = false) => {
+    const trip = trips.find((t: any) => t.id === tripId);
+    const isInTrash = trip?.deleted_at !== null;
     
-    if (!confirm(confirmMessage)) {
-      return;
+    // If in trash or permanent flag set, do hard delete
+    if (isInTrash || permanent) {
+      const confirmMessage = language === 'ar'
+        ? 'هل أنت متأكد من حذف هذه الرحلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'
+        : language === 'de'
+        ? 'Sind Sie sicher, dass Sie diese Fahrt dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+        : 'Are you sure you want to permanently delete this trip? This action cannot be undone.';
+      
+      if (!confirm(confirmMessage)) return;
     }
 
     try {
       setLoading(true);
-      const result: any = await adminApi.deleteTrip(tripId);
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
       
-      console.log('Delete successful, removing trip from list...');
+      const url = isInTrash || permanent 
+        ? `${API_BASE}/api/admin/trips/${tripId}?permanent=true`
+        : `${API_BASE}/api/admin/trips/${tripId}`;
       
-      // Remove from local state immediately
-      setTrips(prevTrips => {
-        const filtered = prevTrips.filter((t: any) => t.id !== tripId);
-        console.log(`Removed trip ${tripId} from local state. Remaining trips:`, filtered.length);
-        return filtered;
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       
-      alert(language === 'ar' 
-        ? 'تم حذف الرحلة نهائياً' 
-        : language === 'de' 
-        ? 'Fahrt dauerhaft gelöscht' 
-        : 'Trip permanently deleted');
+      if (!response.ok) throw new Error('Failed to delete trip');
       
-      // Refresh the list from server to ensure consistency
-      console.log('Refreshing trips list from server...');
-      await loadSchedules(false); // Only load active trips
-      console.log('Trips list refreshed');
+      setTrips(prevTrips => prevTrips.filter((t: any) => t.id !== tripId));
+      
+      alert(isInTrash || permanent
+        ? (language === 'ar' ? 'تم حذف الرحلة نهائياً' : language === 'de' ? 'Fahrt dauerhaft gelöscht' : 'Trip permanently deleted')
+        : (language === 'ar' ? 'تم نقل الرحلة إلى سلة المهملات' : language === 'de' ? 'Fahrt in Papierkorb verschoben' : 'Trip moved to trash')
+      );
+      
+      await loadSchedules(false);
     } catch (err: any) {
       console.error('Error deleting trip:', err);
-      console.error('Error status:', err.status);
-      console.error('Error message:', err.message);
-      console.error('Error details:', err.details);
-      
-      // Handle 401 Unauthorized - token expired or missing
-      if (err.status === 401) {
-        const authErrorMsg = language === 'ar' 
-          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
-          : language === 'de' 
-          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
-          : 'Session expired. Please log in again.';
-        alert(authErrorMsg);
-        // Redirect to login or reload page
-        window.location.href = '/';
-        return;
-      }
-      
-      const errorMessage = err.message || (language === 'ar' ? 'فشل حذف الرحلة' : language === 'de' ? 'Fehler beim Löschen der Fahrt' : 'Failed to delete trip');
-      const details = err.details ? `\n\nDetails: ${JSON.stringify(err.details)}` : '';
-      alert(`${errorMessage}${details}`);
+      alert(err.message || (language === 'ar' ? 'فشل حذف الرحلة' : language === 'de' ? 'Fehler beim Löschen' : 'Failed to delete trip'));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRestoreTrip = async (tripId: number) => {
+    try {
+      setLoading(true);
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_BASE}/api/admin/trips/${tripId}/restore`, {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      
+      if (!response.ok) throw new Error('Failed to restore trip');
+      
+      alert(language === 'ar' ? 'تم استعادة الرحلة' : language === 'de' ? 'Fahrt wiederhergestellt' : 'Trip restored');
+      await loadSchedules(false);
+    } catch (err: any) {
+      console.error('Error restoring trip:', err);
+      alert(err.message || 'Failed to restore trip');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewSteps = async (trip: any) => {
+    try {
+      setSelectedTripForSteps(trip);
+      setShowStepsDialog(true);
+      setLoading(true);
+      
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_BASE}/api/admin/trips/${trip.id}/steps`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      
+      if (!response.ok) throw new Error('Failed to load stops');
+      const steps = await response.json();
+      setTripSteps(steps);
+    } catch (err: any) {
+      console.error('Error loading stops:', err);
+      alert('Failed to load stops');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddStop = async (stationId: number, stopOrder: number, arrivalTime?: string, departureTime?: string) => {
+    if (!selectedTripForSteps) return;
+    
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_BASE}/api/admin/trips/${selectedTripForSteps.id}/steps`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          station_id: stationId,
+          stop_order: stopOrder,
+          arrival_time: arrivalTime || null,
+          departure_time: departureTime || null,
+        }),
+      });
+      
+      if (!response.ok) throw new Error('Failed to add stop');
+      
+      await handleViewSteps(selectedTripForSteps);
+      alert(language === 'ar' ? 'تم إضافة المحطة' : language === 'de' ? 'Haltestelle hinzugefügt' : 'Stop added');
+    } catch (err: any) {
+      console.error('Error adding stop:', err);
+      alert('Failed to add stop');
+    }
+  };
+
+  const handleRemoveStop = async (stopId: number) => {
+    if (!selectedTripForSteps) return;
+    
+    try {
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_BASE}/api/admin/trips/${selectedTripForSteps.id}/steps/${stopId}`, {
+        method: 'DELETE',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      
+      if (!response.ok) throw new Error('Failed to remove stop');
+      
+      await handleViewSteps(selectedTripForSteps);
+      alert(language === 'ar' ? 'تم حذف المحطة' : language === 'de' ? 'Haltestelle entfernt' : 'Stop removed');
+    } catch (err: any) {
+      console.error('Error removing stop:', err);
+      alert('Failed to remove stop');
     }
   };
 
@@ -1948,92 +2215,28 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       )}
 
       {activeTab === 'schedules' && (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-xl text-gray-900">{t.scheduleManagement}</h2>
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setShowAddTripDialog(true)}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  {t.addSchedule}
-                </button>
-              </div>
-            </div>
-          {loading ? (
-            <div className="flex items-center justify-center h-64">
-              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full" style={{ borderCollapse: 'collapse' }}>
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.actions}</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {trips.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
-                        {language === 'ar' 
-                          ? 'لا توجد رحلات. يرجى إضافة رحلة جديدة أو التحقق من قاعدة البيانات.'
-                          : language === 'de'
-                          ? 'Es gibt keinen Zeitplan. Bitte überprüfen Sie alle Zeitpläne und passen Sie sie nach Bedarf an.'
-                          : 'No trips found. Please add a new trip or check the database.'}
-                      </td>
-                    </tr>
-                  ) : (
-                    trips.slice(0, 20).map((trip: any) => (
-                      <tr key={trip.id} className={`hover:bg-gray-50 ${trip.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
-                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
-                          {trip.from_city || 'N/A'}
-                          {trip.is_active === false && (
-                            <span className="ml-2 text-xs text-gray-500">
-                              ({language === 'ar' ? 'معطل' : language === 'de' ? 'Deaktiviert' : 'Inactive'})
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{trip.to_city || 'N/A'}</td>
-                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>
-                          {trip.departure_time ? new Date(trip.departure_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
-                        </td>
-                        <td className="px-6 py-3 text-sm" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleEditTrip(trip.id)}
-                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={loading}
-                            >
-                              {t.edit}
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteTrip(trip.id)}
-                              className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={loading}
-                            >
-                              {t.delete}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-          </div>
+        <>
+          <ScheduleManagement 
+            language={language}
+            onEditTrip={handleEditTrip}
+            onAddTrip={() => setShowAddTripDialog(true)}
+            refreshTrigger={scheduleRefreshTrigger}
+          />
 
           {/* Add Trip Dialog - Popup Window */}
           {showAddTripDialog && (
             <div 
-              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
+              className="fixed inset-0 flex items-center justify-center p-4"
+              style={{ 
+                zIndex: 99999,
+                backgroundColor: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(4px)',
+                position: 'fixed',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+              }}
               onClick={(e) => {
                 // Close dialog when clicking on backdrop
                 if (e.target === e.currentTarget) {
@@ -2043,7 +2246,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               }}
             >
               <div 
-                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
+                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] flex flex-col"
+                style={{ 
+                  position: 'relative',
+                  zIndex: 100000,
+                  overflow: 'hidden',
+                }}
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header - Sticky */}
@@ -2071,7 +2279,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 </div>
 
                 {/* Content - Scrollable */}
-                <div className="overflow-y-auto flex-1 p-6">
+                <div 
+                  className="flex-1 p-6"
+                  style={{
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    maxHeight: 'calc(95vh - 100px)',
+                  }}
+                >
                   <div className="space-y-4">
                   {/* From City */}
                   <div>
@@ -2540,7 +2755,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               </div>
             </div>
           )}
-        </div>
+        </>
       )}
 
       {activeTab === 'users' && user?.role === 'admin' && (
@@ -2640,6 +2855,260 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       )}
 
       {activeTab === 'photos' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {language === 'ar' ? 'إدارة الصور' : language === 'de' ? 'Fotoverwaltung' : 'Photo Management'}
+            </h3>
+            <button
+              onClick={() => {
+                setEditingImage(null);
+                setPhotoType('bus');
+                setEntityId('');
+                setSelectedFile(null);
+                setShowPhotoUploadDialog(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Upload className="w-5 h-5" />
+              {language === 'ar' ? 'تحميل صورة' : language === 'de' ? 'Foto hochladen' : 'Upload Photo'}
+            </button>
+          </div>
+          
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
+                      {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px' }}>
+                      {language === 'ar' ? 'اسم الملف' : language === 'de' ? 'Dateiname' : 'File Name'}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '120px' }}>
+                      {language === 'ar' ? 'نوع الصورة' : language === 'de' ? 'Foto-Typ' : 'Photo Type'}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '100px' }}>
+                      {language === 'ar' ? 'معرف الكيان' : language === 'de' ? 'Entitäts-ID' : 'Entity ID'}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '180px' }}>
+                      {language === 'ar' ? 'تم الرفع بواسطة' : language === 'de' ? 'Hochgeladen von' : 'Uploaded By'}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px' }}>
+                      {language === 'ar' ? 'التاريخ' : language === 'de' ? 'Datum' : 'Date'}
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px' }}>
+                      {t.actions}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {images.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                        <Image className="w-12 h-12 mx-auto mb-2 text-gray-400" />
+                        <p>{language === 'ar' ? 'لا توجد صور' : language === 'de' ? 'Keine Fotos vorhanden' : 'No photos uploaded'}</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    images.map((image: any) => (
+                      <tr key={image.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-3 text-sm text-gray-900">
+                          <img 
+                            src={image.image_url} 
+                            alt={image.file_name}
+                            className="w-16 h-16 object-cover rounded border border-gray-200"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"%3E%3Crect fill="%23eee" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="monospace" font-size="14" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
+                            }}
+                          />
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-900">{image.file_name || 'N/A'}</td>
+                        <td className="px-6 py-3">
+                          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                            image.entity_type === 'bus' ? 'bg-blue-100 text-blue-700' : 
+                            image.entity_type === 'station' ? 'bg-green-100 text-green-700' : 
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {image.entity_type === 'bus' ? (language === 'ar' ? 'باص' : language === 'de' ? 'Bus' : 'Bus') : 
+                             image.entity_type === 'station' ? (language === 'ar' ? 'محطة' : language === 'de' ? 'Station' : 'Station') : 
+                             image.entity_type}
+                          </span>
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-900">{image.entity_id}</td>
+                        <td className="px-6 py-3 text-sm text-gray-900">{image.uploaded_by_name || image.uploaded_by_email || 'N/A'}</td>
+                        <td className="px-6 py-3 text-sm text-gray-900">
+                          {image.created_at ? new Date(image.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : language === 'de' ? 'de-DE' : 'en-US') : 'N/A'}
+                        </td>
+                        <td className="px-6 py-3 text-sm">
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleEditImage(image)}
+                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={loading}
+                            >
+                              {t.edit}
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteImage(image.id)}
+                              className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={loading}
+                            >
+                              {t.delete}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Photo Upload Dialog */}
+      {showPhotoUploadDialog && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPhotoUploadDialog(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+              <h2 className="text-2xl font-bold flex items-center gap-3">
+                <Upload className="w-6 h-6" />
+                {editingImage 
+                  ? (language === 'ar' ? 'تحديث الصورة' : language === 'de' ? 'Foto aktualisieren' : 'Update Photo')
+                  : t.uploadPhoto
+                }
+              </h2>
+              <button
+                onClick={() => {
+                  setShowPhotoUploadDialog(false);
+                  setEditingImage(null);
+                }}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto flex-1 p-6">
+              <div className="space-y-4">
+                {editingImage && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                    <p className="text-sm text-blue-700">
+                      {language === 'ar' ? 'تحديث صورة موجودة. تحديد ملف جديد سيستبدل الصورة الحالية.' : 
+                       language === 'de' ? 'Bestehendes Foto aktualisieren. Eine neue Datei auswählen ersetzt das aktuelle Foto.' : 
+                       'Updating existing photo. Select a new file to replace the current image.'}
+                    </p>
+                    <div className="mt-2">
+                      <img 
+                        src={editingImage.image_url} 
+                        alt={editingImage.file_name}
+                        className="w-32 h-32 object-cover rounded border border-blue-300"
+                      />
+                    </div>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.photoType}</label>
+                  <select
+                    value={photoType}
+                    onChange={(e) => setPhotoType(e.target.value as 'bus' | 'station')}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                    disabled={!!editingImage}
+                  >
+                    <option value="bus">{t.busPhoto}</option>
+                    <option value="station">{t.stationPhoto}</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'معرف الكيان (معرف الحافلة أو معرف المحطة)' : language === 'de' ? 'Entitäts-ID (Bus-ID oder Stations-ID)' : 'Entity ID (Bus ID or Station ID)'}
+                  </label>
+                  <input
+                    type="number"
+                    value={entityId}
+                    onChange={(e) => setEntityId(e.target.value)}
+                    placeholder={language === 'ar' ? 'أدخل المعرف' : language === 'de' ? 'ID eingeben' : 'Enter ID'}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                    disabled={!!editingImage}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.selectFile}
+                    {editingImage && <span className="text-xs text-gray-500 ml-2">({language === 'ar' ? 'اختياري' : language === 'de' ? 'optional' : 'optional'})</span>}
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                  />
+                </div>
+                {uploadStatus === 'success' && (
+                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 text-sm">
+                    {t.uploadSuccess}
+                  </div>
+                )}
+                {uploadStatus === 'error' && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
+                    {language === 'ar' ? 'فشل التحميل. يرجى المحاولة مرة أخرى.' : language === 'de' ? 'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.' : 'Upload failed. Please try again.'}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-4 shadow-lg">
+              <button
+                onClick={() => {
+                  handleImageUpload();
+                }}
+                disabled={(!selectedFile && !editingImage) || !entityId || uploadStatus === 'success' || loading}
+                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                {editingImage 
+                  ? (language === 'ar' ? 'تحديث' : language === 'de' ? 'Aktualisieren' : 'Update')
+                  : t.uploadPhoto
+                }
+              </button>
+              <button
+                onClick={() => {
+                  setShowPhotoUploadDialog(false);
+                  setEditingImage(null);
+                  setUploadStatus('');
+                  setSelectedFile(null);
+                  setEntityId('');
+                }}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                {t.cancel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'photos_old_remove_this' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl text-gray-900 mb-6">{t.uploadPhoto}</h2>
           <div className="space-y-4">
@@ -2695,6 +3164,139 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       )}
 
       {activeTab === 'import' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl text-gray-900">{t.dataImport}</h2>
+            <button
+              onClick={() => setShowCSVImportDialog(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            >
+              <Upload className="w-5 h-5" />
+              {t.uploadCSV}
+            </button>
+          </div>
+          <div className="text-center py-12 text-gray-500">
+            <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
+            <p>{language === 'ar' ? 'انقر على "تحميل CSV" لاستيراد بيانات جديدة' : language === 'de' ? 'Klicken Sie auf "CSV hochladen", um neue Daten zu importieren' : 'Click "Upload CSV" to import new data'}</p>
+          </div>
+        </div>
+      )}
+
+      {/* CSV Import Dialog */}
+      {showCSVImportDialog && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowCSVImportDialog(false);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+              <h2 className="text-2xl font-bold flex items-center gap-3">
+                <Upload className="w-6 h-6" />
+                {t.dataImport}
+              </h2>
+              <button
+                onClick={() => setShowCSVImportDialog(false)}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="overflow-y-auto flex-1 p-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.uploadCSV}</label>
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
+                  />
+                </div>
+                {csvFile && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleCSVPreview}
+                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                    >
+                      <AlertCircle className="w-5 h-5" />
+                      {t.preview}
+                    </button>
+                    <button
+                      onClick={async () => {
+                        await handleCSVImport();
+                        setShowCSVImportDialog(false);
+                      }}
+                      disabled={loading}
+                      className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
+                      {t.import}
+                    </button>
+                  </div>
+                )}
+                {csvPreview && (
+                  <div className="mt-4 border border-gray-200 rounded-lg p-4">
+                    <h3 className="text-sm font-semibold text-gray-900 mb-2">
+                      {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'} ({csvPreview.totalRows} {language === 'ar' ? 'صفوف' : language === 'de' ? 'Zeilen' : 'rows'})
+                    </h3>
+                    <div className="overflow-x-auto max-h-96">
+                      <table className="w-full text-xs">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {csvPreview.headers?.map((h: string, i: number) => (
+                              <th key={i} className="px-2 py-1 text-left border border-gray-300">{h}</th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {csvPreview.rows?.slice(0, 10).map((row: any[], i: number) => (
+                            <tr key={i} className="hover:bg-gray-50">
+                              {row.map((cell: any, j: number) => (
+                                <td key={j} className="px-2 py-1 border border-gray-300">{cell}</td>
+                              ))}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      {csvPreview.totalRows > 10 && (
+                        <p className="text-xs text-gray-500 mt-2">
+                          {language === 'ar' ? `عرض 10 من ${csvPreview.totalRows} صفوف` : language === 'de' ? `10 von ${csvPreview.totalRows} Zeilen angezeigt` : `Showing 10 of ${csvPreview.totalRows} rows`}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-4 shadow-lg">
+              <button
+                onClick={() => {
+                  setShowCSVImportDialog(false);
+                  setCsvFile(null);
+                  setCsvPreview(null);
+                }}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                {t.cancel}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'import_old_remove_this' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl text-gray-900 mb-6">{t.dataImport}</h2>
           <div className="space-y-4">

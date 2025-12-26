@@ -5,11 +5,17 @@ const router = Router();
 
 // GET /api/admin/trips
 router.get("/", async (req, res) => {
-  // Optional query parameter to show all trips (including inactive) or only active
   const showAll = req.query.showAll === 'true';
-  const whereClause = showAll ? '' : 'WHERE t.is_active = true';
+  const showTrash = req.query.showTrash === 'true';
   
-  console.log(`Fetching trips, showAll: ${showAll}, whereClause: ${whereClause}`);
+  let whereClause = '';
+  if (showTrash) {
+    whereClause = 'WHERE t.deleted_at IS NOT NULL';
+  } else {
+    whereClause = showAll ? 'WHERE t.deleted_at IS NULL' : 'WHERE t.is_active = true AND t.deleted_at IS NULL';
+  }
+  
+  console.log(`Fetching trips, showAll: ${showAll}, showTrash: ${showTrash}, whereClause: ${whereClause}`);
   
   const r = await pool.query(
     `
@@ -17,12 +23,20 @@ router.get("/", async (req, res) => {
       t.*,
       c1.name as from_city,
       c2.name as to_city,
-      COALESCE(comp.name, 'Unknown') AS company_name
+      COALESCE(comp.name, 'Unknown') AS company_name,
+      tt.label as transport_type_name,
+      tt.code as transport_type_code,
+      COALESCE((
+        SELECT price FROM trip_fares tf 
+        WHERE tf.trip_id = t.id 
+        LIMIT 1
+      ), 0) as price
     FROM trips t
     JOIN routes r ON r.id = t.route_id
     JOIN cities c1 ON c1.id = r.from_city_id
     JOIN cities c2 ON c2.id = r.to_city_id
     LEFT JOIN transport_companies comp ON t.company_id = comp.id
+    LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
     ${whereClause}
     ORDER BY t.id DESC
     LIMIT 200
@@ -31,6 +45,92 @@ router.get("/", async (req, res) => {
   
   console.log(`Returning ${r.rows.length} trips`);
   res.json(r.rows);
+});
+
+// GET /api/admin/trips/:id/steps - Get route stops for a trip
+router.get("/:id/steps", async (req, res) => {
+  try {
+    const tripId = Number(req.params.id);
+    
+    const trip = await pool.query('SELECT route_id FROM trips WHERE id = $1', [tripId]);
+    if (trip.rows.length === 0) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+    
+    const routeId = trip.rows[0].route_id;
+    
+    const result = await pool.query(
+      `
+      SELECT 
+        rs.id,
+        rs.route_id,
+        rs.station_id,
+        rs.stop_order,
+        rs.arrival_time,
+        rs.departure_time,
+        s.name as station_name,
+        c.name as city_name
+      FROM route_stops rs
+      JOIN stations s ON rs.station_id = s.id
+      LEFT JOIN cities c ON s.city_id = c.id
+      WHERE rs.route_id = $1
+      ORDER BY rs.stop_order
+      `,
+      [routeId]
+    );
+    
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error('Error fetching trip steps:', error);
+    res.status(500).json({ message: 'Error fetching trip steps', error: String(error) });
+  }
+});
+
+// POST /api/admin/trips/:id/steps - Add a route stop
+router.post("/:id/steps", async (req, res) => {
+  try {
+    const tripId = Number(req.params.id);
+    const { station_id, stop_order, arrival_time, departure_time } = req.body;
+    
+    if (!station_id || !stop_order) {
+      return res.status(400).json({ message: 'station_id and stop_order are required' });
+    }
+    
+    const trip = await pool.query('SELECT route_id FROM trips WHERE id = $1', [tripId]);
+    if (trip.rows.length === 0) {
+      return res.status(404).json({ message: 'Trip not found' });
+    }
+    
+    const routeId = trip.rows[0].route_id;
+    
+    const result = await pool.query(
+      `
+      INSERT INTO route_stops (route_id, station_id, stop_order, arrival_time, departure_time)
+      VALUES ($1, $2, $3, $4, $5)
+      RETURNING id
+      `,
+      [routeId, station_id, stop_order, arrival_time || null, departure_time || null]
+    );
+    
+    res.status(201).json({ id: result.rows[0].id, message: 'Stop added successfully' });
+  } catch (error: any) {
+    console.error('Error adding trip step:', error);
+    res.status(500).json({ message: 'Error adding trip step', error: String(error) });
+  }
+});
+
+// DELETE /api/admin/trips/:id/steps/:stepId - Remove a route stop
+router.delete("/:id/steps/:stepId", async (req, res) => {
+  try {
+    const stepId = Number(req.params.stepId);
+    
+    await pool.query('DELETE FROM route_stops WHERE id = $1', [stepId]);
+    
+    res.json({ message: 'Stop removed successfully' });
+  } catch (error: any) {
+    console.error('Error removing trip step:', error);
+    res.status(500).json({ message: 'Error removing trip step', error: String(error) });
+  }
 });
 
 // POST /api/admin/trips
@@ -85,9 +185,9 @@ router.post("/", async (req, res) => {
         $1,$2,$3,
         $4,$5,
         $6::timestamp,$7::timestamp,$8,
-        $9,$9,
-        $10,$11,
-        $12,$13,$14,
+        $9,$10,
+        $11,$12,
+        $13,$14,
         $15,$16,$17
       )
       RETURNING *
@@ -96,7 +196,7 @@ router.post("/", async (req, res) => {
         route_id, company_id, transport_type_id,
         departure_station_id, arrival_station_id,
         departure_time, arrival_time, duration_minutes,
-        seats_total,
+        seats_total, seats_total, // seats_available = seats_total initially
         status, is_active,
         bus_number, driver_name,
         equipment, cancellation_policy, extra_info
@@ -141,7 +241,26 @@ router.post("/", async (req, res) => {
     }
 
     await client.query("COMMIT");
-    res.status(201).json(trip);
+    
+    // Get the created trip with all JOIN data (same as GET /api/admin/trips)
+    const fullTripResult = await client.query(
+      `
+      SELECT
+        t.*,
+        c1.name as from_city,
+        c2.name as to_city,
+        COALESCE(comp.name, 'Unknown') AS company_name
+      FROM trips t
+      JOIN routes r ON r.id = t.route_id
+      JOIN cities c1 ON c1.id = r.from_city_id
+      JOIN cities c2 ON c2.id = r.to_city_id
+      LEFT JOIN transport_companies comp ON t.company_id = comp.id
+      WHERE t.id = $1
+      `,
+      [trip.id]
+    );
+    
+    res.status(201).json(fullTripResult.rows[0]);
   } catch (error: any) {
     await client.query("ROLLBACK");
     console.error("Error creating trip:", error);
@@ -154,7 +273,9 @@ router.post("/", async (req, res) => {
 // PATCH /api/admin/trips/:id
 router.patch("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { price, currency } = req.body;
+  const { price, currency, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id } = req.body;
+
+  console.log(`PATCH /api/admin/trips/${id} - Request body:`, req.body);
 
   // تحديثات بسيطة شائعة
   const allowed = [
@@ -176,12 +297,36 @@ router.patch("/:id", async (req, res) => {
   const values: any[] = [];
   let idx = 1;
 
+  // Handle route_id, company_id, transport_type_id, station IDs (numeric fields)
+  if (route_id !== undefined && route_id !== null && route_id !== '') {
+    updates.push(`route_id = $${idx++}`);
+    values.push(Number(route_id));
+  }
+  if (company_id !== undefined && company_id !== null && company_id !== '') {
+    updates.push(`company_id = $${idx++}`);
+    values.push(Number(company_id));
+  }
+  if (transport_type_id !== undefined && transport_type_id !== null && transport_type_id !== '') {
+    updates.push(`transport_type_id = $${idx++}`);
+    values.push(Number(transport_type_id));
+  }
+  if (departure_station_id !== undefined && departure_station_id !== null && departure_station_id !== '') {
+    updates.push(`departure_station_id = $${idx++}`);
+    values.push(Number(departure_station_id));
+  }
+  if (arrival_station_id !== undefined && arrival_station_id !== null && arrival_station_id !== '') {
+    updates.push(`arrival_station_id = $${idx++}`);
+    values.push(Number(arrival_station_id));
+  }
+
   for (const key of allowed) {
     if (req.body[key] !== undefined) {
       updates.push(`${key} = $${idx++}${key.includes("time") ? "::timestamp" : ""}`);
       values.push(req.body[key]);
     }
   }
+
+  console.log(`PATCH /api/admin/trips/${id} - Updates:`, updates, 'Values:', values);
 
   const client = await pool.connect();
   try {
@@ -243,8 +388,23 @@ router.patch("/:id", async (req, res) => {
 
     await client.query("COMMIT");
 
-    // Get updated trip
-    const tripResult = await client.query(`SELECT * FROM trips WHERE id = $1`, [id]);
+    // Get updated trip with all JOIN data (same as GET /api/admin/trips)
+    const tripResult = await client.query(
+      `
+      SELECT
+        t.*,
+        c1.name as from_city,
+        c2.name as to_city,
+        COALESCE(comp.name, 'Unknown') AS company_name
+      FROM trips t
+      JOIN routes r ON r.id = t.route_id
+      JOIN cities c1 ON c1.id = r.from_city_id
+      JOIN cities c2 ON c2.id = r.to_city_id
+      LEFT JOIN transport_companies comp ON t.company_id = comp.id
+      WHERE t.id = $1
+      `,
+      [id]
+    );
     res.json(tripResult.rows[0]);
   } catch (error: any) {
     await client.query("ROLLBACK");
@@ -255,27 +415,30 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-// DELETE /api/admin/trips/:id (Hard Delete - permanently deletes trip)
+// DELETE /api/admin/trips/:id (Soft Delete - moves to trash)
 router.delete("/:id", async (req, res) => {
   try {
     const id = Number(req.params.id);
+    const permanent = req.query.permanent === 'true';
     
     if (isNaN(id)) {
       return res.status(400).json({ message: "Invalid trip ID" });
     }
 
-    console.log(`Attempting to permanently delete trip ${id}...`);
+    console.log(`Attempting to ${permanent ? 'permanently delete' : 'soft delete (trash)'} trip ${id}...`);
 
     // Check if trip exists
-    const checkResult = await pool.query(`SELECT id FROM trips WHERE id = $1`, [id]);
+    const checkResult = await pool.query(`SELECT id, deleted_at FROM trips WHERE id = $1`, [id]);
     if (checkResult.rows.length === 0) {
       return res.status(404).json({ message: "Trip not found" });
     }
 
-    console.log(`Trip ${id} found, performing permanent deletion (hard delete)`);
+    const trip = checkResult.rows[0];
     
-    // Always perform hard delete (permanent deletion) - no soft delete
-    {
+    // If permanent delete or already in trash, perform hard delete
+    if (permanent || trip.deleted_at !== null) {
+      console.log(`Trip ${id} performing permanent deletion (hard delete)`);
+      
       // Hard delete: Permanently delete the trip and related data
       // Use transaction to ensure data consistency
       // For hard delete, delete related data first, then delete the trip
@@ -415,15 +578,109 @@ router.delete("/:id", async (req, res) => {
           details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
       }
+    } else {
+      // Soft delete: Set deleted_at timestamp
+      console.log(`Trip ${id} moving to trash (soft delete)`);
+      
+      await pool.query(
+        'UPDATE trips SET deleted_at = CURRENT_TIMESTAMP WHERE id = $1',
+        [id]
+      );
+      
+      console.log(`Trip ${id} moved to trash`);
+      
+      return res.json({ 
+        ok: true, 
+        message: "Trip moved to trash",
+        softDelete: true,
+        tripId: id
+      });
     }
   } catch (error: any) {
-    console.error("Error deactivating trip:", error);
+    console.error("Error deleting trip:", error);
     console.error("Error code:", error.code);
     console.error("Error message:", error.message);
     console.error("Error stack:", error.stack);
     
     res.status(500).json({ 
-      message: "Error deactivating trip", 
+      message: "Error deleting trip", 
+      error: error.message || String(error),
+      code: error.code,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// POST /api/admin/trips/:id/restore - Restore trip from trash
+router.post("/:id/restore", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid trip ID" });
+    }
+
+    console.log(`Attempting to restore trip ${id} from trash...`);
+
+    // Check if trip exists and is in trash
+    const checkResult = await pool.query(
+      `SELECT id, deleted_at FROM trips WHERE id = $1`,
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+    
+    const trip = checkResult.rows[0];
+    
+    if (trip.deleted_at === null) {
+      return res.status(400).json({ message: "Trip is not in trash" });
+    }
+
+    // Restore trip by setting deleted_at to NULL
+    await pool.query(
+      'UPDATE trips SET deleted_at = NULL WHERE id = $1',
+      [id]
+    );
+    
+    console.log(`Trip ${id} restored from trash`);
+    
+    // Get the restored trip with all data
+    const restoredTrip = await pool.query(
+      `
+      SELECT
+        t.*,
+        c1.name as from_city,
+        c2.name as to_city,
+        COALESCE(comp.name, 'Unknown') AS company_name,
+        tt.name as transport_type_name,
+        tt.code as transport_type_code,
+        COALESCE((
+          SELECT price FROM trip_fares tf 
+          WHERE tf.trip_id = t.id 
+          LIMIT 1
+        ), 0) as price
+      FROM trips t
+      JOIN routes r ON r.id = t.route_id
+      JOIN cities c1 ON c1.id = r.from_city_id
+      JOIN cities c2 ON c2.id = r.to_city_id
+      LEFT JOIN transport_companies comp ON t.company_id = comp.id
+      LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
+      WHERE t.id = $1
+      `,
+      [id]
+    );
+    
+    res.json({ 
+      ok: true, 
+      message: "Trip restored from trash",
+      trip: restoredTrip.rows[0]
+    });
+  } catch (error: any) {
+    console.error("Error restoring trip:", error);
+    res.status(500).json({ 
+      message: "Error restoring trip", 
       error: error.message || String(error),
       code: error.code,
       details: process.env.NODE_ENV === 'development' ? error.stack : undefined
