@@ -445,6 +445,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
                   setFormData({ ...formData, password: e.target.value });
                   if (errors.password) setErrors({ ...errors, password: '' });
                 }}
+                autoComplete={isLogin ? "current-password" : "new-password"}
                 className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
                   errors.password ? 'border-red-500' : 'border-gray-300'
                 }`}
