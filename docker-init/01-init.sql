@@ -960,10 +960,12 @@ CREATE TABLE public.users (
     first_name character varying(100),
     last_name character varying(100),
     gender character varying(20),
+    birth_date date,
     address character varying(255),
     company_id integer,
     user_type_id integer,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
+    updated_at timestamp without time zone DEFAULT now(),
     password_hash text
 );
 
