@@ -64,6 +64,37 @@ export const tripsApi = {
   },
 };
 
+// Auth APIs
+export const authApi = {
+  register: async (data: {
+    email: string;
+    password: string;
+    first_name: string;
+    last_name: string;
+    phone?: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/auth/register`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  login: async (email: string, password: string) => {
+    const response = await fetch(`${API_BASE}/api/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    return handleResponse(response);
+  },
+};
+
 // User APIs
 export const usersApi = {
   getMe: async () => {

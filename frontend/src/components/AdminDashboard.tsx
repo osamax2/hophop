@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download } from 'lucide-react';
 import type { Language, User } from '../App';
-import { adminApi, imagesApi, tripsApi, citiesApi } from '../lib/api';
+import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
 import { ScheduleManagement } from './ScheduleManagement';
 
@@ -1223,7 +1223,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setLoading(true);
       
       // Register the user
-      const registerResponse = await api.post('/auth/register', {
+      const registerResponse = await authApi.register({
         email: newUserData.email,
         password: newUserData.password,
         first_name: newUserData.first_name,
