@@ -161,7 +161,11 @@ router.post("/login", async (req, res) => {
  */
 router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user?.id;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const result = await pool.query(
       `
@@ -238,8 +242,12 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
  */
 router.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const userId = req.userId;
+    const userId = req.user?.id;
     const { first_name, last_name, phone, gender, birth_date, address } = req.body;
+
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
 
     const updateFields: string[] = [];
     const values: any[] = [];
