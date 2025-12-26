@@ -70,7 +70,24 @@ export const usersApi = {
     const response = await fetch(`${API_BASE}/api/auth/me`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse(response);
+    const data = await handleResponse<{ user: any }>(response);
+    // Convert snake_case to camelCase for frontend
+    const user = data.user;
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone,
+      gender: user.gender,
+      birthDate: user.birth_date,
+      address: user.address,
+      role: user.role,
+      roles: user.roles,
+      is_active: user.is_active,
+      created_at: user.created_at,
+    };
   },
 
   updateMe: async (data: {
