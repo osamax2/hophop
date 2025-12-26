@@ -81,10 +81,19 @@ export const usersApi = {
     birthDate?: string;
     address?: string;
   }) => {
+    // Convert camelCase to snake_case for backend
+    const backendData: any = {};
+    if (data.firstName !== undefined) backendData.first_name = data.firstName;
+    if (data.lastName !== undefined) backendData.last_name = data.lastName;
+    if (data.phone !== undefined) backendData.phone = data.phone;
+    if (data.gender !== undefined) backendData.gender = data.gender;
+    if (data.birthDate !== undefined) backendData.birth_date = data.birthDate;
+    if (data.address !== undefined) backendData.address = data.address;
+
     const response = await fetch(`${API_BASE}/api/auth/me`, {
       method: "PATCH",
       headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+      body: JSON.stringify(backendData),
     });
     return handleResponse(response);
   },
