@@ -67,7 +67,7 @@ export const tripsApi = {
 // User APIs
 export const usersApi = {
   getMe: async () => {
-    const response = await fetch(`${API_BASE}/api/users/me`, {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
@@ -81,7 +81,7 @@ export const usersApi = {
     birthDate?: string;
     address?: string;
   }) => {
-    const response = await fetch(`${API_BASE}/api/users/me`, {
+    const response = await fetch(`${API_BASE}/api/auth/me`, {
       method: "PATCH",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
