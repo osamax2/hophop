@@ -123,6 +123,12 @@ export function SearchResults({
 }: SearchResultsProps) {
   const t = translations[language];
 
+  // Helper to convert to Arabic numerals
+  const toArabicNumerals = (num: string | number): string => {
+    const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    return String(num).replace(/\d/g, (digit) => arabicNumerals[parseInt(digit)]);
+  };
+
   const [sortBy, setSortBy] = useState<'earliest' | 'cheapest'>('earliest');
   const [showFilters, setShowFilters] = useState(true);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
@@ -335,7 +341,7 @@ export function SearchResults({
                   </div>
                   <div className="flex items-center gap-1 text-sm text-gray-600 mt-2">
                     <Users className="w-4 h-4" />
-                    {trip.seatsAvailable} {t.seats}
+                    {language === 'ar' ? toArabicNumerals(trip.seatsAvailable) : trip.seatsAvailable} {t.seats}
                   </div>
                 </div>
 
@@ -450,8 +456,8 @@ export function SearchResults({
                     className="w-full"
                   />
                   <div className="flex justify-between text-sm text-gray-600">
-                    <span>0 SYP</span>
-                    <span>{priceRange[1]} SYP</span>
+                    <span>{formatCurrency(0, language)}</span>
+                    <span>{formatCurrency(priceRange[1], language)}</span>
                   </div>
                 </div>
               </div>

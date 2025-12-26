@@ -9,6 +9,47 @@ interface ScheduleManagementProps {
   refreshTrigger?: number;
 }
 
+// Convert numbers to Arabic numerals
+const toArabicNumerals = (num: number | string): string => {
+  const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+  return String(num).replace(/\d/g, (digit) => arabicNumerals[parseInt(digit)]);
+};
+
+// City name translations
+const getCityName = (cityName: string, language: Language): string => {
+  if (language !== 'ar') return cityName;
+  
+  const cityTranslations: Record<string, string> = {
+    'Damascus': 'دمشق',
+    'Aleppo': 'حلب',
+    'Homs': 'حمص',
+    'Latakia': 'اللاذقية',
+    'Tartus': 'طرطوس',
+    'Hama': 'حماة',
+    'Deir ez-Zor': 'دير الزور',
+    'Raqqa': 'الرقة',
+    'Daraa': 'درعا',
+    'Al-Hasakah': 'الحسكة',
+    'Qamishli': 'القامشلي',
+    'Idlib': 'إدلب',
+    'As-Suwayda': 'السويداء',
+    'Quneitra': 'القنيطرة',
+    'Al-Hajar al-Aswad': 'الحجر الأسود',
+    'Douma': 'دوما',
+    'Jaramana': 'جرمانا',
+    'Al-Qusayr': 'القصير',
+    'Manbij': 'منبج',
+    'Azaz': 'أعزاز',
+    'Al-Bab': 'الباب',
+    'Afrin': 'عفرين',
+    'Ras al-Ayn': 'رأس العين',
+    'Kobani': 'كوباني',
+    'Tel Abyad': 'تل أبيض',
+  };
+  
+  return cityTranslations[cityName] || cityName;
+};
+
 // Transport type translations
 const getTransportTypeName = (code: string, language: Language): string => {
   const translations: Record<string, Record<Language, string>> = {
@@ -351,7 +392,8 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
 
   const formatTime = (dateString: string) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const locale = language === 'ar' ? 'ar-SA' : language === 'de' ? 'de-DE' : 'en-US';
+    return new Date(dateString).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   };
 
   const getStatusBadge = (status: string) => {
@@ -450,14 +492,18 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
                         !trip.is_active ? 'bg-gray-50 opacity-60' : ''
                       }`}
                     >
-                      <td className="px-4 py-3 text-gray-900 font-medium">{trip.id}</td>
+                      <td className="px-4 py-3 text-gray-900 font-medium">
+                        {language === 'ar' ? toArabicNumerals(trip.id) : trip.id}
+                      </td>
                       <td className="px-4 py-3 text-gray-900">
-                        {trip.from_city || 'N/A'}
+                        {getCityName(trip.from_city || 'N/A', language)}
                         {trip.deleted_at && (
                           <span className="ml-2 text-xs text-red-600 font-medium">({t.inTrash})</span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-gray-900">{trip.to_city || 'N/A'}</td>
+                      <td className="px-4 py-3 text-gray-900">
+                        {getCityName(trip.to_city || 'N/A', language)}
+                      </td>
                       <td className="px-4 py-3 text-gray-600">{trip.company_name || 'N/A'}</td>
                       <td className="px-4 py-3 text-gray-600">
                         {trip.transport_type_code ? getTransportTypeName(trip.transport_type_code, language) : 'N/A'}
@@ -465,14 +511,14 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
                       <td className="px-4 py-3 text-gray-900">{formatTime(trip.departure_time)}</td>
                       <td className="px-4 py-3 text-gray-900">{formatTime(trip.arrival_time)}</td>
                       <td className="px-4 py-3 text-gray-600">
-                        {trip.duration_minutes ? `${trip.duration_minutes}m` : 'N/A'}
+                        {trip.duration_minutes ? (language === 'ar' ? `${toArabicNumerals(trip.duration_minutes)}دقيقة` : `${trip.duration_minutes}m`) : 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-gray-900 font-medium">
-                        {trip.price ? `${Number(trip.price).toLocaleString()} SYP` : 'N/A'}
+                        {trip.price ? (language === 'ar' ? `${toArabicNumerals(Number(trip.price).toLocaleString())} ليرة` : `${Number(trip.price).toLocaleString()} SYP`) : 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         <span className={trip.seats_available < 5 ? 'text-red-600 font-medium' : ''}>
-                          {trip.seats_available}/{trip.seats_total}
+                          {language === 'ar' ? `${toArabicNumerals(trip.seats_available)}/${toArabicNumerals(trip.seats_total)}` : `${trip.seats_available}/${trip.seats_total}`}
                         </span>
                       </td>
                       <td className="px-4 py-3">{getStatusBadge(trip.status)}</td>

@@ -37,6 +37,8 @@ const translations = {
     tripUnavailable: 'Diese Verbindung ist derzeit nicht verfügbar',
     alternativeTrips: 'Alternative Fahrten',
     loginToFavorite: 'Melden Sie sich an, um Favoriten zu speichern',
+    noBusPhotos: 'Keine Bus-Fotos verfügbar',
+    noStationPhotos: 'Keine Haltestellen-Fotos verfügbar',
   },
   en: {
     tripDetails: 'Trip Details',
@@ -61,6 +63,8 @@ const translations = {
     tripUnavailable: 'This connection is currently unavailable',
     alternativeTrips: 'Alternative Trips',
     loginToFavorite: 'Sign in to save favorites',
+    noBusPhotos: 'No bus photos available',
+    noStationPhotos: 'No station photos available',
   },
   ar: {
     tripDetails: 'تفاصيل الرحلة',
@@ -85,6 +89,8 @@ const translations = {
     tripUnavailable: 'هذه الرحلة غير متاحة حاليًا',
     alternativeTrips: 'رحلات بديلة',
     loginToFavorite: 'سجل الدخول لحفظ المفضلة',
+    noBusPhotos: 'لا توجد صور للباص',
+    noStationPhotos: 'لا توجد صور للمحطات',
   },
 };
 
@@ -289,7 +295,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                 <div>
                   <h3 className="text-sm text-gray-700 mb-3">{t.busPhotos}</h3>
                   {busImages.length === 0 ? (
-                    <p className="text-sm text-gray-500">No bus photos available</p>
+                    <p className="text-sm text-gray-500">{t.noBusPhotos}</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {busImages.map((img: any) => (
@@ -309,7 +315,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                 <div>
                   <h3 className="text-sm text-gray-700 mb-3">{t.stationPhotos}</h3>
                   {stationImages.length === 0 ? (
-                    <p className="text-sm text-gray-500">No station photos available</p>
+                    <p className="text-sm text-gray-500">{t.noStationPhotos}</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                       {stationImages.map((img: any) => (

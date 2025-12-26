@@ -446,6 +446,26 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [showUsersList, setShowUsersList] = useState<boolean>(false);
   const [filterRole, setFilterRole] = useState<string>('');
   const [filterName, setFilterName] = useState<string>('');
+  
+  // Add User Dialog
+  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+  const [newUserData, setNewUserData] = useState({
+    first_name: '',
+    last_name: '',
+    email: '',
+    password: '',
+    phone: '',
+    role: 'user'
+  });
+  const [userValidationErrors, setUserValidationErrors] = useState<any>({});
+  
+  // Stops for new trip
+  const [newTripStops, setNewTripStops] = useState<Array<{
+    station_id: string;
+    stop_order: number;
+    arrival_time?: string;
+    departure_time?: string;
+  }>>([]);
 
   // Load analytics data
   useEffect(() => {
@@ -1146,6 +1166,136 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
+  const validateNewUser = () => {
+    const errors: any = {};
+    
+    // First name validation
+    if (!newUserData.first_name.trim()) {
+      errors.first_name = language === 'ar' ? 'الاسم الأول مطلوب' : language === 'de' ? 'Vorname erforderlich' : 'First name is required';
+    }
+    
+    // Last name validation
+    if (!newUserData.last_name.trim()) {
+      errors.last_name = language === 'ar' ? 'اسم العائلة مطلوب' : language === 'de' ? 'Nachname erforderlich' : 'Last name is required';
+    }
+    
+    // Email validation
+    if (!newUserData.email.trim()) {
+      errors.email = language === 'ar' ? 'البريد الإلكتروني مطلوب' : language === 'de' ? 'E-Mail erforderlich' : 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUserData.email)) {
+      errors.email = language === 'ar' ? 'البريد الإلكتروني غير صالح' : language === 'de' ? 'Ungültige E-Mail' : 'Invalid email format';
+    }
+    
+    // Password validation
+    if (!newUserData.password) {
+      errors.password = language === 'ar' ? 'كلمة المرور مطلوبة' : language === 'de' ? 'Passwort erforderlich' : 'Password is required';
+    } else if (newUserData.password.length < 6) {
+      errors.password = language === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : language === 'de' ? 'Passwort muss mindestens 6 Zeichen lang sein' : 'Password must be at least 6 characters';
+    }
+    
+    // Phone validation (optional but if provided should be valid)
+    if (newUserData.phone && !/^\+?[0-9]{10,15}$/.test(newUserData.phone.replace(/\s/g, ''))) {
+      errors.phone = language === 'ar' ? 'رقم الهاتف غير صالح' : language === 'de' ? 'Ungültige Telefonnummer' : 'Invalid phone number';
+    }
+    
+    setUserValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleAddUser = async () => {
+    if (!validateNewUser()) {
+      return;
+    }
+
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(language === 'ar' 
+        ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.'
+        : language === 'de' 
+        ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.'
+        : 'Session expired. Please log in again.');
+      window.location.reload();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      // Register the user
+      const registerResponse = await api.post('/auth/register', {
+        email: newUserData.email,
+        password: newUserData.password,
+        first_name: newUserData.first_name,
+        last_name: newUserData.last_name,
+        phone: newUserData.phone || undefined
+      });
+      
+      // Get the created user to assign role
+      const users = await adminApi.getUsers(false);
+      const createdUser = users.find((u: any) => u.email === newUserData.email);
+      
+      if (createdUser && newUserData.role !== 'user') {
+        // Assign role if not default 'user'
+        const roleNames: string[] = [];
+        if (newUserData.role === 'admin') {
+          roleNames.push('Administrator');
+        } else if (newUserData.role === 'agent') {
+          roleNames.push('Agent');
+        }
+        
+        if (roleNames.length > 0) {
+          await adminApi.changeUserRole(createdUser.id, roleNames);
+        }
+      }
+      
+      alert(language === 'ar' 
+        ? 'تم إضافة المستخدم بنجاح'
+        : language === 'de' 
+        ? 'Benutzer erfolgreich hinzugefügt'
+        : 'User added successfully');
+      
+      // Reset form
+      setNewUserData({
+        first_name: '',
+        last_name: '',
+        email: '',
+        password: '',
+        phone: '',
+        role: 'user'
+      });
+      setUserValidationErrors({});
+      setShowAddUserDialog(false);
+      
+      // Refresh users list
+      loadUsers();
+    } catch (err: any) {
+      console.error('Error adding user:', err);
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        localStorage.removeItem("token");
+        window.location.reload();
+        return;
+      }
+
+      const errorMsg = err.message || (language === 'ar' 
+        ? 'فشل إضافة المستخدم. يرجى المحاولة مرة أخرى.'
+        : language === 'de' 
+        ? 'Fehler beim Hinzufügen des Benutzers. Bitte versuchen Sie es erneut.'
+        : 'Failed to add user. Please try again.');
+      alert(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleImageUpload = async () => {
     if (!selectedFile || !entityId) {
       alert('Please select a file and enter entity ID');
@@ -1482,6 +1632,39 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         // Create new trip
         const newCreatedTrip = await adminApi.createTrip(tripData);
         
+        // Add stops if any were defined
+        if (newTripStops.length > 0 && newCreatedTrip.id) {
+          try {
+            const API_BASE = import.meta.env.VITE_API_BASE || "";
+            const token = localStorage.getItem("token");
+            
+            // Add each stop to the newly created trip
+            for (const stop of newTripStops) {
+              await fetch(`${API_BASE}/api/admin/trips/${newCreatedTrip.id}/steps`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({
+                  station_id: parseInt(stop.station_id),
+                  stop_order: stop.stop_order,
+                  arrival_time: stop.arrival_time || null,
+                  departure_time: stop.departure_time || null,
+                }),
+              });
+            }
+          } catch (stopsErr) {
+            console.error('Error adding stops:', stopsErr);
+            // Don't fail the entire trip creation if stops fail
+            alert(language === 'ar' 
+              ? 'تم إنشاء الرحلة ولكن فشل إضافة بعض المحطات' 
+              : language === 'de' 
+              ? 'Fahrt erstellt, aber einige Haltestellen konnten nicht hinzugefügt werden' 
+              : 'Trip created but some stops failed to add');
+          }
+        }
+        
         // Add the new trip to the local state instead of reloading all trips
         setTrips(prevTrips => [...prevTrips, newCreatedTrip]);
         
@@ -1493,6 +1676,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       
       setShowAddTripDialog(false);
       setEditingTripId(null);
+      setNewTripStops([]);
       setNewTrip({
         from_city: '',
         to_city: '',
@@ -1558,6 +1742,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       cancellation_policy: '',
       extra_info: '',
     });
+    setNewTripStops([]);
     setShowAddTripDialog(true);
   };
 
@@ -2242,6 +2427,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 if (e.target === e.currentTarget) {
                   setShowAddTripDialog(false);
                   setEditingTripId(null);
+                  setNewTripStops([]);
                 }
               }}
             >
@@ -2256,7 +2442,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               >
                 {/* Header - Sticky */}
                 <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
-                  <h2 className="text-2xl font-bold flex items-center gap-3">
+                  <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                     {editingTripId ? (
                       <>
                         <span>{language === 'ar' ? 'تعديل الرحلة' : language === 'de' ? 'Fahrt bearbeiten' : 'Edit Trip'}</span>
@@ -2270,6 +2456,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     onClick={() => {
                       setShowAddTripDialog(false);
                       setEditingTripId(null);
+                      setNewTripStops([]);
                     }}
                     className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
                     title={language === 'ar' ? 'إغلاق' : language === 'de' ? 'Schließen' : 'Close'}
@@ -2608,6 +2795,119 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     />
                   </div>
 
+                  {/* Stops Section - Only for new trips */}
+                  {!editingTripId && (
+                    <div className="mt-6 border-t pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {language === 'ar' ? 'المحطات (اختياري)' : language === 'de' ? 'Haltestellen (optional)' : 'Stops (Optional)'}
+                        </h3>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setNewTripStops([...newTripStops, {
+                              station_id: '',
+                              stop_order: newTripStops.length + 1,
+                              arrival_time: '',
+                              departure_time: '',
+                            }]);
+                          }}
+                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                        >
+                          <Plus className="w-4 h-4" />
+                          {language === 'ar' ? 'إضافة محطة' : language === 'de' ? 'Haltestelle hinzufügen' : 'Add Stop'}
+                        </button>
+                      </div>
+                      
+                      {newTripStops.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-4">
+                          {language === 'ar' ? 'لم يتم إضافة محطات بعد. انقر فوق "إضافة محطة" لإضافة محطات إلى هذه الرحلة.' : language === 'de' ? 'Noch keine Haltestellen hinzugefügt. Klicken Sie auf "Haltestelle hinzufügen", um Haltestellen zu dieser Fahrt hinzuzufügen.' : 'No stops added yet. Click "Add Stop" to add stops to this trip.'}
+                        </p>
+                      ) : (
+                        <div className="space-y-3">
+                          {newTripStops.map((stop, index) => (
+                            <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div className="flex items-start gap-3">
+                                <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
+                                  {index + 1}
+                                </div>
+                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      {language === 'ar' ? 'المحطة' : language === 'de' ? 'Station' : 'Station'}
+                                    </label>
+                                    <select
+                                      value={stop.station_id}
+                                      onChange={(e) => {
+                                        const newStops = [...newTripStops];
+                                        newStops[index].station_id = e.target.value;
+                                        setNewTripStops(newStops);
+                                      }}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                      required
+                                    >
+                                      <option value="">
+                                        {language === 'ar' ? 'اختر محطة' : language === 'de' ? 'Station wählen' : 'Select station'}
+                                      </option>
+                                      {stations.map((station: any) => (
+                                        <option key={station.id} value={station.id}>
+                                          {station.city_name} - {station.name}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      {language === 'ar' ? 'وقت الوصول' : language === 'de' ? 'Ankunftszeit' : 'Arrival Time'}
+                                    </label>
+                                    <input
+                                      type="time"
+                                      value={stop.arrival_time || ''}
+                                      onChange={(e) => {
+                                        const newStops = [...newTripStops];
+                                        newStops[index].arrival_time = e.target.value;
+                                        setNewTripStops(newStops);
+                                      }}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1">
+                                      {language === 'ar' ? 'وقت المغادرة' : language === 'de' ? 'Abfahrtszeit' : 'Departure Time'}
+                                    </label>
+                                    <input
+                                      type="time"
+                                      value={stop.departure_time || ''}
+                                      onChange={(e) => {
+                                        const newStops = [...newTripStops];
+                                        newStops[index].departure_time = e.target.value;
+                                        setNewTripStops(newStops);
+                                      }}
+                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                                    />
+                                  </div>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const newStops = newTripStops.filter((_, i) => i !== index);
+                                    // Re-number the remaining stops
+                                    newStops.forEach((s, i) => s.stop_order = i + 1);
+                                    setNewTripStops(newStops);
+                                  }}
+                                  className="flex-shrink-0 text-red-600 hover:text-red-700 transition-colors p-1"
+                                  title={language === 'ar' ? 'حذف المحطة' : language === 'de' ? 'Haltestelle löschen' : 'Delete stop'}
+                                >
+                                  <X className="w-5 h-5" />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   </div>
 
                   {/* Actions - Sticky Footer */}
@@ -2624,6 +2924,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       onClick={() => {
                         setShowAddTripDialog(false);
                         setEditingTripId(null);
+                        setNewTripStops([]);
                         setNewTrip({
                           route_id: '',
                           company_id: '',
@@ -2764,15 +3065,24 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             <h3 className="text-lg font-semibold text-gray-900">
               {language === 'ar' ? 'المستخدمون' : language === 'de' ? 'Benutzer' : 'Users'}
             </h3>
-            <button
-              onClick={() => setShowDeletedUsers(!showDeletedUsers)}
-              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              {showDeletedUsers 
-                ? (language === 'ar' ? 'إخفاء المحذوفة' : language === 'de' ? 'Gelöschte ausblenden' : 'Hide Deleted')
-                : (language === 'ar' ? 'إظهار المحذوفة' : language === 'de' ? 'Gelöschte anzeigen' : 'Show Deleted')
-              }
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAddUserDialog(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                {language === 'ar' ? 'إضافة مستخدم' : language === 'de' ? 'Benutzer hinzufügen' : 'Add User'}
+              </button>
+              <button
+                onClick={() => setShowDeletedUsers(!showDeletedUsers)}
+                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                {showDeletedUsers 
+                  ? (language === 'ar' ? 'إخفاء المحذوفة' : language === 'de' ? 'Gelöschte ausblenden' : 'Hide Deleted')
+                  : (language === 'ar' ? 'إظهار المحذوفة' : language === 'de' ? 'Gelöschte anzeigen' : 'Show Deleted')
+                }
+              </button>
+            </div>
           </div>
           {loading ? (
             <div className="flex items-center justify-center h-64">
@@ -2989,7 +3299,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           >
             {/* Header */}
             <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
+              <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                 <Upload className="w-6 h-6" />
                 {editingImage 
                   ? (language === 'ar' ? 'تحديث الصورة' : language === 'de' ? 'Foto aktualisieren' : 'Update Photo')
@@ -3198,7 +3508,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           >
             {/* Header */}
             <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
-              <h2 className="text-2xl font-bold flex items-center gap-3">
+              <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                 <Upload className="w-6 h-6" />
                 {t.dataImport}
               </h2>
@@ -3520,6 +3830,248 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                 {language === 'ar' ? 'حذف الحساب' : language === 'de' ? 'Konto löschen' : 'Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add User Dialog */}
+      {showAddUserDialog && (
+        <div 
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAddUserDialog(false);
+              setNewUserData({
+                first_name: '',
+                last_name: '',
+                email: '',
+                password: '',
+                phone: '',
+                role: 'user'
+              });
+              setUserValidationErrors({});
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[95vh] flex flex-col"
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {language === 'ar' ? 'إضافة مستخدم جديد' : language === 'de' ? 'Neuen Benutzer hinzufügen' : 'Add New User'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowAddUserDialog(false);
+                  setNewUserData({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    password: '',
+                    phone: '',
+                    role: 'user'
+                  });
+                  setUserValidationErrors({});
+                }}
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content - Scrollable */}
+            <div 
+              className="flex-1 p-6"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                maxHeight: 'calc(95vh - 160px)',
+              }}
+            >
+              <div className="space-y-4">
+                {/* First Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'الاسم الأول' : language === 'de' ? 'Vorname' : 'First Name'} *
+                  </label>
+                  <input
+                    type="text"
+                    value={newUserData.first_name}
+                    onChange={(e) => {
+                      setNewUserData({ ...newUserData, first_name: e.target.value });
+                      if (userValidationErrors.first_name) {
+                        setUserValidationErrors({ ...userValidationErrors, first_name: undefined });
+                      }
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      userValidationErrors.first_name ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder={language === 'ar' ? 'أدخل الاسم الأول' : language === 'de' ? 'Vorname eingeben' : 'Enter first name'}
+                  />
+                  {userValidationErrors.first_name && (
+                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.first_name}</p>
+                  )}
+                </div>
+
+                {/* Last Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'اسم العائلة' : language === 'de' ? 'Nachname' : 'Last Name'} *
+                  </label>
+                  <input
+                    type="text"
+                    value={newUserData.last_name}
+                    onChange={(e) => {
+                      setNewUserData({ ...newUserData, last_name: e.target.value });
+                      if (userValidationErrors.last_name) {
+                        setUserValidationErrors({ ...userValidationErrors, last_name: undefined });
+                      }
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      userValidationErrors.last_name ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder={language === 'ar' ? 'أدخل اسم العائلة' : language === 'de' ? 'Nachname eingeben' : 'Enter last name'}
+                  />
+                  {userValidationErrors.last_name && (
+                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.last_name}</p>
+                  )}
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'البريد الإلكتروني' : language === 'de' ? 'E-Mail' : 'Email'} *
+                  </label>
+                  <input
+                    type="email"
+                    value={newUserData.email}
+                    onChange={(e) => {
+                      setNewUserData({ ...newUserData, email: e.target.value });
+                      if (userValidationErrors.email) {
+                        setUserValidationErrors({ ...userValidationErrors, email: undefined });
+                      }
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      userValidationErrors.email ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder={language === 'ar' ? 'أدخل البريد الإلكتروني' : language === 'de' ? 'E-Mail eingeben' : 'Enter email'}
+                  />
+                  {userValidationErrors.email && (
+                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.email}</p>
+                  )}
+                </div>
+
+                {/* Password */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'كلمة المرور' : language === 'de' ? 'Passwort' : 'Password'} *
+                  </label>
+                  <input
+                    type="password"
+                    value={newUserData.password}
+                    onChange={(e) => {
+                      setNewUserData({ ...newUserData, password: e.target.value });
+                      if (userValidationErrors.password) {
+                        setUserValidationErrors({ ...userValidationErrors, password: undefined });
+                      }
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      userValidationErrors.password ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder={language === 'ar' ? 'أدخل كلمة المرور' : language === 'de' ? 'Passwort eingeben' : 'Enter password'}
+                  />
+                  {userValidationErrors.password && (
+                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.password}</p>
+                  )}
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'رقم الهاتف' : language === 'de' ? 'Telefonnummer' : 'Phone Number'}
+                  </label>
+                  <input
+                    type="tel"
+                    value={newUserData.phone}
+                    onChange={(e) => {
+                      setNewUserData({ ...newUserData, phone: e.target.value });
+                      if (userValidationErrors.phone) {
+                        setUserValidationErrors({ ...userValidationErrors, phone: undefined });
+                      }
+                    }}
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
+                      userValidationErrors.phone ? 'border-red-500' : 'border-gray-300'
+                    }`}
+                    placeholder={language === 'ar' ? 'أدخل رقم الهاتف' : language === 'de' ? 'Telefonnummer eingeben' : 'Enter phone number'}
+                  />
+                  {userValidationErrors.phone && (
+                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.phone}</p>
+                  )}
+                </div>
+
+                {/* Role */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'الدور' : language === 'de' ? 'Rolle' : 'Role'} *
+                  </label>
+                  <select
+                    value={newUserData.role}
+                    onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="user">{language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User'}</option>
+                    <option value="agent">{language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent'}</option>
+                    <option value="admin">{language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Admin'}</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer with buttons */}
+            <div className="sticky bottom-0 bg-gray-50 p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={() => {
+                  setShowAddUserDialog(false);
+                  setNewUserData({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    password: '',
+                    phone: '',
+                    role: 'user'
+                  });
+                  setUserValidationErrors({});
+                }}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                {language === 'ar' ? 'إلغاء' : language === 'de' ? 'Abbrechen' : 'Cancel'}
+              </button>
+              <button
+                onClick={handleAddUser}
+                disabled={loading}
+                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {language === 'ar' ? 'إضافة' : language === 'de' ? 'Hinzufügen' : 'Add'}
               </button>
             </div>
           </div>
