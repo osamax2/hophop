@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Star, Edit, Trash2 } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
@@ -135,6 +135,20 @@ const translations = {
     clearFilters: 'Filter löschen',
     exportToCSV: 'Als CSV exportieren',
     noTripsMatch: 'Keine Reisen entsprechen den Filtern',
+    ratingsManagement: 'Bewertungsverwaltung',
+    user: 'Benutzer',
+    company: 'Unternehmen',
+    punctuality: 'Pünktlichkeit',
+    friendliness: 'Freundlichkeit',
+    cleanliness: 'Sauberkeit',
+    comment: 'Kommentar',
+    date: 'Datum',
+    editRating: 'Bewertung bearbeiten',
+    deleteRating: 'Bewertung löschen',
+    confirmDeleteRating: 'Möchten Sie diese Bewertung wirklich löschen?',
+    ratingUpdated: 'Bewertung erfolgreich aktualisiert',
+    ratingDeleted: 'Bewertung erfolgreich gelöscht',
+    updateRating: 'Bewertung aktualisieren',
   },
   en: {
     adminDashboard: 'Admin Dashboard',
@@ -215,6 +229,20 @@ const translations = {
     clearFilters: 'Clear Filters',
     exportToCSV: 'Export to CSV',
     noTripsMatch: 'No trips match the filters',
+    ratingsManagement: 'Ratings Management',
+    user: 'User',
+    company: 'Company',
+    punctuality: 'Punctuality',
+    friendliness: 'Friendliness',
+    cleanliness: 'Cleanliness',
+    comment: 'Comment',
+    date: 'Date',
+    editRating: 'Edit Rating',
+    deleteRating: 'Delete Rating',
+    confirmDeleteRating: 'Are you sure you want to delete this rating?',
+    ratingUpdated: 'Rating updated successfully',
+    ratingDeleted: 'Rating deleted successfully',
+    updateRating: 'Update Rating',
   },
   ar: {
     adminDashboard: 'لوحة الإدارة',
@@ -295,12 +323,26 @@ const translations = {
     clearFilters: 'مسح الفلاتر',
     exportToCSV: 'تصدير كملف CSV',
     noTripsMatch: 'لا توجد رحلات تطابق الفلاتر',
+    ratingsManagement: 'إدارة التقييمات',
+    user: 'المستخدم',
+    company: 'الشركة',
+    punctuality: 'الدقة',
+    friendliness: 'الود',
+    cleanliness: 'النظافة',
+    comment: 'التعليق',
+    date: 'التاريخ',
+    editRating: 'تعديل التقييم',
+    deleteRating: 'حذف التقييم',
+    confirmDeleteRating: 'هل أنت متأكد من حذف هذا التقييم؟',
+    ratingUpdated: 'تم تحديث التقييم بنجاح',
+    ratingDeleted: 'تم حذف التقييم بنجاح',
+    updateRating: 'تحديث التقييم',
   },
 };
 
 export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'photos' | 'import' | 'analytics'>('analytics');
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'photos' | 'import' | 'analytics' | 'ratings'>('analytics');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -378,6 +420,17 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [showUsersList, setShowUsersList] = useState<boolean>(false);
   const [filterRole, setFilterRole] = useState<string>('');
   const [filterName, setFilterName] = useState<string>('');
+
+  // Ratings data
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [showEditRatingDialog, setShowEditRatingDialog] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<any>(null);
+  const [editRatingData, setEditRatingData] = useState({
+    punctuality_rating: 0,
+    friendliness_rating: 0,
+    cleanliness_rating: 0,
+    comment: '',
+  });
 
   // Load analytics data
   useEffect(() => {
@@ -479,6 +532,20 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       loadUsers();
     }
   }, [activeTab, showDeletedUsers]);
+
+  // Load ratings data
+  useEffect(() => {
+    if (activeTab === 'ratings') {
+      loadRatings();
+    }
+  }, [activeTab]);
+
+  // Debug: Monitor dialog state changes
+  useEffect(() => {
+    if (showEditRatingDialog) {
+      console.log('Dialog is now visible. selectedRating:', selectedRating);
+    }
+  }, [showEditRatingDialog, selectedRating]);
 
   const loadAnalytics = async () => {
     try {
@@ -818,6 +885,91 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setUsers(usersData);
     } catch (err) {
       console.error('Error loading users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRatings = async () => {
+    try {
+      setLoading(true);
+      const ratingsData = await adminApi.getRatings();
+      console.log('Loaded ratings:', ratingsData);
+      console.log('Number of ratings:', ratingsData?.length || 0);
+      setRatings(ratingsData || []);
+    } catch (err) {
+      console.error('Error loading ratings:', err);
+      alert(language === 'ar' 
+        ? `خطأ في تحميل التقييمات: ${err instanceof Error ? err.message : 'حدث خطأ غير معروف'}`
+        : language === 'de'
+        ? `Fehler beim Laden der Bewertungen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`
+        : `Error loading ratings: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setRatings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditRatingClick = (rating: any) => {
+    console.log('handleEditRatingClick called with rating:', rating);
+    if (!rating) {
+      console.error('Rating is null or undefined');
+      return;
+    }
+    try {
+      setSelectedRating(rating);
+      setEditRatingData({
+        punctuality_rating: rating.punctuality_rating || 0,
+        friendliness_rating: rating.friendliness_rating || 0,
+        cleanliness_rating: rating.cleanliness_rating || 0,
+        comment: rating.comment || '',
+      });
+      setShowEditRatingDialog(true);
+      console.log('Dialog state set to true, showEditRatingDialog should be true');
+    } catch (error) {
+      console.error('Error in handleEditRatingClick:', error);
+    }
+  };
+
+  const handleUpdateRating = async () => {
+    if (!selectedRating) return;
+
+    try {
+      setLoading(true);
+      await adminApi.updateRating(selectedRating.id, editRatingData);
+      alert(language === 'ar' ? t.ratingUpdated : language === 'de' ? t.ratingUpdated : t.ratingUpdated);
+      setShowEditRatingDialog(false);
+      setSelectedRating(null);
+      loadRatings();
+    } catch (err: any) {
+      console.error('Error updating rating:', err);
+      alert(language === 'ar' 
+        ? `خطأ في تحديث التقييم: ${err.message || 'حدث خطأ غير معروف'}`
+        : language === 'de'
+        ? `Fehler beim Aktualisieren der Bewertung: ${err.message || 'Unbekannter Fehler'}`
+        : `Error updating rating: ${err.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRating = async (ratingId: number) => {
+    if (!window.confirm(language === 'ar' ? t.confirmDeleteRating : language === 'de' ? t.confirmDeleteRating : t.confirmDeleteRating)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminApi.deleteRating(ratingId);
+      alert(language === 'ar' ? t.ratingDeleted : language === 'de' ? t.ratingDeleted : t.ratingDeleted);
+      loadRatings();
+    } catch (err: any) {
+      console.error('Error deleting rating:', err);
+      alert(language === 'ar' 
+        ? `خطأ في حذف التقييم: ${err.message || 'حدث خطأ غير معروف'}`
+        : language === 'de'
+        ? `Fehler beim Löschen der Bewertung: ${err.message || 'Unbekannter Fehler'}`
+        : `Error deleting rating: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -1460,6 +1612,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     { id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar },
     // Users management tab - Admin only
     ...(user?.role === 'admin' ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
+    { id: 'ratings' as const, label: t.ratingsManagement, icon: Star },
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
     { id: 'import' as const, label: t.dataImport, icon: Upload },
   ];
@@ -2639,6 +2792,115 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         </div>
       )}
 
+      {activeTab === 'ratings' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">
+              {t.ratingsManagement}
+            </h3>
+          </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.user}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.company}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.punctuality}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.friendliness}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.cleanliness}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.comment}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.date}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.actions}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {!ratings || ratings.length === 0 ? (
+                    <tr>
+                      <td colSpan={8} className="px-6 py-8 text-center text-gray-600">
+                        {language === 'ar' ? 'لا توجد تقييمات' : language === 'de' ? 'Keine Bewertungen' : 'No ratings found'}
+                      </td>
+                    </tr>
+                  ) : (
+                    ratings.map((rating: any) => {
+                      console.log('Rendering rating:', rating);
+                      return (
+                        <tr key={rating.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-3 text-sm text-gray-900">{rating.user_name || rating.user_email}</td>
+                          <td className="px-6 py-3 text-sm text-gray-900">{rating.company_name || '-'}</td>
+                          <td className="px-6 py-3 text-sm text-gray-900">
+                            <div className="flex items-center gap-1">
+                              {rating.punctuality_rating || 0}
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900">
+                            <div className="flex items-center gap-1">
+                              {rating.friendliness_rating || 0}
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900">
+                            <div className="flex items-center gap-1">
+                              {rating.cleanliness_rating || 0}
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900 max-w-xs truncate">
+                            {rating.comment || '-'}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-500">
+                            {rating.created_at 
+                              ? new Date(rating.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : language === 'de' ? 'de-DE' : 'en-US')
+                              : '-'}
+                          </td>
+                          <td className="px-6 py-3 text-sm">
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('Edit button clicked for rating:', rating.id);
+                                  if (!loading) {
+                                    handleEditRatingClick(rating);
+                                  }
+                                }}
+                                disabled={loading}
+                                className="text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={t.editRating}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDeleteRating(rating.id);
+                                }}
+                                className="text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                                title={t.deleteRating}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
       {activeTab === 'photos' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl text-gray-900 mb-6">{t.uploadPhoto}</h2>
@@ -2918,6 +3180,158 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
                 {language === 'ar' ? 'حذف الحساب' : language === 'de' ? 'Konto löschen' : 'Delete Account'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Rating Dialog */}
+      {showEditRatingDialog && selectedRating && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[10000] p-4 backdrop-blur-md"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000 }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowEditRatingDialog(false);
+              setSelectedRating(null);
+              setEditRatingData({
+                punctuality_rating: 0,
+                friendliness_rating: 0,
+                cleanliness_rating: 0,
+                comment: '',
+              });
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200 relative z-[10001] border border-gray-200"
+            style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t.editRating}
+              </h2>
+            </div>
+
+            <div className="overflow-y-auto flex-1 p-6">
+              <div className="space-y-4">
+                {/* Punctuality Rating */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.punctuality} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditRatingData({ ...editRatingData, punctuality_rating: star })}
+                        className="transition-colors"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= editRatingData.punctuality_rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Friendliness Rating */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.friendliness} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditRatingData({ ...editRatingData, friendliness_rating: star })}
+                        className="transition-colors"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= editRatingData.friendliness_rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Cleanliness Rating */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.cleanliness} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditRatingData({ ...editRatingData, cleanliness_rating: star })}
+                        className="transition-colors"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= editRatingData.cleanliness_rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comment */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.comment}
+                  </label>
+                  <textarea
+                    value={editRatingData.comment}
+                    onChange={(e) => setEditRatingData({ ...editRatingData, comment: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    rows={4}
+                    placeholder={language === 'ar' ? 'أدخل تعليقاً' : language === 'de' ? 'Kommentar eingeben' : 'Enter a comment'}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 border-t border-gray-200 p-6 flex gap-4 rounded-b-2xl">
+              <button
+                onClick={() => {
+                  setShowEditRatingDialog(false);
+                  setSelectedRating(null);
+                  setEditRatingData({
+                    punctuality_rating: 0,
+                    friendliness_rating: 0,
+                    cleanliness_rating: 0,
+                    comment: '',
+                  });
+                }}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleUpdateRating}
+                disabled={loading || editRatingData.punctuality_rating === 0 || editRatingData.friendliness_rating === 0 || editRatingData.cleanliness_rating === 0}
+                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {t.updateRating}
               </button>
             </div>
           </div>

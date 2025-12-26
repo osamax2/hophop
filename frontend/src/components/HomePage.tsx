@@ -133,7 +133,7 @@ const translations = {
     footerLinks: 'روابط',
     footerFollowUs: 'تابعنا',
     footerCopyright: '© 2024 هوب هوب. جميع الحقوق محفوظة.',
-    footerAboutText: 'منصتك الموثوقة لجدول مواعيد الحافلات بين المدن السورية.',
+    footerAboutText: 'منصتك الموثوقة لجدول مواعيد الرحلات بين المدن السورية.',
     footerContactText: 'اتصل بنا للحصول على الدعم والاستفسارات.',
     footerSocialText: 'تابعنا على وسائل التواصل الاجتماعي',
     footerPrivacy: 'سياسة الخصوصية',
@@ -388,21 +388,21 @@ export function HomePage({ onSearch, language }: HomePageProps) {
             <p className="text-gray-600 text-sm leading-relaxed">{t.featureRatingText}</p>
           </div>
 
-          {/* Secure Booking */}
-          <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all border border-gray-100">
+          {/* Secure Booking - Temporarily hidden */}
+          {/* <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all border border-gray-100">
             <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
               <ShieldCheck className="w-7 h-7 text-white" />
             </div>
             <h3 className="text-gray-900 text-lg mb-2">{t.featureBooking}</h3>
             <p className="text-gray-600 text-sm leading-relaxed">{t.featureBookingText}</p>
-          </div>
+          </div> */}
         </div>
       </div>
 
       {/* Footer */}
       <footer className="bg-gradient-to-b from-gray-900 to-gray-800 text-white mt-20">
         <div className="max-w-6xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
             {/* About Section */}
             <div className="lg:col-span-1">
               <div className="flex items-center gap-3 mb-6">
@@ -443,20 +443,6 @@ export function HomePage({ onSearch, language }: HomePageProps) {
                     <Phone className="w-4 h-4" />
                   </div>
                   <span>+963 11 123 4567</span>
-                </a>
-              </div>
-            </div>
-
-            {/* Social Media Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-6 text-gray-300">{t.footerFollowUs}</h3>
-              <p className="text-gray-300 text-sm mb-6 leading-relaxed">{t.footerSocialText}</p>
-              <div className="flex gap-4">
-                <a href="#" className="w-14 h-14 bg-gray-800 rounded-xl flex items-center justify-center hover:bg-blue-600 hover:scale-110 transition-all shadow-lg hover:shadow-blue-500/50 group">
-                  <Facebook className="w-6 h-6 text-gray-300 group-hover:text-white" />
-                </a>
-                <a href="#" className="w-14 h-14 bg-gray-800 rounded-xl flex items-center justify-center hover:bg-gradient-to-br hover:from-purple-600 hover:via-pink-600 hover:to-orange-500 hover:scale-110 transition-all shadow-lg hover:shadow-pink-500/50 group">
-                  <Instagram className="w-6 h-6 text-gray-300 group-hover:text-white" />
                 </a>
               </div>
             </div>

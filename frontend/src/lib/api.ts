@@ -489,4 +489,36 @@ export const adminApi = {
     });
     return handleResponse(response);
   },
+
+  getRatings: async (companyId?: number) => {
+    const url = companyId 
+      ? `${API_BASE}/api/admin/ratings?company_id=${companyId}`
+      : `${API_BASE}/api/admin/ratings`;
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  updateRating: async (ratingId: number, data: {
+    punctuality_rating?: number;
+    friendliness_rating?: number;
+    cleanliness_rating?: number;
+    comment?: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/admin/ratings/${ratingId}`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  deleteRating: async (ratingId: number) => {
+    const response = await fetch(`${API_BASE}/api/admin/ratings/${ratingId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
 };
