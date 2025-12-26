@@ -50,21 +50,22 @@ export default function App() {
 
       try {
         const API_BASE = import.meta.env.VITE_API_BASE || "";
-        const meRes = await fetch(`${API_BASE}/api/users/me`, {
+        const meRes = await fetch(`${API_BASE}/api/auth/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
 
         if (meRes.ok) {
           const meData = await meRes.json();
-          const userRole = meData?.user?.role ?? meData?.role ?? "user";
+          const userData = meData?.user || meData;
+          const userRole = userData?.role ?? "user";
           
           const userObj: User = {
-            id: String(meData?.user?.id ?? meData?.id ?? "1"),
-            name: meData?.user?.name ?? meData?.name ?? "",
-            email: meData?.user?.email ?? meData?.email ?? "",
-            phone: meData?.user?.phone ?? meData?.phone ?? "",
+            id: String(userData?.id ?? "1"),
+            name: userData?.name ?? "",
+            email: userData?.email ?? "",
+            phone: userData?.phone ?? "",
             role: userRole as UserRole,
-            language: (meData?.user?.language ?? meData?.language ?? 'ar') as Language,
+            language: (userData?.language ?? 'ar') as Language,
           };
           
           setUser(userObj);
