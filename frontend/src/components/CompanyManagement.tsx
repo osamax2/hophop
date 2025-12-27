@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, RotateCcw, Loader2, Building2, Mail, Phone, MapPin, FileText, X } from 'lucide-react';
+import { Plus, Edit, Trash2, RotateCcw, Loader2, Building2, Mail, Phone, MapPin, FileText, X, Search, Filter } from 'lucide-react';
 import type { Language } from '../App';
 
 interface CompanyManagementProps {
@@ -49,6 +49,13 @@ const translations = {
     password: 'Passwort',
     optional: '(Optional)',
     userAccountInfo: 'Ein Agenten-Konto wird für dieses Unternehmen erstellt',
+    search: 'Suchen',
+    searchPlaceholder: 'Nach Name, E-Mail oder CR-Nummer suchen...',
+    filterByStatus: 'Nach Status filtern',
+    all: 'Alle',
+    activeOnly: 'Nur Aktive',
+    inactiveOnly: 'Nur Inaktive',
+    clearFilters: 'Filter löschen',
   },
   en: {
     companyManagement: 'Company Management',
@@ -92,6 +99,13 @@ const translations = {
     password: 'Password',
     optional: '(Optional)',
     userAccountInfo: 'An agent account will be created for this company',
+    search: 'Search',
+    searchPlaceholder: 'Search by name, email or CR number...',
+    filterByStatus: 'Filter by Status',
+    all: 'All',
+    activeOnly: 'Active Only',
+    inactiveOnly: 'Inactive Only',
+    clearFilters: 'Clear Filters',
   },
   ar: {
     companyManagement: 'إدارة الشركات',
@@ -135,6 +149,13 @@ const translations = {
     password: 'كلمة المرور',
     optional: '(اختياري)',
     userAccountInfo: 'سيتم إنشاء حساب وكيل لهذه الشركة',
+    search: 'بحث',
+    searchPlaceholder: 'البحث بالاسم أو البريد الإلكتروني أو رقم السجل التجاري...',
+    filterByStatus: 'تصفية حسب الحالة',
+    all: 'الكل',
+    activeOnly: 'النشطة فقط',
+    inactiveOnly: 'غير النشطة فقط',
+    clearFilters: 'مسح الفلاتر',
   },
 };
 
@@ -145,6 +166,8 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
   const [showDialog, setShowDialog] = useState(false);
   const [showDeleted, setShowDeleted] = useState(false);
   const [editingCompany, setEditingCompany] = useState<any>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -367,8 +390,76 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
     setShowDialog(true);
   };
 
+  // Filter and search companies
+  const filteredCompanies = companies.filter((company) => {
+    // Search filter
+    const matchesSearch = searchQuery === '' || 
+      company.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      company.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      company.cr_number?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    // Status filter
+    const matchesStatus = 
+      statusFilter === 'all' ||
+      (statusFilter === 'active' && company.is_active) ||
+      (statusFilter === 'inactive' && !company.is_active);
+    
+    return matchesSearch && matchesStatus;
+  });
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Search and Filters */}
+      <div className="p-6 border-b border-gray-200 space-y-4">
+        <div className="flex flex-wrap gap-4 items-center">
+          {/* Search */}
+          <div className="flex-1 min-w-[300px]">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder={t.searchPlaceholder}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-gray-600" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+            >
+              <option value="all">{t.all}</option>
+              <option value="active">{t.activeOnly}</option>
+              <option value="inactive">{t.inactiveOnly}</option>
+            </select>
+          </div>
+
+          {/* Clear Filters */}
+          {(searchQuery || statusFilter !== 'all') && (
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setStatusFilter('all');
+              }}
+              className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {t.clearFilters}
+            </button>
+          )}
+        </div>
+
+        {/* Results count */}
+        <div className="text-sm text-gray-600">
+          {filteredCompanies.length} {filteredCompanies.length === 1 ? t.companyManagement.slice(0, -1) : t.companyManagement}
+        </div>
+      </div>
+
       {/* Header */}
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
@@ -420,14 +511,14 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {companies.length === 0 ? (
+              {filteredCompanies.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-6 py-12 text-center text-gray-600">
                     {t.noCompanies}
                   </td>
                 </tr>
               ) : (
-                companies.map((company) => (
+                filteredCompanies.map((company) => (
                   <tr 
                     key={company.id} 
                     className={`hover:bg-gray-50 ${company.deleted_at ? 'bg-red-50' : ''}`}
