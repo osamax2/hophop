@@ -408,7 +408,8 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
   });
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+    <>
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       {/* Search and Filters */}
       <div className="p-6 border-b border-gray-200 space-y-4">
         <div className="flex flex-wrap gap-4 items-center">
@@ -581,8 +582,9 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
           </table>
         </div>
       )}
+      </div>
 
-      {/* Add/Edit Dialog */}
+      {/* Add/Edit Dialog - Outside main container */}
       {showDialog && (
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
@@ -845,6 +847,6 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
