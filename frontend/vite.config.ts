@@ -52,6 +52,14 @@ export default defineConfig({
     build: {
       target: 'esnext',
       outDir: 'build',
+      rollupOptions: {
+        output: {
+          manualChunks: undefined,
+          entryFileNames: `assets/[name]-v2-[hash].js`,
+          chunkFileNames: `assets/[name]-v2-[hash].js`,
+          assetFileNames: `assets/[name]-[hash].[ext]`
+        }
+      }
     },
     server: {
       port: 5173,

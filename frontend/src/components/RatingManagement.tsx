@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Filter, Trash2, RotateCcw, Edit2, Star, X } from 'lucide-react';
 
+// Rating Management Component v2.0
 interface Rating {
   id: number;
   user_id: number;
