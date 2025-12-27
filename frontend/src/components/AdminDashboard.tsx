@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Star, Edit, Trash2 } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Star, Edit, Trash2, Building2 } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
+import { CompanyManagement } from './CompanyManagement';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -136,6 +137,7 @@ const translations = {
     exportToCSV: 'Als CSV exportieren',
     noTripsMatch: 'Keine Reisen entsprechen den Filtern',
     ratingsManagement: 'Bewertungsverwaltung',
+    companyManagement: 'Unternehmensverwaltung',
     user: 'Benutzer',
     company: 'Unternehmen',
     punctuality: 'Pünktlichkeit',
@@ -230,6 +232,7 @@ const translations = {
     exportToCSV: 'Export to CSV',
     noTripsMatch: 'No trips match the filters',
     ratingsManagement: 'Ratings Management',
+    companyManagement: 'Company Management',
     user: 'User',
     company: 'Company',
     punctuality: 'Punctuality',
@@ -324,6 +327,7 @@ const translations = {
     exportToCSV: 'تصدير كملف CSV',
     noTripsMatch: 'لا توجد رحلات تطابق الفلاتر',
     ratingsManagement: 'إدارة التقييمات',
+    companyManagement: 'إدارة الشركات',
     user: 'المستخدم',
     company: 'الشركة',
     punctuality: 'الدقة',
@@ -342,7 +346,7 @@ const translations = {
 
 export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'photos' | 'import' | 'analytics' | 'ratings'>('analytics');
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'photos' | 'import' | 'analytics' | 'ratings' | 'companies'>('analytics');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -1613,6 +1617,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     { id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar },
     // Users management tab - Admin only
     ...(user?.role === 'admin' ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
+    // Companies management tab - Admin only
+    ...(user?.role === 'admin' ? [{ id: 'companies' as const, label: t.companyManagement, icon: Building2 }] : []),
     { id: 'ratings' as const, label: t.ratingsManagement, icon: Star },
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
     { id: 'import' as const, label: t.dataImport, icon: Upload },
@@ -2947,6 +2953,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Companies Tab */}
+      {activeTab === 'companies' && user?.role === 'admin' && (
+        <CompanyManagement language={language} />
       )}
 
       {activeTab === 'photos' && (

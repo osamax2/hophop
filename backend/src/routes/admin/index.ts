@@ -9,6 +9,7 @@ import analyticsAdmin from "./analytics";
 import importAdmin from "./import";
 import imagesAdmin from "./images";
 import ratingsAdmin from "./ratings.admin";
+import companiesAdmin from "./companies.admin";
 
 const router = Router();
 
@@ -25,5 +26,8 @@ router.use("/ratings", ratingsAdmin);
 
 // Users management: Admin only
 router.use("/users", requireRole(["ADMIN"]), usersAdmin);
+
+// Companies management: Admin only
+router.use("/companies", requireRole(["ADMIN"]), companiesAdmin);
 
 export default router;

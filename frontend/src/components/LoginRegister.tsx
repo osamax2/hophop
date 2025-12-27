@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, Lock, Calendar, Globe } from 'lucide-react';
+import { User, Mail, Phone, Lock, Calendar, Globe, Building2 } from 'lucide-react';
 import type { Language, User as UserType } from '../App';
+import { CompanyRegister } from './CompanyRegister';
 
 interface LoginRegisterProps {
   onLogin: (user: UserType) => void;
@@ -29,6 +30,7 @@ const translations = {
     selectLanguage: 'Sprache auswählen',
     orLoginWith: 'Oder anmelden mit',
     whatsapp: 'WhatsApp',
+    registerAsCompany: 'Als Unternehmen registrieren',
     // Validation messages
     passwordMinLength: 'Das Passwort muss mindestens 8 Zeichen lang sein',
     passwordUppercase: 'Das Passwort muss mindestens einen Großbuchstaben enthalten',
@@ -58,8 +60,7 @@ const translations = {
     other: 'Other',
     selectLanguage: 'Select Language',
     orLoginWith: 'Or sign in with',
-    whatsapp: 'WhatsApp',
-    // Validation messages
+    whatsapp: 'WhatsApp',    registerAsCompany: 'Register as Company',    // Validation messages
     passwordMinLength: 'Password must be at least 8 characters long',
     passwordUppercase: 'Password must contain at least one uppercase letter',
     passwordLowercase: 'Password must contain at least one lowercase letter',
@@ -88,8 +89,7 @@ const translations = {
     other: 'آخر',
     selectLanguage: 'اختر اللغة',
     orLoginWith: 'أو سجل الدخول باستخدام',
-    whatsapp: 'واتساب',
-    // Validation messages
+    whatsapp: 'واتساب',    registerAsCompany: 'التسجيل كشركة',    // Validation messages
     passwordMinLength: 'يجب أن تكون كلمة المرور 8 أحرف على الأقل',
     passwordUppercase: 'يجب أن تحتوي كلمة المرور على حرف كبير واحد على الأقل',
     passwordLowercase: 'يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل',
@@ -103,6 +103,7 @@ const translations = {
 export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
   const t = translations[language];
   const [isLogin, setIsLogin] = useState(true);
+  const [showCompanyRegister, setShowCompanyRegister] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -287,6 +288,16 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
   };
 
   
+  // Show company registration form if selected
+  if (showCompanyRegister) {
+    return (
+      <CompanyRegister 
+        language={language} 
+        onBack={() => setShowCompanyRegister(false)} 
+      />
+    );
+  }
+
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-gradient-to-br from-green-50 to-blue-50">
       <div className="w-full max-w-md">
@@ -632,6 +643,20 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
               {isLogin ? t.switchToRegister : t.switchToLogin}
             </button>
           </div>
+
+          {/* Company Registration Button */}
+          {isLogin && (
+            <div className="mt-6 pt-6 border-t border-gray-200 text-center">
+              <button
+                type="button"
+                onClick={() => setShowCompanyRegister(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 text-green-600 hover:text-green-700 hover:bg-green-50 rounded-lg transition-colors"
+              >
+                <Building2 className="w-5 h-5" />
+                {t.registerAsCompany}
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
