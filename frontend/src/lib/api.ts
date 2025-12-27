@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+const API_BASE = import.meta.env.VITE_API_BASE || "";
 
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("token");
@@ -118,6 +118,10 @@ export const usersApi = {
       roles: user.roles,
       is_active: user.is_active,
       created_at: user.created_at,
+      company_id: user.company_id,
+      company_name: user.company_name,
+      agent_type: user.agent_type,
+      agent_type_name: user.agent_type_name,
     };
   },
 
@@ -360,6 +364,22 @@ export const adminApi = {
     return handleResponse(response);
   },
 
+  getAgentTypes: async () => {
+    const response = await fetch(`${API_BASE}/api/admin/users/agent-types`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  updateAgentInfo: async (userId: number, data: { company_id?: number | null; agent_type?: string | null }) => {
+    const response = await fetch(`${API_BASE}/api/admin/users/${userId}/agent-info`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
   getTrips: async (showAll: boolean = false) => {
     const url = showAll 
       ? `${API_BASE}/api/admin/trips?showAll=true`
@@ -514,6 +534,17 @@ export const adminApi = {
       method: "PATCH",
       headers: headers,
       body: JSON.stringify({ is_active: isActive }),
+    });
+    return handleResponse(response);
+  },
+
+  setUserStatus: async (userId: number, status: 'active' | 'inactive' | 'blocked') => {
+    const headers = getAuthHeaders();
+    headers['Content-Type'] = 'application/json';
+    const response = await fetch(`${API_BASE}/api/admin/users/${userId}/status`, {
+      method: "PATCH",
+      headers: headers,
+      body: JSON.stringify({ status }),
     });
     return handleResponse(response);
   },

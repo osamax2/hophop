@@ -25,8 +25,8 @@ router.use("/analytics", analyticsAdmin);
 router.use("/import", importAdmin);
 router.use("/images", imagesAdmin);
 
-// Users management: Admin only
-router.use("/users", requireRole(["ADMIN"]), usersAdmin);
+// Users management: Admin and Agent (Agent managers see only their company's users)
+router.use("/users", usersAdmin);
 
 // Companies management: Admin only
 router.use("/companies", requireRole(["ADMIN"]), companiesAdmin);

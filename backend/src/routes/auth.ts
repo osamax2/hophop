@@ -1,12 +1,21 @@
 import { Router } from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import { pool } from "../db";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
+import { sendVerificationEmail, sendWelcomeEmail } from "../services/email.service";
+
 const router = Router();
+
+// Helper function to generate verification token
+function generateVerificationToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 /**
  * POST /api/auth/register
+ * Creates a new user account with email verification
  */
 router.post("/register", async (req, res) => {
   const {
@@ -40,14 +49,19 @@ router.post("/register", async (req, res) => {
 
     // hash password
     const password_hash = await bcrypt.hash(password, 10);
+    
+    // generate verification token
+    const verificationToken = generateVerificationToken();
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // insert user
+    // insert user as inactive, pending email verification
     const result = await pool.query(
       `
       INSERT INTO users
-        (email, password_hash, first_name, last_name, phone, gender, address, is_active)
+        (email, password_hash, first_name, last_name, phone, gender, address, 
+         is_active, status, email_verified, verification_token, verification_token_expires)
       VALUES
-        ($1, $2, $3, $4, $5, $6, $7, true)
+        ($1, $2, $3, $4, $5, $6, $7, false, 'inactive', false, $8, $9)
       RETURNING id
       `,
       [
@@ -58,24 +72,186 @@ router.post("/register", async (req, res) => {
         phone || null,
         gender || null,
         address || null,
+        verificationToken,
+        tokenExpires,
       ]
     );
 
     const userId = result.rows[0].id;
 
-    // generate JWT
-    const token = jwt.sign(
-      { id: userId },
-      process.env.JWT_SECRET!,
-      { expiresIn: "7d" }
-    );
+    // Send verification email
+    const emailSent = await sendVerificationEmail({
+      to: email,
+      firstName: first_name,
+      verificationToken,
+    });
 
-    res.status(201).json({ token });
+    if (!emailSent) {
+      console.error("Failed to send verification email to:", email);
+    }
+
+    res.status(201).json({ 
+      message: "Registration successful. Please check your email to verify your account.",
+      requiresVerification: true,
+    });
   } catch (error) {
     console.error("Register error:", error);
     res.status(500).json({
       message: "Register failed",
        error: String(error),
+    });
+  }
+});
+
+/**
+ * GET /api/auth/verify-email
+ * Verify user email with token
+ */
+router.get("/verify-email", async (req, res) => {
+  const { token } = req.query;
+
+  if (!token || typeof token !== "string") {
+    return res.status(400).json({
+      message: "Verification token is required",
+    });
+  }
+
+  try {
+    // Find user with this verification token
+    const result = await pool.query(
+      `
+      SELECT id, email, first_name, verification_token_expires
+      FROM users
+      WHERE verification_token = $1
+      `,
+      [token]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(400).json({
+        message: "Invalid or expired verification token",
+        code: "INVALID_TOKEN",
+      });
+    }
+
+    const user = result.rows[0];
+
+    // Check if token has expired
+    if (new Date() > new Date(user.verification_token_expires)) {
+      return res.status(400).json({
+        message: "Verification token has expired. Please register again.",
+        code: "TOKEN_EXPIRED",
+      });
+    }
+
+    // Activate the user
+    await pool.query(
+      `
+      UPDATE users
+      SET is_active = true,
+          status = 'active',
+          email_verified = true,
+          verification_token = NULL,
+          verification_token_expires = NULL,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1
+      `,
+      [user.id]
+    );
+
+    // Send welcome email
+    await sendWelcomeEmail(user.email, user.first_name);
+
+    // Generate JWT token so user can login immediately
+    const jwtToken = jwt.sign(
+      { id: user.id },
+      process.env.JWT_SECRET || "dev_secret_change_me",
+      { expiresIn: "7d" }
+    );
+
+    res.json({
+      message: "Email verified successfully! Your account is now active.",
+      token: jwtToken,
+      verified: true,
+    });
+  } catch (error) {
+    console.error("Verify email error:", error);
+    res.status(500).json({
+      message: "Verification failed",
+      error: String(error),
+    });
+  }
+});
+
+/**
+ * POST /api/auth/resend-verification
+ * Resend verification email
+ */
+router.post("/resend-verification", async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({
+      message: "Email is required",
+    });
+  }
+
+  try {
+    // Find user
+    const result = await pool.query(
+      `
+      SELECT id, email, first_name, email_verified, is_active
+      FROM users
+      WHERE email = $1
+      `,
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      // Don't reveal if email exists
+      return res.json({
+        message: "If this email exists, a verification link has been sent.",
+      });
+    }
+
+    const user = result.rows[0];
+
+    if (user.email_verified) {
+      return res.status(400).json({
+        message: "Email is already verified",
+      });
+    }
+
+    // Generate new verification token
+    const verificationToken = generateVerificationToken();
+    const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await pool.query(
+      `
+      UPDATE users
+      SET verification_token = $1,
+          verification_token_expires = $2,
+          updated_at = CURRENT_TIMESTAMP
+      WHERE id = $3
+      `,
+      [verificationToken, tokenExpires, user.id]
+    );
+
+    // Send verification email
+    await sendVerificationEmail({
+      to: user.email,
+      firstName: user.first_name,
+      verificationToken,
+    });
+
+    res.json({
+      message: "If this email exists, a verification link has been sent.",
+    });
+  } catch (error) {
+    console.error("Resend verification error:", error);
+    res.status(500).json({
+      message: "Failed to resend verification email",
+      error: String(error),
     });
   }
 });
@@ -179,6 +355,10 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
         u.address,
         u.is_active,
         u.created_at,
+        u.company_id,
+        c.name as company_name,
+        ut.code as agent_type,
+        ut.name as agent_type_name,
         COALESCE(
           json_agg(
             DISTINCT jsonb_build_object('name', r.name)
@@ -188,8 +368,10 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
       FROM users u
       LEFT JOIN user_roles ur ON u.id = ur.user_id
       LEFT JOIN roles r ON ur.role_id = r.id
+      LEFT JOIN transport_companies c ON u.company_id = c.id
+      LEFT JOIN user_types ut ON u.user_type_id = ut.id
       WHERE u.id = $1
-      GROUP BY u.id
+      GROUP BY u.id, c.name, ut.code, ut.name
       `,
       [userId]
     );
@@ -200,12 +382,14 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
 
     const user = result.rows[0];
     
-    // Determine primary role (admin > driver > user)
+    // Determine primary role (admin > agent > driver > user)
     let role = "user";
     const roleNames = user.roles.map((r: any) => r.name?.toLowerCase()).filter(Boolean);
     
     if (roleNames.includes("admin") || roleNames.includes("administrator")) {
       role = "admin";
+    } else if (roleNames.includes("agent")) {
+      role = "agent";
     } else if (roleNames.includes("driver")) {
       role = "driver";
     }
@@ -224,6 +408,10 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
         roles: roleNames,
         is_active: user.is_active,
         created_at: user.created_at,
+        company_id: user.company_id,
+        company_name: user.company_name,
+        agent_type: user.agent_type,
+        agent_type_name: user.agent_type_name,
       },
     });
   } catch (error: any) {

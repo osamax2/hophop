@@ -98,6 +98,7 @@ export class TripsService {
     date?: string;
     status?: string;
     isActive?: boolean;
+    companyId?: number;
     limit?: number;
     offset?: number;
   }): Promise<Trip[]> {
@@ -139,6 +140,11 @@ export class TripsService {
     if (filters.isActive !== undefined) {
       query += ` AND t.is_active = $${paramIndex++}`;
       values.push(filters.isActive);
+    }
+
+    if (filters.companyId) {
+      query += ` AND t.company_id = $${paramIndex++}`;
+      values.push(filters.companyId);
     }
 
     query += ` ORDER BY t.departure_time ASC`;

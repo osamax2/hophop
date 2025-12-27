@@ -201,7 +201,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
 
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('http://87.106.51.243:3002/api/admin/companies', {
+      const response = await fetch('/api/admin/companies', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -227,7 +227,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
       if (searchQuery) params.append('search', searchQuery);
 
       const response = await fetch(
-        `http://87.106.51.243:3002/api/admin/bookings?${params.toString()}`,
+        `/api/admin/bookings?${params.toString()}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -258,7 +258,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
 
     try {
       const response = await fetch(
-        `http://87.106.51.243:3002/api/admin/bookings/${editingBooking.id}`,
+        `/api/admin/bookings/${editingBooking.id}`,
         {
           method: 'PATCH',
           headers: {
@@ -292,8 +292,8 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
 
     try {
       const url = permanent
-        ? `http://87.106.51.243:3002/api/admin/bookings/${id}?permanent=true`
-        : `http://87.106.51.243:3002/api/admin/bookings/${id}`;
+        ? `/api/admin/bookings/${id}?permanent=true`
+        : `/api/admin/bookings/${id}`;
 
       const response = await fetch(url, {
         method: 'DELETE',
@@ -319,7 +319,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
 
     try {
       const response = await fetch(
-        `http://87.106.51.243:3002/api/admin/bookings/${id}/restore`,
+        `/api/admin/bookings/${id}/restore`,
         {
           method: 'POST',
           headers: {

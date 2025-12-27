@@ -237,7 +237,7 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
       if (searchQuery) params.append('search', searchQuery);
 
       const response = await fetch(
-        `http://87.106.51.243:3002/api/admin/invoices?${params.toString()}`,
+        `/api/admin/invoices?${params.toString()}`,
         {
           headers: {
             'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -270,7 +270,7 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
 
     try {
       const response = await fetch(
-        `http://87.106.51.243:3002/api/admin/invoices/${editingInvoice.id}`,
+        `/api/admin/invoices/${editingInvoice.id}`,
         {
           method: 'PATCH',
           headers: {
@@ -306,8 +306,8 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
 
     try {
       const url = permanent
-        ? `http://87.106.51.243:3002/api/admin/invoices/${id}?permanent=true`
-        : `http://87.106.51.243:3002/api/admin/invoices/${id}`;
+        ? `/api/admin/invoices/${id}?permanent=true`
+        : `/api/admin/invoices/${id}`;
 
       const response = await fetch(url, {
         method: 'DELETE',
@@ -333,7 +333,7 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
 
     try {
       const response = await fetch(
-        `http://87.106.51.243:3002/api/admin/invoices/${id}/restore`,
+        `/api/admin/invoices/${id}/restore`,
         {
           method: 'POST',
           headers: {

@@ -1,12 +1,50 @@
 import { Router } from "express";
 import { pool } from "../../db";
+import jwt from "jsonwebtoken";
 
 const router = Router();
+
+// Helper function to get user info from token
+async function getUserFromToken(req: any): Promise<{id: number, company_id: number | null, agent_type: string | null, isAdmin: boolean} | null> {
+  try {
+    const header = req.headers.authorization;
+    const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
+    if (!token) return null;
+
+    const secret = process.env.JWT_SECRET || "dev_secret_change_me";
+    const payload = jwt.verify(token, secret) as { id: number };
+    
+    // Get user with company_id and agent_type
+    const result = await pool.query(`
+      SELECT u.id, u.company_id, ut.code as agent_type,
+             EXISTS(SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = u.id AND r.name = 'Administrator') as is_admin
+      FROM users u
+      LEFT JOIN user_types ut ON u.user_type_id = ut.id
+      WHERE u.id = $1
+    `, [payload.id]);
+    
+    if (result.rows.length === 0) return null;
+    
+    const user = result.rows[0];
+    return {
+      id: user.id,
+      company_id: user.company_id,
+      agent_type: user.agent_type,
+      isAdmin: user.is_admin
+    };
+  } catch (err) {
+    return null;
+  }
+}
 
 // GET /api/admin/trips
 router.get("/", async (req, res) => {
   const showAll = req.query.showAll === 'true';
   const showTrash = req.query.showTrash === 'true';
+  
+  // Get user from token to determine filtering
+  const currentUser = await getUserFromToken(req);
+  const isAgentManager = currentUser && !currentUser.isAdmin && currentUser.agent_type === 'manager' && currentUser.company_id;
   
   let whereClause = '';
   if (showTrash) {
@@ -15,7 +53,12 @@ router.get("/", async (req, res) => {
     whereClause = showAll ? 'WHERE t.deleted_at IS NULL' : 'WHERE t.is_active = true AND t.deleted_at IS NULL';
   }
   
-  console.log(`Fetching trips, showAll: ${showAll}, showTrash: ${showTrash}, whereClause: ${whereClause}`);
+  // Auto-filter by company_id for agent managers (from token, not query params)
+  if (isAgentManager) {
+    whereClause += ` AND t.company_id = ${currentUser.company_id}`;
+  }
+  
+  console.log(`Fetching trips, showAll: ${showAll}, showTrash: ${showTrash}, isAgentManager: ${isAgentManager}, companyId: ${currentUser?.company_id}, whereClause: ${whereClause}`);
   
   const r = await pool.query(
     `

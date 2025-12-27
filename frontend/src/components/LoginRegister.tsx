@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Mail, Phone, Lock, Calendar, Globe, Building2 } from 'lucide-react';
+import { User, Mail, Phone, Lock, Calendar, Globe, Building2, CheckCircle } from 'lucide-react';
 import type { Language, User as UserType } from '../App';
 import { CompanyRegister } from './CompanyRegister';
 
@@ -104,6 +104,8 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
   const t = translations[language];
   const [isLogin, setIsLogin] = useState(true);
   const [showCompanyRegister, setShowCompanyRegister] = useState(false);
+  const [showVerificationMessage, setShowVerificationMessage] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -114,7 +116,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
     language: language,
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
+  const API_BASE = import.meta.env.VITE_API_BASE || "";
 
   // Update formData.language when language prop changes
   useEffect(() => {
@@ -275,6 +277,13 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
         return;
       }
 
+      // Handle registration with email verification
+      if (!isLogin && data.requiresVerification) {
+        setRegisteredEmail(formData.email);
+        setShowVerificationMessage(true);
+        return;
+      }
+
       // ✅ خزّن JWT الحقيقي
       if (data.token) {
         localStorage.setItem("token", data.token);
@@ -356,6 +365,10 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
         phone: userDataFinal?.phone ?? meData?.phone ?? formData.phone ?? "",
         role: userRole as any,
         language: formData.language as Language,
+        company_id: userDataFinal?.company_id,
+        company_name: userDataFinal?.company_name,
+        agent_type: userDataFinal?.agent_type,
+        agent_type_name: userDataFinal?.agent_type_name,
       };
       
       console.log("User object being set:", userObj);
@@ -375,6 +388,92 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
         language={language} 
         onBack={() => setShowCompanyRegister(false)} 
       />
+    );
+  }
+
+  // Show verification message after successful registration
+  if (showVerificationMessage) {
+    const verificationTranslations = {
+      de: {
+        title: 'E-Mail-Bestätigung erforderlich',
+        message: `Wir haben eine Bestätigungs-E-Mail an ${registeredEmail} gesendet.`,
+        instruction: 'Bitte klicken Sie auf den Link in der E-Mail, um Ihr Konto zu aktivieren.',
+        checkSpam: 'Prüfen Sie auch Ihren Spam-Ordner.',
+        resend: 'Keine E-Mail erhalten?',
+        resendButton: 'Erneut senden',
+        backToLogin: 'Zurück zur Anmeldung',
+      },
+      en: {
+        title: 'Email Verification Required',
+        message: `We have sent a verification email to ${registeredEmail}.`,
+        instruction: 'Please click the link in the email to activate your account.',
+        checkSpam: 'Please also check your spam folder.',
+        resend: "Didn't receive the email?",
+        resendButton: 'Resend',
+        backToLogin: 'Back to Login',
+      },
+      ar: {
+        title: 'التحقق من البريد الإلكتروني مطلوب',
+        message: `لقد أرسلنا رسالة تحقق إلى ${registeredEmail}.`,
+        instruction: 'يرجى النقر على الرابط في البريد الإلكتروني لتفعيل حسابك.',
+        checkSpam: 'يرجى أيضًا التحقق من مجلد البريد العشوائي.',
+        resend: 'لم تستلم البريد الإلكتروني؟',
+        resendButton: 'إعادة الإرسال',
+        backToLogin: 'العودة لتسجيل الدخول',
+      },
+    };
+    const vt = verificationTranslations[language];
+
+    const handleResendVerification = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/resend-verification`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: registeredEmail }),
+        });
+        if (res.ok) {
+          alert(language === 'de' ? 'E-Mail wurde erneut gesendet!' : 
+                language === 'ar' ? 'تم إعادة إرسال البريد الإلكتروني!' : 
+                'Email has been resent!');
+        }
+      } catch (err) {
+        console.error('Resend failed:', err);
+      }
+    };
+
+    return (
+      <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4 py-12 bg-gradient-to-br from-green-50 to-blue-50">
+        <div className="w-full max-w-md">
+          <div className="bg-white rounded-2xl shadow-xl border border-gray-200 p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-10 h-10 text-green-600" />
+            </div>
+            <h2 className="text-2xl font-semibold text-gray-900 mb-4">{vt.title}</h2>
+            <p className="text-gray-600 mb-2">{vt.message}</p>
+            <p className="text-gray-600 mb-4">{vt.instruction}</p>
+            <p className="text-sm text-gray-500 mb-6">{vt.checkSpam}</p>
+            
+            <div className="space-y-3">
+              <p className="text-sm text-gray-500">{vt.resend}</p>
+              <button
+                onClick={handleResendVerification}
+                className="w-full py-2 px-4 border border-green-500 text-green-600 rounded-lg hover:bg-green-50"
+              >
+                {vt.resendButton}
+              </button>
+              <button
+                onClick={() => {
+                  setShowVerificationMessage(false);
+                  setIsLogin(true);
+                }}
+                className="w-full py-2 px-4 text-gray-600 hover:text-gray-800"
+              >
+                {vt.backToLogin}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   }
 

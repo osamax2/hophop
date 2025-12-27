@@ -9,6 +9,7 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { LoginRegister } from './components/LoginRegister';
 import { Reviews } from './components/Reviews';
 import { ContactForm } from './components/ContactForm';
+import VerifyEmail from './components/VerifyEmail';
 import { favoritesApi } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
@@ -21,6 +22,10 @@ export interface User {
   phone: string;
   role: UserRole;
   language: Language;
+  company_id?: number;
+  company_name?: string;
+  agent_type?: string;
+  agent_type_name?: string;
 }
 
 export interface SearchParams {
@@ -38,8 +43,20 @@ export default function App() {
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [verifyToken, setVerifyToken] = useState<string | null>(null);
 
   const isRTL = language === 'ar';
+
+  // Check for verify-email route on page load
+  useEffect(() => {
+    const path = window.location.pathname;
+    const urlParams = new URLSearchParams(window.location.search);
+    
+    if (path === '/verify-email') {
+      setVerifyToken(urlParams.get('token'));
+      setCurrentPage('verify-email');
+    }
+  }, []);
 
   // Auto-login on page load if token exists
   useEffect(() => {
@@ -67,6 +84,10 @@ export default function App() {
             phone: userData?.phone ?? "",
             role: userRole as UserRole,
             language: (userData?.language ?? 'ar') as Language,
+            company_id: userData?.company_id,
+            company_name: userData?.company_name,
+            agent_type: userData?.agent_type,
+            agent_type_name: userData?.agent_type_name,
           };
           
           setUser(userObj);
@@ -237,7 +258,146 @@ export default function App() {
             isLoggedIn={!!user}
           />
         )}
+        
+        {currentPage === 'verify-email' && (
+          <VerifyEmailWrapper 
+            token={verifyToken}
+            onVerified={(token) => {
+              if (token) {
+                localStorage.setItem('token', token);
+              }
+              // Clear URL and redirect to home
+              window.history.replaceState({}, '', '/');
+              setCurrentPage('home');
+              window.location.reload();
+            }}
+            onNavigateToLogin={() => {
+              window.history.replaceState({}, '', '/');
+              setCurrentPage('login');
+            }}
+          />
+        )}
       </main>
+    </div>
+  );
+}
+
+// Wrapper component for VerifyEmail to handle navigation without react-router
+function VerifyEmailWrapper({ 
+  token, 
+  onVerified, 
+  onNavigateToLogin 
+}: { 
+  token: string | null;
+  onVerified: (token?: string) => void;
+  onNavigateToLogin: () => void;
+}) {
+  const [status, setStatus] = useState<'loading' | 'success' | 'error' | 'no-token'>('loading');
+  const [message, setMessage] = useState('');
+  const [jwtToken, setJwtToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) {
+      setStatus('no-token');
+      setMessage('Kein Verifizierungstoken gefunden.');
+      return;
+    }
+
+    const verifyEmail = async () => {
+      try {
+        const API_BASE = import.meta.env.VITE_API_BASE || '';
+        const response = await fetch(`${API_BASE}/api/auth/verify-email?token=${token}`);
+        const data = await response.json();
+
+        if (response.ok) {
+          setStatus('success');
+          setMessage(data.message || 'E-Mail erfolgreich verifiziert!');
+          
+          if (data.token) {
+            setJwtToken(data.token);
+            // Auto redirect after 3 seconds
+            setTimeout(() => {
+              onVerified(data.token);
+            }, 3000);
+          }
+        } else {
+          setStatus('error');
+          setMessage(data.message || 'Verifizierung fehlgeschlagen.');
+        }
+      } catch (error) {
+        setStatus('error');
+        setMessage('Ein Fehler ist aufgetreten. Bitte versuchen Sie es später erneut.');
+      }
+    };
+
+    verifyEmail();
+  }, [token, onVerified]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-indigo-100 p-4">
+      <div className="w-full max-w-md bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-6 text-center">
+          <div className="text-4xl mb-2">🚌</div>
+          <h1 className="text-2xl font-bold text-white">HopHop</h1>
+        </div>
+        
+        <div className="p-6 text-center">
+          <div className="mx-auto mb-4">
+            {status === 'loading' && (
+              <div className="w-16 h-16 mx-auto bg-blue-100 rounded-full flex items-center justify-center">
+                <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            {status === 'success' && (
+              <div className="w-16 h-16 mx-auto bg-green-100 rounded-full flex items-center justify-center">
+                <span className="text-3xl">✓</span>
+              </div>
+            )}
+            {status === 'error' && (
+              <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
+                <span className="text-3xl">✗</span>
+              </div>
+            )}
+            {status === 'no-token' && (
+              <div className="w-16 h-16 mx-auto bg-yellow-100 rounded-full flex items-center justify-center">
+                <span className="text-3xl">⚠</span>
+              </div>
+            )}
+          </div>
+          
+          <h2 className="text-xl font-semibold mb-2">
+            {status === 'loading' && 'E-Mail wird verifiziert...'}
+            {status === 'success' && 'Erfolgreich verifiziert! 🎉'}
+            {status === 'error' && 'Verifizierung fehlgeschlagen'}
+            {status === 'no-token' && 'Fehlender Token'}
+          </h2>
+          
+          <p className="text-gray-600 mb-6">{message}</p>
+          
+          {status === 'success' && (
+            <>
+              <p className="text-sm text-gray-500 mb-4">
+                Sie werden in wenigen Sekunden automatisch weitergeleitet...
+              </p>
+              <button 
+                onClick={() => onVerified(jwtToken || undefined)}
+                className="w-full py-3 px-4 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-lg font-medium hover:from-purple-700 hover:to-indigo-700"
+              >
+                Jetzt zur Startseite →
+              </button>
+            </>
+          )}
+          
+          {(status === 'error' || status === 'no-token') && (
+            <button 
+              onClick={onNavigateToLogin}
+              className="w-full py-3 px-4 border border-gray-300 rounded-lg font-medium hover:bg-gray-50"
+            >
+              Zur Anmeldeseite
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

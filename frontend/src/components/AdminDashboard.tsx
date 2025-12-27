@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
@@ -78,6 +78,12 @@ const translations = {
     adminRole: 'Administrator',
     agentRole: 'Agent',
     userRole: 'Benutzer',
+    agentType: 'Agent-Typ',
+    selectAgentType: 'Agent-Typ wählen',
+    manager: 'Manager',
+    driver: 'Fahrer',
+    driverAssistant: 'Fahrerhelfer',
+    assignedCompany: 'Zugewiesene Firma',
     photoManagement: 'Fotoverwaltung',
     dataImport: 'Datenimport',
     analytics: 'Analyse & Statistiken',
@@ -187,6 +193,12 @@ const translations = {
     adminRole: 'Administrator',
     agentRole: 'Agent',
     userRole: 'User',
+    agentType: 'Agent Type',
+    selectAgentType: 'Select Agent Type',
+    manager: 'Manager',
+    driver: 'Driver',
+    driverAssistant: 'Driver Assistant',
+    assignedCompany: 'Assigned Company',
     photoManagement: 'Photo Management',
     dataImport: 'Data Import',
     analytics: 'Analytics & Statistics',
@@ -296,6 +308,12 @@ const translations = {
     adminRole: 'مدير',
     agentRole: 'وكيل',
     userRole: 'مستخدم',
+    agentType: 'نوع الوكيل',
+    selectAgentType: 'اختر نوع الوكيل',
+    manager: 'مدير',
+    driver: 'سائق',
+    driverAssistant: 'مساعد السائق',
+    assignedCompany: 'الشركة المعينة',
     photoManagement: 'إدارة الصور',
     dataImport: 'استيراد البيانات',
     analytics: 'التحليلات والإحصائيات',
@@ -392,7 +410,14 @@ const translations = {
 
 export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics'>('analytics');
+  
+  // Determine user access level
+  const isAdmin = user?.role === 'admin';
+  const isAgentManager = user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id;
+  
+  // Default tab based on role
+  const defaultTab = isAdmin ? 'analytics' : 'schedules';
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics'>(defaultTab);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -422,8 +447,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     last_name: '',
     email: '',
     password: '',
-    role: 'User'
+    role: 'User',
+    company_id: '' as string | number,
+    agent_type: '' as string
   });
+  const [editCompanySearchQuery, setEditCompanySearchQuery] = useState('');
+  const [showEditCompanySuggestions, setShowEditCompanySuggestions] = useState(false);
+  const [editSelectedCompanyName, setEditSelectedCompanyName] = useState('');
 
   // Add/Edit Trip Dialog
   const [showAddTripDialog, setShowAddTripDialog] = useState(false);
@@ -494,9 +524,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     email: '',
     password: '',
     phone: '',
-    role: 'user'
+    role: 'user',
+    company_id: '' as string | number,
+    agent_type: '' as string
   });
   const [userValidationErrors, setUserValidationErrors] = useState<any>({});
+  const [agentTypes, setAgentTypes] = useState<Array<{id: number; code: string; name: string; name_ar?: string}>>([]);
+  const [companySearchQuery, setCompanySearchQuery] = useState('');
+  const [showCompanySuggestions, setShowCompanySuggestions] = useState(false);
+  const [selectedCompanyName, setSelectedCompanyName] = useState('');
   
   // Stops for new trip
   const [newTripStops, setNewTripStops] = useState<Array<{
@@ -517,10 +553,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // Load schedules data
   useEffect(() => {
     if (activeTab === 'schedules') {
-      loadSchedules();
-      loadTripFormData();
+      // Wait for user to be loaded before fetching trips (for agent manager filtering)
+      // For admins, user is defined but company_id may be undefined - that's OK
+      // For agent managers, we need company_id to filter
+      if (user) {
+        loadSchedules();
+        loadTripFormData();
+      }
     }
-  }, [activeTab, showTrash]);
+  }, [activeTab, showTrash, user?.company_id, user?.role]);
 
   // Load images when photos tab is active
   useEffect(() => {
@@ -677,7 +718,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const loadSchedules = async (showAll: boolean = false) => {
     try {
       setLoading(true);
-      // Load trips based on showTrash state
+      
+      // Backend now automatically filters by company_id based on user's token
+      // No need to pass company_id as query parameter
       const url = showTrash 
         ? `/api/admin/trips?showTrash=true`
         : `/api/admin/trips?showAll=${showAll}`;
@@ -695,6 +738,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       const routesData = await adminApi.getRoutes();
       
       console.log('Loaded trips from server:', tripsData.length, 'showTrash:', showTrash);
+      console.log('Current user for filtering:', user?.email, 'role:', user?.role, 'agent_type:', user?.agent_type, 'company_id:', user?.company_id);
+      console.log('isAdmin:', isAdmin, 'isAgentManager:', isAgentManager);
       
       setTrips(tripsData);
       setRoutes(routesData);
@@ -768,6 +813,21 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         const companyName = trip.company_name || '';
         return companyName.toLowerCase().includes(filterCompany.toLowerCase());
       });
+    }
+
+    // For Agent Managers, only show trips from their company
+    // Check if user is agent with manager type and has company_id
+    const userIsAgentManager = user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id;
+    console.log('getFilteredTrips - user:', user?.email, 'role:', user?.role, 'agent_type:', user?.agent_type, 'company_id:', user?.company_id, 'isAgentManager:', userIsAgentManager);
+    
+    if (userIsAgentManager) {
+      console.log('Filtering trips for agent manager, company_id:', user?.company_id);
+      filtered = filtered.filter((trip: any) => {
+        const match = Number(trip.company_id) === Number(user?.company_id);
+        console.log('Trip', trip.id, 'company_id:', trip.company_id, 'match:', match);
+        return match;
+      });
+      console.log('After filter:', filtered.length, 'trips');
     }
 
     return filtered;
@@ -958,6 +1018,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setLoading(true);
       const usersData = await adminApi.getUsers(showDeletedUsers);
       setUsers(usersData);
+      // Also load agent types
+      const types = await adminApi.getAgentTypes();
+      setAgentTypes(types);
     } catch (err) {
       console.error('Error loading users:', err);
     } finally {
@@ -1021,6 +1084,56 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
+  // Handle user status change (active, inactive, blocked)
+  const handleUserStatusChange = async (userId: number, newStatus: 'active' | 'inactive' | 'blocked') => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(language === 'ar' 
+        ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.'
+        : language === 'de' 
+        ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.'
+        : 'Session expired. Please log in again.');
+      window.location.reload();
+      return;
+    }
+
+    const statusLabels: Record<string, Record<string, string>> = {
+      active: { ar: 'نشط', de: 'Aktiv', en: 'Active' },
+      inactive: { ar: 'غير نشط', de: 'Inaktiv', en: 'Inactive' },
+      blocked: { ar: 'محظور', de: 'Gesperrt', en: 'Blocked' }
+    };
+
+    const confirmMessage = language === 'ar'
+      ? `هل أنت متأكد من تغيير حالة المستخدم إلى "${statusLabels[newStatus].ar}"؟`
+      : language === 'de'
+      ? `Sind Sie sicher, dass Sie den Status auf "${statusLabels[newStatus].de}" ändern möchten?`
+      : `Are you sure you want to change user status to "${statusLabels[newStatus].en}"?`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminApi.setUserStatus(userId, newStatus);
+      alert(language === 'ar' 
+        ? 'تم تغيير حالة المستخدم بنجاح'
+        : language === 'de' 
+        ? 'Benutzerstatus erfolgreich geändert'
+        : 'User status changed successfully');
+      loadUsers();
+    } catch (err: any) {
+      console.error('Error changing user status:', err);
+      alert(language === 'ar' 
+        ? 'فشل تغيير حالة المستخدم. يرجى المحاولة مرة أخرى.'
+        : language === 'de' 
+        ? 'Fehler beim Ändern des Benutzerstatus. Bitte versuchen Sie es erneut.'
+        : 'Failed to change user status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleEditProfileClick = (userItem: any) => {
     console.log('handleEditProfileClick called with user:', userItem);
     try {
@@ -1038,8 +1151,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         last_name: userItem.last_name || '',
         email: userItem.email || '',
         password: '',
-        role: currentRole
+        role: currentRole,
+        company_id: userItem.company_id || '',
+        agent_type: userItem.agent_type || ''
       });
+      setEditSelectedCompanyName(userItem.company_name || '');
+      setEditCompanySearchQuery('');
+      setShowEditCompanySuggestions(false);
       setSelectedUserForEdit(userItem);
       setShowEditProfileDialog(true);
       console.log('Edit profile dialog should be shown now, showEditProfileDialog:', true);
@@ -1162,6 +1280,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
       await adminApi.updateUserProfile(selectedUserForEdit.id, updateData);
       
+      // Update agent info if role is Agent
+      if (editProfileData.role === 'Agent') {
+        await adminApi.updateAgentInfo(selectedUserForEdit.id, {
+          company_id: editProfileData.company_id ? Number(editProfileData.company_id) : null,
+          agent_type: editProfileData.agent_type || null
+        });
+      }
+      
       alert(language === 'ar' 
         ? 'تم تحديث ملف المستخدم بنجاح'
         : language === 'de' 
@@ -1175,8 +1301,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         last_name: '',
         email: '',
         password: '',
-        role: 'User'
+        role: 'User',
+        company_id: '',
+        agent_type: ''
       });
+      setEditCompanySearchQuery('');
+      setEditSelectedCompanyName('');
+      setShowEditCompanySuggestions(false);
       loadUsers(); // Refresh users list
     } catch (err: any) {
       console.error('Error updating user profile:', err);
@@ -1281,6 +1412,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           roleNames.push('Administrator');
         } else if (newUserData.role === 'agent') {
           roleNames.push('Agent');
+          // For Agent Managers, automatically assign their company
+          const agentMgrCompanyId = (user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id);
+          const companyIdToUse = agentMgrCompanyId ? user.company_id : newUserData.company_id;
+          // Also update agent info (company and type)
+          if (companyIdToUse || newUserData.agent_type) {
+            await adminApi.updateAgentInfo(createdUser.id, {
+              company_id: companyIdToUse ? Number(companyIdToUse) : null,
+              agent_type: newUserData.agent_type || null
+            });
+          }
         }
         
         if (roleNames.length > 0) {
@@ -1301,9 +1442,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         email: '',
         password: '',
         phone: '',
-        role: 'user'
+        role: 'user',
+        company_id: '',
+        agent_type: ''
       });
       setUserValidationErrors({});
+      setCompanySearchQuery('');
+      setSelectedCompanyName('');
+      setShowCompanySuggestions(false);
       setShowAddUserDialog(false);
       
       // Refresh users list
@@ -1627,9 +1773,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         duration = Math.round((arr.getTime() - dep.getTime()) / (1000 * 60));
       }
 
+      // For Agent Managers, always use their company_id
+      const companyIdToUse = isAgentManager ? user?.company_id : parseInt(newTrip.company_id);
+
       const tripData = {
         route_id: parseInt(routeId),
-        company_id: parseInt(newTrip.company_id),
+        company_id: companyIdToUse,
         transport_type_id: parseInt(newTrip.transport_type_id),
         departure_station_id: parseInt(newTrip.departure_station_id),
         arrival_station_id: parseInt(newTrip.arrival_station_id),
@@ -1763,9 +1912,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
   const handleAddTrip = () => {
     setEditingTripId(null);
+    // For Agent Managers, automatically set their company_id
+    const agentManagerCompanyId = (user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id) 
+      ? String(user.company_id) 
+      : '';
     setNewTrip({
       route_id: '',
-      company_id: '',
+      company_id: agentManagerCompanyId,
       transport_type_id: '',
       departure_station_id: '',
       arrival_station_id: '',
@@ -1946,19 +2099,23 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     );
   }
 
+  // canAccessDashboard uses the isAdmin and isAgentManager defined at the top
+  const canAccessDashboard = isAdmin || isAgentManager;
+
   const tabs = [
-    { id: 'analytics' as const, label: t.analytics, icon: BarChart3 },
+    // Analytics - Admin only
+    ...(isAdmin ? [{ id: 'analytics' as const, label: t.analytics, icon: BarChart3 }] : []),
     { id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar },
-    // Users management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
+    // Users management tab - Admin or Agent Manager
+    ...((isAdmin || isAgentManager) ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
     // Companies management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'companies' as const, label: t.companyManagement, icon: Building2 }] : []),
+    ...(isAdmin ? [{ id: 'companies' as const, label: t.companyManagement, icon: Building2 }] : []),
     // Ratings management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'ratings' as const, label: t.ratingsManagement, icon: Star }] : []),
-    // Bookings management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'bookings' as const, label: t.bookingsManagement, icon: Calendar }] : []),
-    // Invoices management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'invoices' as const, label: t.invoicesManagement, icon: Download }] : []),
+    ...(isAdmin ? [{ id: 'ratings' as const, label: t.ratingsManagement, icon: Star }] : []),
+    // Bookings management tab - Admin or Agent Manager
+    ...((isAdmin || isAgentManager) ? [{ id: 'bookings' as const, label: t.bookingsManagement, icon: Calendar }] : []),
+    // Invoices management tab - Admin or Agent Manager
+    ...((isAdmin || isAgentManager) ? [{ id: 'invoices' as const, label: t.invoicesManagement, icon: Download }] : []),
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
     { id: 'import' as const, label: t.dataImport, icon: Upload },
   ];
@@ -2010,7 +2167,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   onClick={() => {
                     setShowTripsList(!showTripsList);
                     if (!showTripsList) {
-                      // Load trips when opening
+                      // Load trips when opening - backend automatically filters by company for agent managers
                       adminApi.getTrips(true).then((tripsData) => {
                         setTrips(Array.isArray(tripsData) ? tripsData : []);
                       }).catch(console.error);
@@ -2602,22 +2759,31 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     </select>
                   </div>
 
-                  {/* Company */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">{t.company}</label>
-                    <select
-                      value={newTrip.company_id}
-                      onChange={(e) => setNewTrip({ ...newTrip, company_id: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    >
-                      <option value="">{t.selectCompany || 'Select Company'}</option>
-                      {companies.map((company: any) => (
-                        <option key={company.id} value={company.id}>
-                          {company.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Company - Only show for Admins, Agent Managers use their company automatically */}
+                  {isAdmin ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.company}</label>
+                      <select
+                        value={newTrip.company_id}
+                        onChange={(e) => setNewTrip({ ...newTrip, company_id: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      >
+                        <option value="">{t.selectCompany || 'Select Company'}</option>
+                        {companies.map((company: any) => (
+                          <option key={company.id} value={company.id}>
+                            {company.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : isAgentManager ? (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.company}</label>
+                      <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                        {user?.company_name || (language === 'ar' ? 'شركتك' : language === 'de' ? 'Ihre Firma' : 'Your company')}
+                      </div>
+                    </div>
+                  ) : null}
 
                   {/* Transport Type */}
                   <div>
@@ -3106,9 +3272,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         </>
       )}
 
-      {activeTab === 'users' && user?.role === 'admin' && (() => {
+      {activeTab === 'users' && (isAdmin || isAgentManager) && (() => {
         // Filter users based on search and role
-        const filteredUsers = users.filter((userItem: any) => {
+        let filteredUsers = users.filter((userItem: any) => {
+          // For Agent Managers, only show users from their company
+          if (isAgentManager && !isAdmin) {
+            if (userItem.company_id !== user?.company_id) {
+              return false;
+            }
+          }
+          
           // Search filter
           const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim();
           const matchesSearch = userSearchQuery === '' ||
@@ -3219,62 +3392,78 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.userName}</th>
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{t.userEmail}</th>
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.userRole}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.actions}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}>{language === 'ar' ? 'الحالة' : language === 'de' ? 'Status' : 'Status'}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '120px', minWidth: '120px', maxWidth: '120px' }}>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="px-6 py-8 text-center text-gray-600">No users found</td>
+                      <td colSpan={5} className="px-6 py-8 text-center text-gray-600">No users found</td>
                     </tr>
                   ) : (
                     filteredUsers.map((userItem: any) => {
                       const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim() || userItem.email;
                       const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
-                      const isAdmin = roles.includes('Administrator') || roles.includes('ADMIN');
+                      const isUserAdmin = roles.includes('Administrator') || roles.includes('ADMIN');
                       const isAgent = roles.includes('Agent') || roles.includes('AGENT');
-                      const roleDisplay = isAdmin ? 'admin' : isAgent ? 'agent' : 'user';
+                      const roleDisplay = isUserAdmin ? 'admin' : isAgent ? 'agent' : 'user';
+                      const currentStatus = userItem.status || (userItem.is_active ? 'active' : 'inactive');
                       return (
-                        <tr key={userItem.id} className={`hover:bg-gray-50 ${userItem.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
+                        <tr key={userItem.id} className={`hover:bg-gray-50 ${currentStatus === 'blocked' ? 'bg-red-50' : currentStatus === 'inactive' ? 'opacity-60 bg-gray-100' : ''}`}>
                           <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{userName}</td>
                           <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{userItem.email}</td>
                           <td className="px-6 py-3" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                             <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                              isAdmin ? 'bg-purple-100 text-purple-700' : isAgent ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
+                              isUserAdmin ? 'bg-purple-100 text-purple-700' : isAgent ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'
                             }`}>
                               {roleDisplay}
-                              {userItem.is_active === false && (
-                                <span className="ml-1 text-xs">({language === 'ar' ? 'محظور' : language === 'de' ? 'Gesperrt' : 'Banned'})</span>
-                              )}
                             </span>
                           </td>
-                          <td className="px-6 py-3 text-sm" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
-                            <div className="flex gap-2">
-                              <button 
-                                type="button"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  console.log('Button clicked for user:', userItem.id);
-                                  if (!loading) {
-                                    handleEditProfileClick(userItem);
-                                  }
-                                }}
+                          <td className="px-6 py-3" style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}>
+                            {(isAdmin || isAgentManager) ? (
+                              <select
+                                value={currentStatus}
+                                onChange={(e) => handleUserStatusChange(userItem.id, e.target.value as 'active' | 'inactive' | 'blocked')}
                                 disabled={loading}
-                                className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                                className={`text-xs px-2 py-1 rounded-full border-0 cursor-pointer ${
+                                  currentStatus === 'active' ? 'bg-green-100 text-green-700' :
+                                  currentStatus === 'inactive' ? 'bg-yellow-100 text-yellow-700' :
+                                  'bg-red-100 text-red-700'
+                                }`}
                               >
-                                {t.editProfile}
-                              </button>
-                              <button 
-                                onClick={() => handleBanUser(userItem.id, userItem.is_active !== false)}
-                                disabled={loading}
-                                className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              >
-                                {userItem.is_active === false 
-                                  ? (language === 'ar' ? 'إلغاء الحظر' : language === 'de' ? 'Entsperren' : 'Unban')
-                                  : t.blockUser}
-                              </button>
-                            </div>
+                                <option value="active">{language === 'ar' ? 'نشط' : language === 'de' ? 'Aktiv' : 'Active'}</option>
+                                <option value="inactive">{language === 'ar' ? 'غير نشط' : language === 'de' ? 'Inaktiv' : 'Inactive'}</option>
+                                <option value="blocked">{language === 'ar' ? 'محظور' : language === 'de' ? 'Gesperrt' : 'Blocked'}</option>
+                              </select>
+                            ) : (
+                              <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                                currentStatus === 'active' ? 'bg-green-100 text-green-700' :
+                                currentStatus === 'inactive' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-red-100 text-red-700'
+                              }`}>
+                                {currentStatus === 'active' ? (language === 'ar' ? 'نشط' : language === 'de' ? 'Aktiv' : 'Active') :
+                                 currentStatus === 'inactive' ? (language === 'ar' ? 'غير نشط' : language === 'de' ? 'Inaktiv' : 'Inactive') :
+                                 (language === 'ar' ? 'محظور' : language === 'de' ? 'Gesperrt' : 'Blocked')}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-3 text-sm" style={{ width: '120px', minWidth: '120px', maxWidth: '120px' }}>
+                            <button 
+                              type="button"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                console.log('Button clicked for user:', userItem.id);
+                                if (!loading) {
+                                  handleEditProfileClick(userItem);
+                                }
+                              }}
+                              disabled={loading}
+                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                            >
+                              {t.editProfile}
+                            </button>
                           </td>
                         </tr>
                       );
@@ -3289,23 +3478,23 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       })()}
 
       {/* Companies Tab */}
-      {activeTab === 'companies' && user?.role === 'admin' && (
+      {activeTab === 'companies' && isAdmin && (
         <CompanyManagement language={language} />
       )}
 
       {/* Ratings Tab */}
-      {activeTab === 'ratings' && user?.role === 'admin' && (
+      {activeTab === 'ratings' && isAdmin && (
         <RatingManagement language={language} />
       )}
 
       {/* Bookings Tab */}
-      {activeTab === 'bookings' && user?.role === 'admin' && (
-        <BookingManagement language={language} />
+      {activeTab === 'bookings' && (isAdmin || isAgentManager) && (
+        <BookingManagement language={language} companyId={isAgentManager ? user?.company_id : undefined} />
       )}
 
       {/* Invoices Tab */}
-      {activeTab === 'invoices' && user?.role === 'admin' && (
-        <InvoiceManagement language={language} />
+      {activeTab === 'invoices' && (isAdmin || isAgentManager) && (
+        <InvoiceManagement language={language} companyId={isAgentManager ? user?.company_id : undefined} />
       )}
 
       {activeTab === 'photos' && (
@@ -3834,8 +4023,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 last_name: '',
                 email: '',
                 password: '',
-                role: 'User'
+                role: 'User',
+                company_id: '' as string | number,
+                agent_type: ''
               });
+              setEditCompanySearchQuery('');
+              setShowEditCompanySuggestions(false);
+              setEditSelectedCompanyName('');
             }
           }}
         >
@@ -3912,6 +4106,95 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 </select>
               </div>
 
+              {/* Company and Agent Type - Only show for Agents */}
+              {editProfileData.role === 'Agent' && (
+                <>
+                  {/* Company Search */}
+                  <div className="relative">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {language === 'ar' ? 'الشركة المعينة' : language === 'de' ? 'Zugewiesene Firma' : 'Assigned Company'}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type="text"
+                        value={editCompanySearchQuery}
+                        onChange={(e) => {
+                          setEditCompanySearchQuery(e.target.value);
+                          setShowEditCompanySuggestions(true);
+                          if (!e.target.value) {
+                            setEditProfileData({ ...editProfileData, company_id: '' });
+                            setEditSelectedCompanyName('');
+                          }
+                        }}
+                        onFocus={() => setShowEditCompanySuggestions(true)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder={language === 'ar' ? 'ابحث عن شركة...' : language === 'de' ? 'Firma suchen...' : 'Search for a company...'}
+                      />
+                      {editSelectedCompanyName && (
+                        <div className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                          <Check className="w-4 h-4" />
+                          {editSelectedCompanyName}
+                        </div>
+                      )}
+                      {showEditCompanySuggestions && editCompanySearchQuery && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {companies
+                            .filter(c => 
+                              c.name.toLowerCase().includes(editCompanySearchQuery.toLowerCase()) ||
+                              (c.name_ar && c.name_ar.includes(editCompanySearchQuery))
+                            )
+                            .slice(0, 10)
+                            .map(company => (
+                              <div
+                                key={company.id}
+                                onClick={() => {
+                                  setEditProfileData({ ...editProfileData, company_id: company.id });
+                                  setEditSelectedCompanyName(language === 'ar' ? (company.name_ar || company.name) : company.name);
+                                  setEditCompanySearchQuery('');
+                                  setShowEditCompanySuggestions(false);
+                                }}
+                                className="px-4 py-2 hover:bg-green-50 cursor-pointer border-b border-gray-100 last:border-0"
+                              >
+                                <div className="font-medium">{language === 'ar' ? (company.name_ar || company.name) : company.name}</div>
+                              </div>
+                            ))
+                          }
+                          {companies.filter(c => 
+                            c.name.toLowerCase().includes(editCompanySearchQuery.toLowerCase()) ||
+                            (c.name_ar && c.name_ar.includes(editCompanySearchQuery))
+                          ).length === 0 && (
+                            <div className="px-4 py-2 text-gray-500">
+                              {language === 'ar' ? 'لم يتم العثور على شركات' : language === 'de' ? 'Keine Firmen gefunden' : 'No companies found'}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Agent Type */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {language === 'ar' ? 'نوع الوكيل' : language === 'de' ? 'Agent-Typ' : 'Agent Type'}
+                    </label>
+                    <select
+                      value={editProfileData.agent_type}
+                      onChange={(e) => setEditProfileData({ ...editProfileData, agent_type: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    >
+                      <option value="">
+                        {language === 'ar' ? 'اختر نوع الوكيل' : language === 'de' ? 'Agent-Typ wählen' : 'Select agent type'}
+                      </option>
+                      {agentTypes.map(type => (
+                        <option key={type.id} value={type.code}>
+                          {language === 'ar' ? (type.name_ar || type.name) : type.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
+
               {/* Password */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -3940,8 +4223,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       last_name: '',
                       email: '',
                       password: '',
-                      role: 'User'
+                      role: 'User',
+                      company_id: '' as string | number,
+                      agent_type: ''
                     });
+                    setEditCompanySearchQuery('');
+                    setShowEditCompanySuggestions(false);
+                    setEditSelectedCompanyName('');
                   }}
                   className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
@@ -4003,9 +4291,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 email: '',
                 password: '',
                 phone: '',
-                role: 'user'
+                role: 'user',
+                company_id: '',
+                agent_type: ''
               });
               setUserValidationErrors({});
+              setCompanySearchQuery('');
+              setSelectedCompanyName('');
+              setShowCompanySuggestions(false);
             }
           }}
         >
@@ -4032,9 +4325,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     email: '',
                     password: '',
                     phone: '',
-                    role: 'user'
+                    role: 'user',
+                    company_id: '',
+                    agent_type: ''
                   });
                   setUserValidationErrors({});
+                  setCompanySearchQuery('');
+                  setSelectedCompanyName('');
+                  setShowCompanySuggestions(false);
                 }}
                 className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
@@ -4179,14 +4477,108 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   </label>
                   <select
                     value={newUserData.role}
-                    onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                    onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value, company_id: '', agent_type: '' })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                   >
                     <option value="user">{language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User'}</option>
                     <option value="agent">{language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent'}</option>
-                    <option value="admin">{language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Admin'}</option>
+                    {/* Only admins can create other admins */}
+                    {isAdmin && (
+                      <option value="admin">{language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Admin'}</option>
+                    )}
                   </select>
                 </div>
+
+                {/* Agent-specific fields */}
+                {newUserData.role === 'agent' && (
+                  <>
+                    {/* Company Selection with Search - Only for Admins, Agent Managers auto-assign their company */}
+                    {isAdmin ? (
+                      <div className="relative">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t.assignedCompany} *
+                        </label>
+                        <input
+                          type="text"
+                          value={selectedCompanyName || companySearchQuery}
+                          onChange={(e) => {
+                            setCompanySearchQuery(e.target.value);
+                            setSelectedCompanyName('');
+                            setNewUserData({ ...newUserData, company_id: '' });
+                            setShowCompanySuggestions(true);
+                          }}
+                          onFocus={() => setShowCompanySuggestions(true)}
+                          placeholder={language === 'ar' ? 'ابحث عن شركة...' : language === 'de' ? 'Firma suchen...' : 'Search company...'}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        />
+                      {showCompanySuggestions && companySearchQuery && (
+                        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                          {companies
+                            .filter((company: any) => 
+                              company.name.toLowerCase().includes(companySearchQuery.toLowerCase())
+                            )
+                            .slice(0, 10)
+                            .map((company: any) => (
+                              <div
+                                key={company.id}
+                                className="px-4 py-2 hover:bg-green-50 cursor-pointer border-b last:border-b-0"
+                                onClick={() => {
+                                  setNewUserData({ ...newUserData, company_id: company.id });
+                                  setSelectedCompanyName(company.name);
+                                  setCompanySearchQuery('');
+                                  setShowCompanySuggestions(false);
+                                }}
+                              >
+                                {company.name}
+                              </div>
+                            ))
+                          }
+                          {companies.filter((company: any) => 
+                            company.name.toLowerCase().includes(companySearchQuery.toLowerCase())
+                          ).length === 0 && (
+                            <div className="px-4 py-2 text-gray-500 italic">
+                              {language === 'ar' ? 'لا توجد نتائج' : language === 'de' ? 'Keine Ergebnisse' : 'No results'}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                      {selectedCompanyName && (
+                        <div className="mt-1 text-sm text-green-600 flex items-center gap-1">
+                          ✓ {selectedCompanyName}
+                        </div>
+                      )}
+                      </div>
+                    ) : (
+                      /* Agent Manager sees their company name (read-only) */
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          {t.assignedCompany}
+                        </label>
+                        <div className="w-full px-4 py-2 bg-gray-100 border border-gray-300 rounded-lg text-gray-700">
+                          {user?.company_name || (language === 'ar' ? 'شركتك' : language === 'de' ? 'Ihre Firma' : 'Your company')}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Agent Type Selection */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        {t.agentType} *
+                      </label>
+                      <select
+                        value={newUserData.agent_type}
+                        onChange={(e) => setNewUserData({ ...newUserData, agent_type: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      >
+                        <option value="">{t.selectAgentType}</option>
+                        {/* Agent Managers can only create drivers and assistants, not other managers */}
+                        {isAdmin && <option value="manager">{t.manager}</option>}
+                        <option value="driver">{t.driver}</option>
+                        <option value="assistant">{t.driverAssistant}</option>
+                      </select>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
@@ -4201,9 +4593,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     email: '',
                     password: '',
                     phone: '',
-                    role: 'user'
+                    role: 'user',
+                    company_id: '',
+                    agent_type: ''
                   });
                   setUserValidationErrors({});
+                  setCompanySearchQuery('');
+                  setSelectedCompanyName('');
+                  setShowCompanySuggestions(false);
                 }}
                 className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >

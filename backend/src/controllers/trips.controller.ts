@@ -8,14 +8,18 @@ export class TripsController {
    */
   async getAll(req: Request, res: Response) {
     try {
+      // company_id filter for agent managers
+      const companyId = req.query.company_id ? parseInt(req.query.company_id as string) : undefined;
+
       // إذا كان هناك معايير بحث، استخدم search
-      if (req.query.fromCityId || req.query.toCityId || req.query.date || req.query.status || req.query.isActive !== undefined) {
+      if (req.query.fromCityId || req.query.toCityId || req.query.date || req.query.status || req.query.isActive !== undefined || companyId) {
         const filters = {
           fromCityId: req.query.fromCityId ? parseInt(req.query.fromCityId as string) : undefined,
           toCityId: req.query.toCityId ? parseInt(req.query.toCityId as string) : undefined,
           date: req.query.date as string | undefined,
           status: req.query.status as string | undefined,
           isActive: req.query.isActive !== undefined ? req.query.isActive === "true" : undefined,
+          companyId: companyId,
           limit: req.query.limit ? parseInt(req.query.limit as string) : 100,
           offset: req.query.offset ? parseInt(req.query.offset as string) : 0,
         };
