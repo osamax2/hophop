@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { pool } from "../../db";
 import { requireAuth, AuthedRequest } from "../../middleware/auth";
-import { requireAdmin } from "../../middleware/roles";
+import { requireRole } from "../../middleware/roles";
 
 const router = Router();
 
 // GET /api/admin/companies - Get all companies (including soft deleted if query param showDeleted=true)
-router.get("/", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
+router.get("/", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest, res) => {
   try {
     const showDeleted = req.query.showDeleted === 'true';
     
@@ -35,7 +35,7 @@ router.get("/", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
 });
 
 // GET /api/admin/companies/:id - Get company by ID
-router.get("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
+router.get("/:id", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
     
@@ -63,7 +63,7 @@ router.get("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res) =>
 });
 
 // POST /api/admin/companies - Create new company
-router.post("/", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
+router.post("/", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest, res) => {
   const client = await pool.connect();
   
   try {
@@ -180,7 +180,7 @@ router.post("/", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
 });
 
 // PUT /api/admin/companies/:id - Update company
-router.put("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
+router.put("/:id", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
     const { 
@@ -251,7 +251,7 @@ router.put("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res) =>
 });
 
 // DELETE /api/admin/companies/:id - Soft delete company
-router.delete("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
+router.delete("/:id", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
     const { permanent } = req.query;
@@ -290,7 +290,7 @@ router.delete("/:id", requireAuth, requireAdmin, async (req: AuthedRequest, res)
 });
 
 // POST /api/admin/companies/:id/restore - Restore soft deleted company
-router.post("/:id/restore", requireAuth, requireAdmin, async (req: AuthedRequest, res) => {
+router.post("/:id/restore", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest, res) => {
   try {
     const { id } = req.params;
     
