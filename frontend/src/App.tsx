@@ -8,6 +8,7 @@ import { UserProfile } from './components/UserProfile';
 import { AdminDashboard } from './components/AdminDashboard';
 import { LoginRegister } from './components/LoginRegister';
 import { Reviews } from './components/Reviews';
+import { ContactForm } from './components/ContactForm';
 import { favoritesApi } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
@@ -162,7 +163,18 @@ export default function App() {
       
       <main className="pb-8">
         {currentPage === 'home' && (
-          <HomePage onSearch={handleSearch} language={language} />
+          <HomePage 
+            onSearch={handleSearch} 
+            language={language}
+            onContactClick={() => setCurrentPage('contact')}
+          />
+        )}
+        
+        {currentPage === 'contact' && (
+          <ContactForm 
+            language={language}
+            onClose={() => setCurrentPage('home')}
+          />
         )}
         
         {currentPage === 'search-results' && searchParams && (

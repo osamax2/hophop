@@ -7,6 +7,7 @@ import { CitySelector } from './CitySelector';
 interface HomePageProps {
   onSearch: (params: SearchParams) => void;
   language: Language;
+  onContactClick?: () => void;
 }
 
 const translations = {
@@ -52,6 +53,14 @@ const translations = {
     footerSocialText: 'Folgen Sie uns auf sozialen Medien',
     footerPrivacy: 'Datenschutz',
     footerTerms: 'Nutzungsbedingungen',
+    footerQuickLinks: 'Schnelllinks',
+    footerHome: 'Startseite',
+    footerAllCompanies: 'Alle Unternehmen',
+    footerSchedules: 'Fahrpläne',
+    footerRateCompanies: 'Unternehmen bewerten',
+    footerSupport: 'Support',
+    footerSupportText: 'Kontaktieren Sie uns für Fragen und Unterstützung.',
+    footerLegal: 'Rechtliches',
   },
   en: {
     mainTitle: 'Find Your Journey',
@@ -95,6 +104,14 @@ const translations = {
     footerSocialText: 'Follow us on social media',
     footerPrivacy: 'Privacy Policy',
     footerTerms: 'Terms of Service',
+    footerQuickLinks: 'Quick Links',
+    footerHome: 'Home',
+    footerAllCompanies: 'All Companies',
+    footerSchedules: 'Schedules',
+    footerRateCompanies: 'Rate Companies',
+    footerSupport: 'Support',
+    footerSupportText: 'Contact us for questions and support.',
+    footerLegal: 'Legal',
   },
   ar: {
     mainTitle: 'ابحث عن رحلتك',
@@ -129,7 +146,7 @@ const translations = {
     emptyFieldsError: 'يرجى إدخال مكان المغادرة ومكان الوصول',
     // Footer
     footerAbout: 'من نحن',
-    footerContact: 'اتصل بنا',
+    footerContact: 'تواصل معنا',
     footerLinks: 'روابط',
     footerFollowUs: 'تابعنا',
     footerCopyright: '© 2024 هوب هوب. جميع الحقوق محفوظة.',
@@ -138,6 +155,14 @@ const translations = {
     footerSocialText: 'تابعنا على وسائل التواصل الاجتماعي',
     footerPrivacy: 'سياسة الخصوصية',
     footerTerms: 'شروط الاستخدام',
+    footerQuickLinks: 'روابط سريعة',
+    footerHome: 'الصفحة الرئيسية',
+    footerAllCompanies: 'جميع الشركات',
+    footerSchedules: 'الجداول',
+    footerRateCompanies: 'تقييم الشركات',
+    footerSupport: 'الدعم',
+    footerSupportText: 'يمكنك التواصل معنا للاستفسارات والدعم.',
+    footerLegal: 'معلومات قانونية',
   },
 };
 
@@ -148,7 +173,7 @@ const popularRoutes = [
   { from: 'دمشق', to: 'حمص', duration: '2h 30m' },
 ];
 
-export function HomePage({ onSearch, language }: HomePageProps) {
+export function HomePage({ onSearch, language, onContactClick }: HomePageProps) {
   const t = translations[language];
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
@@ -400,61 +425,98 @@ export function HomePage({ onSearch, language }: HomePageProps) {
       </div>
 
       {/* Footer */}
-      <footer className="bg-gradient-to-b from-gray-900 to-gray-800 text-white mt-20">
-        <div className="max-w-6xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 mb-12">
-            {/* About Section */}
-            <div className="lg:col-span-1">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-gray-200 rounded-xl p-2">
-                  <img src={logo} alt="Logo" className="h-8 w-auto" />
+      <footer className="relative bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white mt-20 border-t border-gray-700/30">
+        {/* Subtle Background Pattern */}
+        <div className="absolute inset-0 opacity-[0.03]">
+          <div className="absolute top-0 right-0 w-96 h-96 bg-green-500 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-emerald-500 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
+          {/* Main Footer Content - 3 Columns */}
+          <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10 mb-10 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+            {/* Column 1: Brand Identity */}
+            <div className="space-y-4">
+              <div className={`flex items-center gap-3 ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-2 shadow-md border border-white/10">
+                  <img src={logo} alt="HopHop Logo" className="h-10 w-auto" />
                 </div>
-                <h3 className="text-2xl font-bold text-gray-300">HopHop</h3>
+                <h3 className="text-xl font-bold text-gray-400 tracking-tight">HopHop</h3>
               </div>
-              <p className="text-gray-300 text-sm leading-relaxed mb-4">{t.footerAboutText}</p>
+              <p className="text-gray-400 text-sm leading-relaxed font-light">
+                {t.footerAboutText}
+              </p>
             </div>
 
-            {/* Links Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-6 text-gray-300">{t.footerLinks}</h3>
+            {/* Column 2: Support & Contact */}
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-gray-400 mb-4 tracking-tight">
+                {t.footerSupport}
+              </h3>
+              <p className="text-gray-400 text-sm leading-relaxed mb-4">
+                {t.footerSupportText}
+              </p>
+              <button
+                onClick={onContactClick}
+                className="group relative inline-flex items-center justify-center gap-5.5 bg-green-600 hover:bg-green-500 text-white font-semibold py-3.5 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-green-500/50 hover:-translate-y-0.5 active:translate-y-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800 text-sm min-w-[140px]"
+              >
+                <Mail className="w-4 h-4 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-[-5deg]" />
+                <span className="relative z-10">{t.footerContact}</span>
+                <div className="absolute inset-0 rounded-xl bg-white/0 group-hover:bg-white/10 transition-colors duration-300"></div>
+              </button>
+            </div>
+
+            {/* Column 3: Legal Information */}
+            <div className="space-y-4">
+              <h3 className="text-base font-semibold text-gray-400 mb-4 tracking-tight">
+                {t.footerLegal}
+              </h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="#" className="text-gray-300 hover:text-green-400 transition-colors text-sm flex items-center gap-2 group">
-                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></span>
-                    <span>{t.footerAbout}</span>
+                  <a 
+                    href="#" 
+                    className="group inline-flex items-center gap-2 text-gray-400 hover:text-green-400 transition-all duration-200 text-sm"
+                  >
+                    <span className={`w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${language === 'ar' ? 'order-2' : ''}`}></span>
+                    <span className={`relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 group-hover:after:w-full`}>
+                      {t.footerPrivacy}
+                    </span>
+                  </a>
+                </li>
+                <li>
+                  <a 
+                    href="#" 
+                    className="group inline-flex items-center gap-2 text-gray-400 hover:text-green-400 transition-all duration-200 text-sm"
+                  >
+                    <span className={`w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${language === 'ar' ? 'order-2' : ''}`}></span>
+                    <span className={`relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 group-hover:after:w-full`}>
+                      {t.footerTerms}
+                    </span>
                   </a>
                 </li>
               </ul>
             </div>
-
-            {/* Contact Section */}
-            <div>
-              <h3 className="text-lg font-semibold mb-6 text-gray-300">{t.footerContact}</h3>
-              <p className="text-gray-300 text-sm mb-6 leading-relaxed">{t.footerContactText}</p>
-              <div className="space-y-4">
-                <a href="mailto:info@hophop.com" className="flex items-center gap-3 text-gray-300 hover:text-green-400 transition-colors text-sm group">
-                  <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-green-600 transition-colors">
-                    <Mail className="w-4 h-4" />
-                  </div>
-                  <span>info@hophop.com</span>
-                </a>
-                <a href="tel:+963111234567" className="flex items-center gap-3 text-gray-300 hover:text-green-400 transition-colors text-sm group">
-                  <div className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center group-hover:bg-green-600 transition-colors">
-                    <Phone className="w-4 h-4" />
-                  </div>
-                  <span>+963 11 123 4567</span>
-                </a>
-              </div>
-            </div>
           </div>
 
-          {/* Copyright */}
-          <div className="border-t border-gray-700 pt-8">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-              <p className="text-gray-400 text-sm">{t.footerCopyright}</p>
-              <div className="flex gap-6 text-sm">
-                <a href="#" className="text-gray-400 hover:text-green-400 transition-colors">{t.footerPrivacy}</a>
-                <a href="#" className="text-gray-400 hover:text-green-400 transition-colors">{t.footerTerms}</a>
+          {/* Bottom Bar - Divider & Copyright */}
+          <div className="border-t border-gray-700/50 pt-6">
+            <div className={`flex flex-col sm:flex-row justify-between items-center gap-3 ${language === 'ar' ? 'sm:flex-row-reverse' : ''}`}>
+              <p className="text-gray-500 text-xs sm:text-sm">
+                {t.footerCopyright}
+              </p>
+              <div className={`flex gap-4 sm:gap-6 text-xs ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
+                <a 
+                  href="#" 
+                  className={`text-gray-500 hover:text-green-400 transition-colors duration-200 relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 hover:after:w-full`}
+                >
+                  {t.footerPrivacy}
+                </a>
+                <a 
+                  href="#" 
+                  className={`text-gray-500 hover:text-green-400 transition-colors duration-200 relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 hover:after:w-full`}
+                >
+                  {t.footerTerms}
+                </a>
               </div>
             </div>
           </div>
