@@ -23,7 +23,7 @@ router.get("/", async (req, res) => {
         u.first_name || ' ' || u.last_name AS user_name,
         u.email AS user_email,
         co.name AS company_name,
-        ROUND((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3.0, 2) AS average_rating
+        ROUND((COALESCE(r.punctuality_rating, 0) + COALESCE(r.friendliness_rating, 0) + COALESCE(r.cleanliness_rating, 0)) / 3.0, 2) AS average_rating
       FROM ratings r
       JOIN users u ON r.user_id = u.id
       LEFT JOIN transport_companies co ON r.transport_company_id = co.id
@@ -113,7 +113,7 @@ router.get("/:id", async (req, res) => {
         u.first_name || ' ' || u.last_name AS user_name,
         u.email AS user_email,
         co.name AS company_name,
-        ROUND((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3.0, 2) AS average_rating
+        ROUND((COALESCE(r.punctuality_rating, 0) + COALESCE(r.friendliness_rating, 0) + COALESCE(r.cleanliness_rating, 0)) / 3.0, 2) AS average_rating
       FROM ratings r
       JOIN users u ON r.user_id = u.id
       LEFT JOIN transport_companies co ON r.transport_company_id = co.id
@@ -231,7 +231,7 @@ router.patch("/:id", async (req, res) => {
         u.first_name || ' ' || u.last_name AS user_name,
         u.email AS user_email,
         co.name AS company_name,
-        ROUND((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3.0, 2) AS average_rating
+        ROUND((COALESCE(r.punctuality_rating, 0) + COALESCE(r.friendliness_rating, 0) + COALESCE(r.cleanliness_rating, 0)) / 3.0, 2) AS average_rating
       FROM ratings r
       JOIN users u ON r.user_id = u.id
       LEFT JOIN transport_companies co ON r.transport_company_id = co.id
@@ -331,7 +331,7 @@ router.post("/:id/restore", async (req, res) => {
         u.first_name || ' ' || u.last_name AS user_name,
         u.email AS user_email,
         co.name AS company_name,
-        ROUND((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3.0, 2) AS average_rating
+        ROUND((COALESCE(r.punctuality_rating, 0) + COALESCE(r.friendliness_rating, 0) + COALESCE(r.cleanliness_rating, 0)) / 3.0, 2) AS average_rating
       FROM ratings r
       JOIN users u ON r.user_id = u.id
       LEFT JOIN transport_companies co ON r.transport_company_id = co.id

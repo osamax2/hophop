@@ -15,7 +15,7 @@ interface Rating {
   user_name: string;
   user_email: string;
   company_name: string;
-  average_rating: number;
+  average_rating?: number | null;
 }
 
 interface Company {
