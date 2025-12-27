@@ -67,8 +67,14 @@ router.get("/", async (req, res) => {
 
     const result = await pool.query(query, values);
     
+    // Convert average_rating to number (PostgreSQL returns NUMERIC as string)
+    const ratingsWithNumbers = result.rows.map(row => ({
+      ...row,
+      average_rating: row.average_rating ? parseFloat(row.average_rating) : 0
+    }));
+    
     // Filter by average rating if specified (client-side filter after calculation)
-    let filteredRows = result.rows;
+    let filteredRows = ratingsWithNumbers;
     if (min_rating) {
       const minVal = parseFloat(min_rating as string);
       if (!isNaN(minVal)) {
@@ -126,7 +132,13 @@ router.get("/:id", async (req, res) => {
       return res.status(404).json({ message: "Rating not found" });
     }
 
-    res.json(result.rows[0]);
+    const rating = result.rows[0];
+    // Convert average_rating to number
+    if (rating.average_rating) {
+      rating.average_rating = parseFloat(rating.average_rating);
+    }
+
+    res.json(rating);
   } catch (error: any) {
     console.error("Error fetching rating:", error);
     res.status(500).json({ message: "Error fetching rating", error: String(error) });
@@ -215,7 +227,7 @@ router.patch("/:id", async (req, res) => {
     await pool.query(updateQuery, values);
 
     // Fetch updated rating with user and company info
-    const updatedRating = await pool.query(
+    const updatedRatingResult = await pool.query(
       `
       SELECT
         r.id,
@@ -240,7 +252,13 @@ router.patch("/:id", async (req, res) => {
       [ratingId]
     );
 
-    res.json(updatedRating.rows[0]);
+    const updatedRating = updatedRatingResult.rows[0];
+    // Convert average_rating to number
+    if (updatedRating.average_rating) {
+      updatedRating.average_rating = parseFloat(updatedRating.average_rating);
+    }
+
+    res.json(updatedRating);
   } catch (error: any) {
     console.error("Error updating rating:", error);
     res.status(500).json({ message: "Error updating rating", error: String(error) });
@@ -315,7 +333,7 @@ router.post("/:id/restore", async (req, res) => {
     );
 
     // Fetch restored rating with details
-    const restoredRating = await pool.query(
+    const restoredRatingResult = await pool.query(
       `
       SELECT
         r.id,
@@ -340,9 +358,15 @@ router.post("/:id/restore", async (req, res) => {
       [ratingId]
     );
 
+    const restoredRating = restoredRatingResult.rows[0];
+    // Convert average_rating to number
+    if (restoredRating.average_rating) {
+      restoredRating.average_rating = parseFloat(restoredRating.average_rating);
+    }
+
     res.json({
       message: "Rating restored successfully",
-      rating: restoredRating.rows[0]
+      rating: restoredRating
     });
   } catch (error: any) {
     console.error("Error restoring rating:", error);
