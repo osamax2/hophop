@@ -5,6 +5,7 @@ import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
 import { ScheduleManagement } from './ScheduleManagement';
 import { CompanyManagement } from './CompanyManagement';
+import RatingManagement from './RatingManagement';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -3280,11 +3281,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       )}
 
       {/* Ratings Tab */}
-      {activeTab === 'ratings' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <h2 className="text-xl text-gray-900 mb-6">{t.ratingsManagement}</h2>
-          <p className="text-gray-600">Ratings management coming soon...</p>
-        </div>
+      {activeTab === 'ratings' && user?.role === 'admin' && (
+        <RatingManagement language={language} />
       )}
 
       {activeTab === 'photos' && (
