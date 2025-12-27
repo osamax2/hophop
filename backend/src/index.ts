@@ -14,6 +14,7 @@ import usersRoutes from "./routes/users";
 import bookingsCrudRoutes from "./routes/bookings-crud";
 import tripsCrudRoutes from "./routes/trips-crud";
 import citiesRoutes from "./routes/cities";
+import companiesRoutes from "./routes/companies";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -31,6 +32,7 @@ app.use("/api/favorites", favoritesRoutes);
 app.use("/api/ratings", ratingsRoutes);
 app.use("/api/images", imagesRoutes);
 app.use("/api/notifications", notificationsRoutes);
+app.use("/api/companies", companiesRoutes);
 
 // ✅ CRUD Routes
 app.use("/api/users", usersRoutes);

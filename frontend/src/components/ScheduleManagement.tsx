@@ -98,6 +98,18 @@ const translations = {
     noTrash: 'Papierkorb ist leer',
     backToTrips: 'Zurück zu Fahrten',
     scheduled: 'Geplant',
+    filterTrips: 'Fahrten filtern',
+    filterByDate: 'Nach Datum filtern',
+    filterByTime: 'Nach Zeit filtern',
+    filterByCity: 'Nach Stadt filtern',
+    filterByCompany: 'Nach Gesellschaft filtern',
+    fromTime: 'Von',
+    toTime: 'Bis',
+    selectCity: 'Stadt auswählen',
+    selectCompany: 'Gesellschaft auswählen',
+    allCities: 'Alle Städte',
+    companyName: 'Firmenname',
+    clearFilters: 'Filter löschen',
     completed: 'Abgeschlossen',
     cancelled: 'Storniert',
     confirmDelete: 'Fahrt in den Papierkorb verschieben?',
@@ -143,6 +155,18 @@ const translations = {
     noTrash: 'Trash is empty',
     backToTrips: 'Back to Trips',
     scheduled: 'Scheduled',
+    filterTrips: 'Filter Trips',
+    filterByDate: 'Filter by Date',
+    filterByTime: 'Filter by Time',
+    filterByCity: 'Filter by City',
+    filterByCompany: 'Filter by Company',
+    fromTime: 'From',
+    toTime: 'To',
+    selectCity: 'Select City',
+    selectCompany: 'Select Company',
+    allCities: 'All Cities',
+    companyName: 'Company Name',
+    clearFilters: 'Clear Filters',
     completed: 'Completed',
     cancelled: 'Cancelled',
     confirmDelete: 'Move trip to trash?',
@@ -188,6 +212,18 @@ const translations = {
     noTrash: 'سلة المهملات فارغة',
     backToTrips: 'العودة إلى الرحلات',
     scheduled: 'مجدولة',
+    filterTrips: 'تصفية الرحلات',
+    filterByDate: 'تصفية حسب التاريخ',
+    filterByTime: 'تصفية حسب الوقت',
+    filterByCity: 'تصفية حسب المدينة',
+    filterByCompany: 'تصفية حسب الشركة',
+    fromTime: 'من',
+    toTime: 'إلى',
+    selectCity: 'اختر المدينة',
+    selectCompany: 'اختر الشركة',
+    allCities: 'جميع المدن',
+    companyName: 'اسم الشركة',
+    clearFilters: 'مسح الفلاتر',
     completed: 'مكتملة',
     cancelled: 'ملغاة',
     confirmDelete: 'نقل الرحلة إلى سلة المهملات؟',
@@ -208,6 +244,15 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
   const [trips, setTrips] = useState<any[]>([]);
   const [showTrash, setShowTrash] = useState(false);
   
+  // Filter states
+  const [filterTimeFrom, setFilterTimeFrom] = useState<string>('');
+  const [filterTimeTo, setFilterTimeTo] = useState<string>('');
+  const [filterDateFrom, setFilterDateFrom] = useState<string>('');
+  const [filterDateTo, setFilterDateTo] = useState<string>('');
+  const [filterCity, setFilterCity] = useState<string>('');
+  const [filterCompany, setFilterCompany] = useState<string>('');
+  const [allCities, setAllCities] = useState<any[]>([]);
+  
   // Steps Dialog
   const [showStepsDialog, setShowStepsDialog] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
@@ -224,10 +269,85 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
   const token = localStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
+  // Load cities for filter
+  useEffect(() => {
+    const loadCities = async () => {
+      try {
+        const response = await fetch(`${API_BASE}/api/cities`, { headers });
+        if (response.ok) {
+          const data = await response.json();
+          setAllCities(data);
+        }
+      } catch (error) {
+        console.error('Failed to load cities:', error);
+      }
+    };
+    loadCities();
+  }, []);
+
   // Load trips on mount and when showTrash or refreshTrigger changes
   useEffect(() => {
     loadTrips();
   }, [showTrash, refreshTrigger]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setFilterTimeFrom('');
+    setFilterTimeTo('');
+    setFilterDateFrom('');
+    setFilterDateTo('');
+    setFilterCity('');
+    setFilterCompany('');
+  };
+
+  // Apply filters to trips
+  const getFilteredTrips = () => {
+    let filtered = trips;
+
+    // Filter by date
+    if (filterDateFrom) {
+      filtered = filtered.filter((trip: any) => {
+        const tripDate = new Date(trip.departure_time).toISOString().split('T')[0];
+        return tripDate >= filterDateFrom;
+      });
+    }
+    if (filterDateTo) {
+      filtered = filtered.filter((trip: any) => {
+        const tripDate = new Date(trip.departure_time).toISOString().split('T')[0];
+        return tripDate <= filterDateTo;
+      });
+    }
+
+    // Filter by time
+    if (filterTimeFrom) {
+      filtered = filtered.filter((trip: any) => {
+        const tripTime = new Date(trip.departure_time).toTimeString().slice(0, 5);
+        return tripTime >= filterTimeFrom;
+      });
+    }
+    if (filterTimeTo) {
+      filtered = filtered.filter((trip: any) => {
+        const tripTime = new Date(trip.departure_time).toTimeString().slice(0, 5);
+        return tripTime <= filterTimeTo;
+      });
+    }
+
+    // Filter by city
+    if (filterCity) {
+      filtered = filtered.filter((trip: any) => 
+        trip.from_city_id === parseInt(filterCity) || trip.to_city_id === parseInt(filterCity)
+      );
+    }
+
+    // Filter by company
+    if (filterCompany) {
+      filtered = filtered.filter((trip: any) => 
+        trip.company_name?.toLowerCase().includes(filterCompany.toLowerCase())
+      );
+    }
+
+    return filtered;
+  };
 
   const loadTrips = async () => {
     try {
@@ -442,6 +562,90 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
           </div>
         </div>
 
+        {/* Filters Section */}
+        <div className="p-6 bg-gray-50 border-b border-gray-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Date Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByDate}</label>
+              <div className="flex gap-2">
+                <input
+                  type="date"
+                  value={filterDateFrom}
+                  onChange={(e) => setFilterDateFrom(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                  placeholder={t.from}
+                />
+                <input
+                  type="date"
+                  value={filterDateTo}
+                  onChange={(e) => setFilterDateTo(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                  placeholder={t.to}
+                />
+              </div>
+            </div>
+
+            {/* Time Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByTime}</label>
+              <div className="flex gap-2">
+                <input
+                  type="time"
+                  value={filterTimeFrom}
+                  onChange={(e) => setFilterTimeFrom(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                />
+                <input
+                  type="time"
+                  value={filterTimeTo}
+                  onChange={(e) => setFilterTimeTo(e.target.value)}
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+
+            {/* City Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByCity}</label>
+              <select
+                value={filterCity}
+                onChange={(e) => setFilterCity(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+              >
+                <option value="">{t.allCities}</option>
+                {allCities.map((city: any) => (
+                  <option key={city.id} value={city.id}>
+                    {getCityName(city.name, language)}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Company Filter */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">{t.filterByCompany}</label>
+              <input
+                type="text"
+                value={filterCompany}
+                onChange={(e) => setFilterCompany(e.target.value)}
+                placeholder={t.companyName}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+              />
+            </div>
+
+            {/* Clear Filters Button */}
+            <div className="flex items-end">
+              <button
+                onClick={clearFilters}
+                className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+              >
+                {t.clearFilters}
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Table */}
         {loading ? (
           <div className="flex items-center justify-center h-64">
@@ -467,7 +671,7 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {trips.length === 0 ? (
+                {getFilteredTrips().length === 0 ? (
                   <tr>
                     <td colSpan={12} className="px-6 py-12 text-center">
                       <div className="text-gray-500 mb-4">
@@ -484,7 +688,7 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
                     </td>
                   </tr>
                 ) : (
-                  trips.map((trip: any) => (
+                  getFilteredTrips().map((trip: any) => (
                     <tr 
                       key={trip.id} 
                       className={`hover:bg-gray-50 ${

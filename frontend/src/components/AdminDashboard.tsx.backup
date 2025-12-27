@@ -1,13 +1,9 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Star, Edit, Trash2, Building2 } from 'lucide-react';
 import type { Language, User } from '../App';
-import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
+import { adminApi, imagesApi, tripsApi, citiesApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
-import { ScheduleManagement } from './ScheduleManagement';
 import { CompanyManagement } from './CompanyManagement';
-import RatingManagement from './RatingManagement';
-import BookingManagement from './BookingManagement';
-import InvoiceManagement from './InvoiceManagement';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -66,18 +62,7 @@ const translations = {
     accessDenied: 'Zugriff verweigert',
     accessMessage: 'Sie haben keine Berechtigung, auf diesen Bereich zuzugreifen.',
     scheduleManagement: 'Fahrplanverwaltung',
-    companyManagement: 'Unternehmensverwaltung',
-    ratingsManagement: 'Bewertungsverwaltung',
-    bookingsManagement: 'Buchungsverwaltung',
-    invoicesManagement: 'Rechnungsverwaltung',
     userManagement: 'Benutzerverwaltung',
-    searchUsers: 'Benutzer suchen',
-    searchUsersPlaceholder: 'Nach Name oder E-Mail suchen...',
-    filterByRole: 'Nach Rolle filtern',
-    allRoles: 'Alle Rollen',
-    adminRole: 'Administrator',
-    agentRole: 'Agent',
-    userRole: 'Benutzer',
     photoManagement: 'Fotoverwaltung',
     dataImport: 'Datenimport',
     analytics: 'Analyse & Statistiken',
@@ -151,42 +136,28 @@ const translations = {
     clearFilters: 'Filter löschen',
     exportToCSV: 'Als CSV exportieren',
     noTripsMatch: 'Keine Reisen entsprechen den Filtern',
-    showTrash: 'Papierkorb anzeigen',
-    hideTrash: 'Papierkorb ausblenden',
-    restore: 'Wiederherstellen',
-    permanentDelete: 'Dauerhaft löschen',
-    inTrash: 'Im Papierkorb',
-    viewStops: 'Stopps anzeigen',
-    manageStops: 'Stopps verwalten',
-    addStop: 'Stopp hinzufügen',
-    stopOrder: 'Reihenfolge',
-    stationName: 'Haltestelle',
-    arrivalTime: 'Ankunftszeit',
-    departureTime: 'Abfahrtszeit',
-    noStops: 'Keine Zwischenstopps',
-    type: 'Typ',
-    status: 'Status',
-    scheduled: 'Geplant',
-    completed: 'Abgeschlossen',
-    cancelled: 'Storniert',
+    ratingsManagement: 'Bewertungsverwaltung',
+    companyManagement: 'Unternehmensverwaltung',
+    user: 'Benutzer',
+    company: 'Unternehmen',
+    punctuality: 'Pünktlichkeit',
+    friendliness: 'Freundlichkeit',
+    cleanliness: 'Sauberkeit',
+    comment: 'Kommentar',
+    date: 'Datum',
+    editRating: 'Bewertung bearbeiten',
+    deleteRating: 'Bewertung löschen',
+    confirmDeleteRating: 'Möchten Sie diese Bewertung wirklich löschen?',
+    ratingUpdated: 'Bewertung erfolgreich aktualisiert',
+    ratingDeleted: 'Bewertung erfolgreich gelöscht',
+    updateRating: 'Bewertung aktualisieren',
   },
   en: {
     adminDashboard: 'Admin Dashboard',
     accessDenied: 'Access Denied',
     accessMessage: 'You do not have permission to access this area.',
     scheduleManagement: 'Schedule Management',
-    companyManagement: 'Company Management',
-    ratingsManagement: 'Ratings Management',
-    bookingsManagement: 'Booking Management',
-    invoicesManagement: 'Invoice Management',
     userManagement: 'User Management',
-    searchUsers: 'Search Users',
-    searchUsersPlaceholder: 'Search by name or email...',
-    filterByRole: 'Filter by Role',
-    allRoles: 'All Roles',
-    adminRole: 'Administrator',
-    agentRole: 'Agent',
-    userRole: 'User',
     photoManagement: 'Photo Management',
     dataImport: 'Data Import',
     analytics: 'Analytics & Statistics',
@@ -260,42 +231,28 @@ const translations = {
     clearFilters: 'Clear Filters',
     exportToCSV: 'Export to CSV',
     noTripsMatch: 'No trips match the filters',
-    showTrash: 'Show Trash',
-    hideTrash: 'Hide Trash',
-    restore: 'Restore',
-    permanentDelete: 'Delete Permanently',
-    inTrash: 'In Trash',
-    viewStops: 'View Stops',
-    manageStops: 'Manage Stops',
-    addStop: 'Add Stop',
-    stopOrder: 'Order',
-    stationName: 'Station',
-    arrivalTime: 'Arrival Time',
-    departureTime: 'Departure Time',
-    noStops: 'No intermediate stops',
-    type: 'Type',
-    status: 'Status',
-    scheduled: 'Scheduled',
-    completed: 'Completed',
-    cancelled: 'Cancelled',
+    ratingsManagement: 'Ratings Management',
+    companyManagement: 'Company Management',
+    user: 'User',
+    company: 'Company',
+    punctuality: 'Punctuality',
+    friendliness: 'Friendliness',
+    cleanliness: 'Cleanliness',
+    comment: 'Comment',
+    date: 'Date',
+    editRating: 'Edit Rating',
+    deleteRating: 'Delete Rating',
+    confirmDeleteRating: 'Are you sure you want to delete this rating?',
+    ratingUpdated: 'Rating updated successfully',
+    ratingDeleted: 'Rating deleted successfully',
+    updateRating: 'Update Rating',
   },
   ar: {
     adminDashboard: 'لوحة الإدارة',
     accessDenied: 'تم رفض الوصول',
     accessMessage: 'ليس لديك إذن للوصول إلى هذه المنطقة.',
     scheduleManagement: 'إدارة الجداول',
-    companyManagement: 'إدارة الشركات',
-    ratingsManagement: 'إدارة التقييمات',
-    bookingsManagement: 'إدارة الحجوزات',
-    invoicesManagement: 'إدارة الفواتير',
     userManagement: 'إدارة المستخدمين',
-    searchUsers: 'بحث المستخدمين',
-    searchUsersPlaceholder: 'البحث بالاسم أو البريد الإلكتروني...',
-    filterByRole: 'تصفية حسب الدور',
-    allRoles: 'جميع الأدوار',
-    adminRole: 'مدير',
-    agentRole: 'وكيل',
-    userRole: 'مستخدم',
     photoManagement: 'إدارة الصور',
     dataImport: 'استيراد البيانات',
     analytics: 'التحليلات والإحصائيات',
@@ -351,24 +308,6 @@ const translations = {
     duration: 'المدة المتوقعة',
     arrival: 'الوصول',
     arrivalTimeAfterDeparture: 'يجب أن يكون وقت الوصول بعد وقت المغادرة',
-    showTrash: 'عرض سلة المهملات',
-    hideTrash: 'إخفاء سلة المهملات',
-    restore: 'استعادة',
-    permanentDelete: 'حذف نهائي',
-    inTrash: 'في سلة المهملات',
-    viewStops: 'عرض المحطات',
-    manageStops: 'إدارة المحطات',
-    addStop: 'إضافة محطة',
-    stopOrder: 'الترتيب',
-    stationName: 'المحطة',
-    arrivalTime: 'وقت الوصول',
-    departureTime: 'وقت المغادرة',
-    noStops: 'لا توجد محطات متوسطة',
-    type: 'النوع',
-    status: 'الحالة',
-    scheduled: 'مجدولة',
-    completed: 'مكتملة',
-    cancelled: 'ملغاة',
     deletePermanently: 'حذف هذه الرحلة المعطلة نهائياً؟',
     deletePermanentlyConfirm: 'هل أنت متأكد من حذف هذه الرحلة المعطلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
     welcomeMessage: 'أهلاً',
@@ -387,12 +326,27 @@ const translations = {
     clearFilters: 'مسح الفلاتر',
     exportToCSV: 'تصدير كملف CSV',
     noTripsMatch: 'لا توجد رحلات تطابق الفلاتر',
+    ratingsManagement: 'إدارة التقييمات',
+    companyManagement: 'إدارة الشركات',
+    user: 'المستخدم',
+    company: 'الشركة',
+    punctuality: 'الدقة',
+    friendliness: 'الود',
+    cleanliness: 'النظافة',
+    comment: 'التعليق',
+    date: 'التاريخ',
+    editRating: 'تعديل التقييم',
+    deleteRating: 'حذف التقييم',
+    confirmDeleteRating: 'هل أنت متأكد من حذف هذا التقييم؟',
+    ratingUpdated: 'تم تحديث التقييم بنجاح',
+    ratingDeleted: 'تم حذف التقييم بنجاح',
+    updateRating: 'تحديث التقييم',
   },
 };
 
 export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics'>('analytics');
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'photos' | 'import' | 'analytics' | 'ratings' | 'companies'>('analytics');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -403,16 +357,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // Schedules data
   const [trips, setTrips] = useState<any[]>([]);
   const [routes, setRoutes] = useState<any[]>([]);
-  const [showTrash, setShowTrash] = useState(false);
-  const [showStepsDialog, setShowStepsDialog] = useState(false);
-  const [selectedTripForSteps, setSelectedTripForSteps] = useState<any>(null);
-  const [tripSteps, setTripSteps] = useState<any[]>([]);
   
   // Users data
   const [users, setUsers] = useState<any[]>([]);
   const [showDeletedUsers, setShowDeletedUsers] = useState(false);
-  const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'agent' | 'user'>('all');
   
   // Edit Profile Dialog
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
@@ -429,13 +377,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [showAddTripDialog, setShowAddTripDialog] = useState(false);
   const [editingTripId, setEditingTripId] = useState<number | null>(null);
   const [showAddRouteDialog, setShowAddRouteDialog] = useState(false);
-  const [scheduleRefreshTrigger, setScheduleRefreshTrigger] = useState(0);
-  
-  // Photo Upload Dialog
-  const [showPhotoUploadDialog, setShowPhotoUploadDialog] = useState(false);
-  
-  // CSV Import Dialog
-  const [showCSVImportDialog, setShowCSVImportDialog] = useState(false);
   const [companies, setCompanies] = useState<any[]>([]);
   const [transportTypes, setTransportTypes] = useState<any[]>([]);
   const [stations, setStations] = useState<any[]>([]);
@@ -464,8 +405,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [photoType, setPhotoType] = useState<'bus' | 'station'>('bus');
   const [entityId, setEntityId] = useState<string>('');
-  const [images, setImages] = useState<any[]>([]);
-  const [editingImage, setEditingImage] = useState<any>(null);
   
   // CSV import
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -485,26 +424,17 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [showUsersList, setShowUsersList] = useState<boolean>(false);
   const [filterRole, setFilterRole] = useState<string>('');
   const [filterName, setFilterName] = useState<string>('');
-  
-  // Add User Dialog
-  const [showAddUserDialog, setShowAddUserDialog] = useState(false);
-  const [newUserData, setNewUserData] = useState({
-    first_name: '',
-    last_name: '',
-    email: '',
-    password: '',
-    phone: '',
-    role: 'user'
+
+  // Ratings data
+  const [ratings, setRatings] = useState<any[]>([]);
+  const [showEditRatingDialog, setShowEditRatingDialog] = useState(false);
+  const [selectedRating, setSelectedRating] = useState<any>(null);
+  const [editRatingData, setEditRatingData] = useState({
+    punctuality_rating: 0,
+    friendliness_rating: 0,
+    cleanliness_rating: 0,
+    comment: '',
   });
-  const [userValidationErrors, setUserValidationErrors] = useState<any>({});
-  
-  // Stops for new trip
-  const [newTripStops, setNewTripStops] = useState<Array<{
-    station_id: string;
-    stop_order: number;
-    arrival_time?: string;
-    departure_time?: string;
-  }>>([]);
 
   // Load analytics data
   useEffect(() => {
@@ -519,13 +449,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     if (activeTab === 'schedules') {
       loadSchedules();
       loadTripFormData();
-    }
-  }, [activeTab, showTrash]);
-
-  // Load images when photos tab is active
-  useEffect(() => {
-    if (activeTab === 'photos') {
-      loadImages();
     }
   }, [activeTab]);
 
@@ -614,6 +537,20 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   }, [activeTab, showDeletedUsers]);
 
+  // Load ratings data
+  useEffect(() => {
+    if (activeTab === 'ratings') {
+      loadRatings();
+    }
+  }, [activeTab]);
+
+  // Debug: Monitor dialog state changes
+  useEffect(() => {
+    if (showEditRatingDialog) {
+      console.log('Dialog is now visible. selectedRating:', selectedRating);
+    }
+  }, [showEditRatingDialog, selectedRating]);
+
   const loadAnalytics = async () => {
     try {
       setLoading(true);
@@ -677,26 +614,18 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const loadSchedules = async (showAll: boolean = false) => {
     try {
       setLoading(true);
-      // Load trips based on showTrash state
-      const url = showTrash 
-        ? `/api/admin/trips?showTrash=true`
-        : `/api/admin/trips?showAll=${showAll}`;
+      // Load all trips including inactive ones for admin management
+      const [tripsData, routesData] = await Promise.all([
+        adminApi.getTrips(showAll),
+        adminApi.getRoutes(),
+      ]);
       
-      const API_BASE = import.meta.env.VITE_API_BASE || "";
-      const token = localStorage.getItem("token");
+      console.log('Loaded trips from server:', tripsData.length);
+      console.log('Trip IDs:', tripsData.map((t: any) => ({ id: t.id, is_active: t.is_active })));
       
-      const response = await fetch(`${API_BASE}${url}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      
-      if (!response.ok) throw new Error('Failed to load trips');
-      const tripsData = await response.json();
-      
-      const routesData = await adminApi.getRoutes();
-      
-      console.log('Loaded trips from server:', tripsData.length, 'showTrash:', showTrash);
-      
-      setTrips(tripsData);
+      // Type assertion for tripsData
+      const typedTripsData = tripsData as any[];
+      setTrips(typedTripsData);
       setRoutes(routesData);
     } catch (err: any) {
       console.error('Error loading schedules:', err);
@@ -858,6 +787,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     setFilterCompany('');
   };
 
+  // Clear user filters
+  const clearUserFilters = () => {
+    setFilterRole('');
+    setFilterName('');
+  };
+
   // Filter users by role and name
   const getFilteredUsers = () => {
     let filtered = [...users];
@@ -948,11 +883,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     document.body.removeChild(link);
   };
 
-  const clearUserFilters = () => {
-    setFilterRole('');
-    setFilterName('');
-  };
-
   const loadUsers = async () => {
     try {
       setLoading(true);
@@ -960,6 +890,91 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setUsers(usersData);
     } catch (err) {
       console.error('Error loading users:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRatings = async () => {
+    try {
+      setLoading(true);
+      const ratingsData = await adminApi.getRatings();
+      console.log('Loaded ratings:', ratingsData);
+      console.log('Number of ratings:', ratingsData?.length || 0);
+      setRatings(ratingsData || []);
+    } catch (err) {
+      console.error('Error loading ratings:', err);
+      alert(language === 'ar' 
+        ? `خطأ في تحميل التقييمات: ${err instanceof Error ? err.message : 'حدث خطأ غير معروف'}`
+        : language === 'de'
+        ? `Fehler beim Laden der Bewertungen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`
+        : `Error loading ratings: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setRatings([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditRatingClick = (rating: any) => {
+    console.log('handleEditRatingClick called with rating:', rating);
+    if (!rating) {
+      console.error('Rating is null or undefined');
+      return;
+    }
+    try {
+      setSelectedRating(rating);
+      setEditRatingData({
+        punctuality_rating: rating.punctuality_rating || 0,
+        friendliness_rating: rating.friendliness_rating || 0,
+        cleanliness_rating: rating.cleanliness_rating || 0,
+        comment: rating.comment || '',
+      });
+      setShowEditRatingDialog(true);
+      console.log('Dialog state set to true, showEditRatingDialog should be true');
+    } catch (error) {
+      console.error('Error in handleEditRatingClick:', error);
+    }
+  };
+
+  const handleUpdateRating = async () => {
+    if (!selectedRating) return;
+
+    try {
+      setLoading(true);
+      await adminApi.updateRating(selectedRating.id, editRatingData);
+      alert(language === 'ar' ? t.ratingUpdated : language === 'de' ? t.ratingUpdated : t.ratingUpdated);
+      setShowEditRatingDialog(false);
+      setSelectedRating(null);
+      loadRatings();
+    } catch (err: any) {
+      console.error('Error updating rating:', err);
+      alert(language === 'ar' 
+        ? `خطأ في تحديث التقييم: ${err.message || 'حدث خطأ غير معروف'}`
+        : language === 'de'
+        ? `Fehler beim Aktualisieren der Bewertung: ${err.message || 'Unbekannter Fehler'}`
+        : `Error updating rating: ${err.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteRating = async (ratingId: number) => {
+    if (!window.confirm(language === 'ar' ? t.confirmDeleteRating : language === 'de' ? t.confirmDeleteRating : t.confirmDeleteRating)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      await adminApi.deleteRating(ratingId);
+      alert(language === 'ar' ? t.ratingDeleted : language === 'de' ? t.ratingDeleted : t.ratingDeleted);
+      loadRatings();
+    } catch (err: any) {
+      console.error('Error deleting rating:', err);
+      alert(language === 'ar' 
+        ? `خطأ في حذف التقييم: ${err.message || 'حدث خطأ غير معروف'}`
+        : language === 'de'
+        ? `Fehler beim Löschen der Bewertung: ${err.message || 'Unbekannter Fehler'}`
+        : `Error deleting rating: ${err.message || 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -1205,136 +1220,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
-  const validateNewUser = () => {
-    const errors: any = {};
-    
-    // First name validation
-    if (!newUserData.first_name.trim()) {
-      errors.first_name = language === 'ar' ? 'الاسم الأول مطلوب' : language === 'de' ? 'Vorname erforderlich' : 'First name is required';
-    }
-    
-    // Last name validation
-    if (!newUserData.last_name.trim()) {
-      errors.last_name = language === 'ar' ? 'اسم العائلة مطلوب' : language === 'de' ? 'Nachname erforderlich' : 'Last name is required';
-    }
-    
-    // Email validation
-    if (!newUserData.email.trim()) {
-      errors.email = language === 'ar' ? 'البريد الإلكتروني مطلوب' : language === 'de' ? 'E-Mail erforderlich' : 'Email is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newUserData.email)) {
-      errors.email = language === 'ar' ? 'البريد الإلكتروني غير صالح' : language === 'de' ? 'Ungültige E-Mail' : 'Invalid email format';
-    }
-    
-    // Password validation
-    if (!newUserData.password) {
-      errors.password = language === 'ar' ? 'كلمة المرور مطلوبة' : language === 'de' ? 'Passwort erforderlich' : 'Password is required';
-    } else if (newUserData.password.length < 6) {
-      errors.password = language === 'ar' ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل' : language === 'de' ? 'Passwort muss mindestens 6 Zeichen lang sein' : 'Password must be at least 6 characters';
-    }
-    
-    // Phone validation (optional but if provided should be valid)
-    if (newUserData.phone && !/^\+?[0-9]{10,15}$/.test(newUserData.phone.replace(/\s/g, ''))) {
-      errors.phone = language === 'ar' ? 'رقم الهاتف غير صالح' : language === 'de' ? 'Ungültige Telefonnummer' : 'Invalid phone number';
-    }
-    
-    setUserValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  const handleAddUser = async () => {
-    if (!validateNewUser()) {
-      return;
-    }
-
-    // Check if user is authenticated
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert(language === 'ar' 
-        ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.'
-        : language === 'de' 
-        ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.'
-        : 'Session expired. Please log in again.');
-      window.location.reload();
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      // Register the user
-      const registerResponse = await authApi.register({
-        email: newUserData.email,
-        password: newUserData.password,
-        first_name: newUserData.first_name,
-        last_name: newUserData.last_name,
-        phone: newUserData.phone || undefined
-      });
-      
-      // Get the created user to assign role
-      const users = await adminApi.getUsers(false);
-      const createdUser = users.find((u: any) => u.email === newUserData.email);
-      
-      if (createdUser && newUserData.role !== 'user') {
-        // Assign role if not default 'user'
-        const roleNames: string[] = [];
-        if (newUserData.role === 'admin') {
-          roleNames.push('Administrator');
-        } else if (newUserData.role === 'agent') {
-          roleNames.push('Agent');
-        }
-        
-        if (roleNames.length > 0) {
-          await adminApi.changeUserRole(createdUser.id, roleNames);
-        }
-      }
-      
-      alert(language === 'ar' 
-        ? 'تم إضافة المستخدم بنجاح'
-        : language === 'de' 
-        ? 'Benutzer erfolgreich hinzugefügt'
-        : 'User added successfully');
-      
-      // Reset form
-      setNewUserData({
-        first_name: '',
-        last_name: '',
-        email: '',
-        password: '',
-        phone: '',
-        role: 'user'
-      });
-      setUserValidationErrors({});
-      setShowAddUserDialog(false);
-      
-      // Refresh users list
-      loadUsers();
-    } catch (err: any) {
-      console.error('Error adding user:', err);
-      
-      // Handle 401 Unauthorized - token expired or missing
-      if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
-        const authErrorMsg = language === 'ar' 
-          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
-          : language === 'de' 
-          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
-          : 'Session expired. Please log in again.';
-        alert(authErrorMsg);
-        localStorage.removeItem("token");
-        window.location.reload();
-        return;
-      }
-
-      const errorMsg = err.message || (language === 'ar' 
-        ? 'فشل إضافة المستخدم. يرجى المحاولة مرة أخرى.'
-        : language === 'de' 
-        ? 'Fehler beim Hinzufügen des Benutzers. Bitte versuchen Sie es erneut.'
-        : 'Failed to add user. Please try again.');
-      alert(errorMsg);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleImageUpload = async () => {
     if (!selectedFile || !entityId) {
       alert('Please select a file and enter entity ID');
@@ -1342,71 +1227,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
 
     try {
-      setLoading(true);
       setUploadStatus('idle');
       await adminApi.uploadImage(selectedFile, photoType, parseInt(entityId));
       setUploadStatus('success');
       setSelectedFile(null);
       setEntityId('');
-      
-      // Reload images to show the new upload
-      await loadImages();
-      
-      // Close dialog after successful upload
-      setTimeout(() => {
-        setUploadStatus('idle');
-        setShowPhotoUploadDialog(false);
-      }, 2000);
+      setTimeout(() => setUploadStatus('idle'), 3000);
     } catch (err: any) {
       setUploadStatus('error');
       alert(err.message || 'Failed to upload image');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadImages = async () => {
-    try {
-      setLoading(true);
-      const imagesData = await imagesApi.getAll();
-      setImages(Array.isArray(imagesData) ? imagesData : []);
-    } catch (err: any) {
-      console.error('Error loading images:', err);
-      setImages([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEditImage = (image: any) => {
-    setEditingImage(image);
-    setPhotoType(image.entity_type as 'bus' | 'station');
-    setEntityId(String(image.entity_id));
-    setSelectedFile(null);
-    setShowPhotoUploadDialog(true);
-  };
-
-  const handleDeleteImage = async (imageId: number) => {
-    const confirmMsg = language === 'ar' 
-      ? 'هل أنت متأكد من حذف هذه الصورة؟' 
-      : language === 'de' 
-      ? 'Sind Sie sicher, dass Sie dieses Bild löschen möchten?' 
-      : 'Are you sure you want to delete this image?';
-    
-    if (!confirm(confirmMsg)) {
-      return;
-    }
-
-    try {
-      setLoading(true);
-      await adminApi.deleteImage(imageId);
-      await loadImages();
-      alert(language === 'ar' ? 'تم حذف الصورة' : language === 'de' ? 'Bild gelöscht' : 'Image deleted');
-    } catch (err: any) {
-      console.error('Error deleting image:', err);
-      alert(err.message || 'Failed to delete image');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -1449,12 +1278,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setLoading(true);
       console.log('Loading trip details for ID:', tripId);
       
-      // Load trip form data first if not already loaded
-      if (cities.length === 0 || companies.length === 0 || transportTypes.length === 0 || stations.length === 0) {
-        console.log('Loading trip form data first...');
-        await loadTripFormData();
-      }
-      
       // Load trip details
       const trip = await tripsApi.getById(tripId);
       
@@ -1464,11 +1287,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         throw new Error('Trip data is empty');
       }
       
-      // The backend already returns from_city and to_city from the JOIN
-      const fromCity = trip.from_city || '';
-      const toCity = trip.to_city || '';
-      
-      console.log('Cities from trip:', { fromCity, toCity });
+      // Find route to get city names
+      const route = routes.find((r: any) => r.id === trip.route_id);
       
       // Convert trip data to form format
       // Get trip price from trip_fares if available
@@ -1488,8 +1308,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       }
 
       setNewTrip({
-        from_city: fromCity,
-        to_city: toCity,
+        from_city: route?.from_city || trip.from_city || '',
+        to_city: route?.to_city || trip.to_city || '',
         route_id: String(trip.route_id || ''),
         company_id: String(trip.company_id || ''),
         transport_type_id: String(trip.transport_type_id || ''),
@@ -1508,7 +1328,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         extra_info: trip.extra_info || '',
       });
       
-      console.log('Setting editingTripId and opening dialog...');
       setEditingTripId(tripId);
       setShowAddTripDialog(true);
     } catch (err: any) {
@@ -1554,21 +1373,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       // Find or create route based on selected cities
       let routeId = newTrip.route_id;
       
-      console.log('handleSaveTrip - Starting save process');
-      console.log('handleSaveTrip - newTrip:', newTrip);
-      console.log('handleSaveTrip - cities array length:', cities.length);
-      console.log('handleSaveTrip - routes array length:', routes.length);
-      
-      // ALWAYS find or create the route based on selected cities
-      // This ensures that when cities are changed, the route_id is updated
-      if (newTrip.from_city && newTrip.to_city) {
-        console.log('handleSaveTrip - Looking for route:', newTrip.from_city, '->', newTrip.to_city);
+      // If cities are selected but route_id is not set, find or create the route
+      if (!routeId && newTrip.from_city && newTrip.to_city) {
         // Find existing route
         const fromCity = cities.find((c: any) => c.name === newTrip.from_city);
         const toCity = cities.find((c: any) => c.name === newTrip.to_city);
-        
-        console.log('handleSaveTrip - fromCity found:', fromCity);
-        console.log('handleSaveTrip - toCity found:', toCity);
         
         if (!fromCity || !toCity) {
           alert(language === 'ar' 
@@ -1646,76 +1455,18 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         extra_info: newTrip.extra_info || null,
       };
 
-      console.log('handleSaveTrip - tripData prepared:', tripData);
-      console.log('handleSaveTrip - editingTripId:', editingTripId);
-
       if (editingTripId) {
         // Update existing trip
-        console.log('handleSaveTrip - Calling adminApi.updateTrip with ID:', editingTripId);
-        const updatedTrip = await adminApi.updateTrip(editingTripId, tripData);
-        console.log('handleSaveTrip - updateTrip response:', updatedTrip);
-        
-        // The backend returns the complete trip with JOIN data (from_city, to_city, company_name)
-        // Replace the entire trip object to ensure all fields are updated
-        setTrips(prevTrips => 
-          prevTrips.map(trip => 
-            trip.id === editingTripId ? updatedTrip : trip
-          )
-        );
-        
-        // Trigger ScheduleManagement to refresh its data
-        setScheduleRefreshTrigger(prev => prev + 1);
-        
+        await adminApi.updateTrip(editingTripId, tripData);
         alert(language === 'ar' ? 'تم تحديث الرحلة بنجاح' : language === 'de' ? 'Fahrt erfolgreich aktualisiert' : 'Trip updated successfully!');
       } else {
         // Create new trip
-        const newCreatedTrip = await adminApi.createTrip(tripData);
-        
-        // Add stops if any were defined
-        if (newTripStops.length > 0 && newCreatedTrip.id) {
-          try {
-            const API_BASE = import.meta.env.VITE_API_BASE || "";
-            const token = localStorage.getItem("token");
-            
-            // Add each stop to the newly created trip
-            for (const stop of newTripStops) {
-              await fetch(`${API_BASE}/api/admin/trips/${newCreatedTrip.id}/steps`, {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                body: JSON.stringify({
-                  station_id: parseInt(stop.station_id),
-                  stop_order: stop.stop_order,
-                  arrival_time: stop.arrival_time || null,
-                  departure_time: stop.departure_time || null,
-                }),
-              });
-            }
-          } catch (stopsErr) {
-            console.error('Error adding stops:', stopsErr);
-            // Don't fail the entire trip creation if stops fail
-            alert(language === 'ar' 
-              ? 'تم إنشاء الرحلة ولكن فشل إضافة بعض المحطات' 
-              : language === 'de' 
-              ? 'Fahrt erstellt, aber einige Haltestellen konnten nicht hinzugefügt werden' 
-              : 'Trip created but some stops failed to add');
-          }
-        }
-        
-        // Add the new trip to the local state instead of reloading all trips
-        setTrips(prevTrips => [...prevTrips, newCreatedTrip]);
-        
-        // Trigger ScheduleManagement to refresh its data
-        setScheduleRefreshTrigger(prev => prev + 1);
-        
+        await adminApi.createTrip(tripData);
         alert(t.tripAdded || 'Trip added successfully!');
       }
       
       setShowAddTripDialog(false);
       setEditingTripId(null);
-      setNewTripStops([]);
       setNewTrip({
         from_city: '',
         to_city: '',
@@ -1736,6 +1487,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         cancellation_policy: '',
         extra_info: '',
       });
+      loadSchedules(); // Refresh trips list
     } catch (err: any) {
       console.error('Error saving trip:', err);
       
@@ -1781,154 +1533,68 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       cancellation_policy: '',
       extra_info: '',
     });
-    setNewTripStops([]);
     setShowAddTripDialog(true);
   };
 
-  const handleDeleteTrip = async (tripId: number, permanent: boolean = false) => {
-    const trip = trips.find((t: any) => t.id === tripId);
-    const isInTrash = trip?.deleted_at !== null;
+  const handleDeleteTrip = async (tripId: number) => {
+    // Show confirmation message for permanent deletion
+    const confirmMessage = language === 'ar'
+      ? 'هل أنت متأكد من حذف هذه الرحلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'
+      : language === 'de'
+      ? 'Sind Sie sicher, dass Sie diese Fahrt dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+      : 'Are you sure you want to permanently delete this trip? This action cannot be undone.';
     
-    // If in trash or permanent flag set, do hard delete
-    if (isInTrash || permanent) {
-      const confirmMessage = language === 'ar'
-        ? 'هل أنت متأكد من حذف هذه الرحلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'
-        : language === 'de'
-        ? 'Sind Sie sicher, dass Sie diese Fahrt dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
-        : 'Are you sure you want to permanently delete this trip? This action cannot be undone.';
-      
-      if (!confirm(confirmMessage)) return;
+    if (!confirm(confirmMessage)) {
+      return;
     }
 
     try {
       setLoading(true);
-      const API_BASE = import.meta.env.VITE_API_BASE || "";
-      const token = localStorage.getItem("token");
+      const result: any = await adminApi.deleteTrip(tripId);
       
-      const url = isInTrash || permanent 
-        ? `${API_BASE}/api/admin/trips/${tripId}?permanent=true`
-        : `${API_BASE}/api/admin/trips/${tripId}`;
+      console.log('Delete successful, removing trip from list...');
       
-      const response = await fetch(url, {
-        method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      // Remove from local state immediately
+      setTrips(prevTrips => {
+        const filtered = prevTrips.filter((t: any) => t.id !== tripId);
+        console.log(`Removed trip ${tripId} from local state. Remaining trips:`, filtered.length);
+        return filtered;
       });
       
-      if (!response.ok) throw new Error('Failed to delete trip');
+      alert(language === 'ar' 
+        ? 'تم حذف الرحلة نهائياً' 
+        : language === 'de' 
+        ? 'Fahrt dauerhaft gelöscht' 
+        : 'Trip permanently deleted');
       
-      setTrips(prevTrips => prevTrips.filter((t: any) => t.id !== tripId));
-      
-      alert(isInTrash || permanent
-        ? (language === 'ar' ? 'تم حذف الرحلة نهائياً' : language === 'de' ? 'Fahrt dauerhaft gelöscht' : 'Trip permanently deleted')
-        : (language === 'ar' ? 'تم نقل الرحلة إلى سلة المهملات' : language === 'de' ? 'Fahrt in Papierkorb verschoben' : 'Trip moved to trash')
-      );
-      
-      await loadSchedules(false);
+      // Refresh the list from server to ensure consistency
+      console.log('Refreshing trips list from server...');
+      await loadSchedules(false); // Only load active trips
+      console.log('Trips list refreshed');
     } catch (err: any) {
       console.error('Error deleting trip:', err);
-      alert(err.message || (language === 'ar' ? 'فشل حذف الرحلة' : language === 'de' ? 'Fehler beim Löschen' : 'Failed to delete trip'));
+      console.error('Error status:', err.status);
+      console.error('Error message:', err.message);
+      console.error('Error details:', err.details);
+      
+      // Handle 401 Unauthorized - token expired or missing
+      if (err.status === 401) {
+        const authErrorMsg = language === 'ar' 
+          ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
+          : language === 'de' 
+          ? 'Sitzung abgelaufen. Bitte melden Sie sich erneut an.' 
+          : 'Session expired. Please log in again.';
+        alert(authErrorMsg);
+        // Redirect to login or reload page
+        window.location.href = '/';
+        return;
+      }
+      
+      const errorMessage = err.message || (language === 'ar' ? 'فشل حذف الرحلة' : language === 'de' ? 'Fehler beim Löschen der Fahrt' : 'Failed to delete trip');
+      const details = err.details ? `\n\nDetails: ${JSON.stringify(err.details)}` : '';
+      alert(`${errorMessage}${details}`);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleRestoreTrip = async (tripId: number) => {
-    try {
-      setLoading(true);
-      const API_BASE = import.meta.env.VITE_API_BASE || "";
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch(`${API_BASE}/api/admin/trips/${tripId}/restore`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      
-      if (!response.ok) throw new Error('Failed to restore trip');
-      
-      alert(language === 'ar' ? 'تم استعادة الرحلة' : language === 'de' ? 'Fahrt wiederhergestellt' : 'Trip restored');
-      await loadSchedules(false);
-    } catch (err: any) {
-      console.error('Error restoring trip:', err);
-      alert(err.message || 'Failed to restore trip');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleViewSteps = async (trip: any) => {
-    try {
-      setSelectedTripForSteps(trip);
-      setShowStepsDialog(true);
-      setLoading(true);
-      
-      const API_BASE = import.meta.env.VITE_API_BASE || "";
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch(`${API_BASE}/api/admin/trips/${trip.id}/steps`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      
-      if (!response.ok) throw new Error('Failed to load stops');
-      const steps = await response.json();
-      setTripSteps(steps);
-    } catch (err: any) {
-      console.error('Error loading stops:', err);
-      alert('Failed to load stops');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleAddStop = async (stationId: number, stopOrder: number, arrivalTime?: string, departureTime?: string) => {
-    if (!selectedTripForSteps) return;
-    
-    try {
-      const API_BASE = import.meta.env.VITE_API_BASE || "";
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch(`${API_BASE}/api/admin/trips/${selectedTripForSteps.id}/steps`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        body: JSON.stringify({
-          station_id: stationId,
-          stop_order: stopOrder,
-          arrival_time: arrivalTime || null,
-          departure_time: departureTime || null,
-        }),
-      });
-      
-      if (!response.ok) throw new Error('Failed to add stop');
-      
-      await handleViewSteps(selectedTripForSteps);
-      alert(language === 'ar' ? 'تم إضافة المحطة' : language === 'de' ? 'Haltestelle hinzugefügt' : 'Stop added');
-    } catch (err: any) {
-      console.error('Error adding stop:', err);
-      alert('Failed to add stop');
-    }
-  };
-
-  const handleRemoveStop = async (stopId: number) => {
-    if (!selectedTripForSteps) return;
-    
-    try {
-      const API_BASE = import.meta.env.VITE_API_BASE || "";
-      const token = localStorage.getItem("token");
-      
-      const response = await fetch(`${API_BASE}/api/admin/trips/${selectedTripForSteps.id}/steps/${stopId}`, {
-        method: 'DELETE',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      });
-      
-      if (!response.ok) throw new Error('Failed to remove stop');
-      
-      await handleViewSteps(selectedTripForSteps);
-      alert(language === 'ar' ? 'تم حذف المحطة' : language === 'de' ? 'Haltestelle entfernt' : 'Stop removed');
-    } catch (err: any) {
-      console.error('Error removing stop:', err);
-      alert('Failed to remove stop');
     }
   };
 
@@ -1953,12 +1619,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     ...(user?.role === 'admin' ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
     // Companies management tab - Admin only
     ...(user?.role === 'admin' ? [{ id: 'companies' as const, label: t.companyManagement, icon: Building2 }] : []),
-    // Ratings management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'ratings' as const, label: t.ratingsManagement, icon: Star }] : []),
-    // Bookings management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'bookings' as const, label: t.bookingsManagement, icon: Calendar }] : []),
-    // Invoices management tab - Admin only
-    ...(user?.role === 'admin' ? [{ id: 'invoices' as const, label: t.invoicesManagement, icon: Download }] : []),
+    { id: 'ratings' as const, label: t.ratingsManagement, icon: Star },
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
     { id: 'import' as const, label: t.dataImport, icon: Upload },
   ];
@@ -2447,49 +2108,107 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       )}
 
       {activeTab === 'schedules' && (
-        <>
-          <ScheduleManagement 
-            language={language}
-            onEditTrip={handleEditTrip}
-            onAddTrip={() => setShowAddTripDialog(true)}
-            refreshTrigger={scheduleRefreshTrigger}
-          />
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h2 className="text-xl text-gray-900">{t.scheduleManagement}</h2>
+              <div className="flex gap-2">
+                <button 
+                  onClick={() => setShowAddTripDialog(true)}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  {t.addSchedule}
+                </button>
+              </div>
+            </div>
+          {loading ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full" style={{ borderCollapse: 'collapse' }}>
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.actions}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {trips.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-8 text-center text-gray-600">
+                        {language === 'ar' 
+                          ? 'لا توجد رحلات. يرجى إضافة رحلة جديدة أو التحقق من قاعدة البيانات.'
+                          : language === 'de'
+                          ? 'Es gibt keinen Zeitplan. Bitte überprüfen Sie alle Zeitpläne und passen Sie sie nach Bedarf an.'
+                          : 'No trips found. Please add a new trip or check the database.'}
+                      </td>
+                    </tr>
+                  ) : (
+                    trips.slice(0, 20).map((trip: any) => (
+                      <tr key={trip.id} className={`hover:bg-gray-50 ${trip.is_active === false ? 'opacity-60 bg-gray-100' : ''}`}>
+                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
+                          {trip.from_city || 'N/A'}
+                          {trip.is_active === false && (
+                            <span className="ml-2 text-xs text-gray-500">
+                              ({language === 'ar' ? 'معطل' : language === 'de' ? 'Deaktiviert' : 'Inactive'})
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{trip.to_city || 'N/A'}</td>
+                        <td className="px-6 py-3 text-sm text-gray-900" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>
+                          {trip.departure_time ? new Date(trip.departure_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : 'N/A'}
+                        </td>
+                        <td className="px-6 py-3 text-sm" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>
+                          <div className="flex gap-2">
+                            <button 
+                              onClick={() => handleEditTrip(trip.id)}
+                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={loading}
+                            >
+                              {t.edit}
+                            </button>
+                            <button 
+                              onClick={() => handleDeleteTrip(trip.id)}
+                              className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={loading}
+                            >
+                              {t.delete}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+          </div>
 
           {/* Add Trip Dialog - Popup Window */}
           {showAddTripDialog && (
             <div 
-              className="fixed inset-0 flex items-center justify-center p-4"
-              style={{ 
-                zIndex: 99999,
-                backgroundColor: 'rgba(0, 0, 0, 0.6)',
-                backdropFilter: 'blur(4px)',
-                position: 'fixed',
-                top: 0,
-                left: 0,
-                right: 0,
-                bottom: 0,
-              }}
+              className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
               onClick={(e) => {
                 // Close dialog when clicking on backdrop
                 if (e.target === e.currentTarget) {
                   setShowAddTripDialog(false);
                   setEditingTripId(null);
-                  setNewTripStops([]);
                 }
               }}
             >
               <div 
-                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] flex flex-col"
-                style={{ 
-                  position: 'relative',
-                  zIndex: 100000,
-                  overflow: 'hidden',
-                }}
+                className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[95vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header - Sticky */}
                 <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
-                  <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
+                  <h2 className="text-2xl font-bold flex items-center gap-3">
                     {editingTripId ? (
                       <>
                         <span>{language === 'ar' ? 'تعديل الرحلة' : language === 'de' ? 'Fahrt bearbeiten' : 'Edit Trip'}</span>
@@ -2503,7 +2222,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     onClick={() => {
                       setShowAddTripDialog(false);
                       setEditingTripId(null);
-                      setNewTripStops([]);
                     }}
                     className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
                     title={language === 'ar' ? 'إغلاق' : language === 'de' ? 'Schließen' : 'Close'}
@@ -2513,14 +2231,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 </div>
 
                 {/* Content - Scrollable */}
-                <div 
-                  className="flex-1 p-6"
-                  style={{
-                    overflowY: 'auto',
-                    overflowX: 'hidden',
-                    maxHeight: 'calc(95vh - 100px)',
-                  }}
-                >
+                <div className="overflow-y-auto flex-1 p-6">
                   <div className="space-y-4">
                   {/* From City */}
                   <div>
@@ -2842,119 +2553,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     />
                   </div>
 
-                  {/* Stops Section - Only for new trips */}
-                  {!editingTripId && (
-                    <div className="mt-6 border-t pt-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          {language === 'ar' ? 'المحطات (اختياري)' : language === 'de' ? 'Haltestellen (optional)' : 'Stops (Optional)'}
-                        </h3>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setNewTripStops([...newTripStops, {
-                              station_id: '',
-                              stop_order: newTripStops.length + 1,
-                              arrival_time: '',
-                              departure_time: '',
-                            }]);
-                          }}
-                          className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                        >
-                          <Plus className="w-4 h-4" />
-                          {language === 'ar' ? 'إضافة محطة' : language === 'de' ? 'Haltestelle hinzufügen' : 'Add Stop'}
-                        </button>
-                      </div>
-                      
-                      {newTripStops.length === 0 ? (
-                        <p className="text-sm text-gray-500 text-center py-4">
-                          {language === 'ar' ? 'لم يتم إضافة محطات بعد. انقر فوق "إضافة محطة" لإضافة محطات إلى هذه الرحلة.' : language === 'de' ? 'Noch keine Haltestellen hinzugefügt. Klicken Sie auf "Haltestelle hinzufügen", um Haltestellen zu dieser Fahrt hinzuzufügen.' : 'No stops added yet. Click "Add Stop" to add stops to this trip.'}
-                        </p>
-                      ) : (
-                        <div className="space-y-3">
-                          {newTripStops.map((stop, index) => (
-                            <div key={index} className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-                              <div className="flex items-start gap-3">
-                                <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center font-semibold">
-                                  {index + 1}
-                                </div>
-                                <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-3">
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                      {language === 'ar' ? 'المحطة' : language === 'de' ? 'Station' : 'Station'}
-                                    </label>
-                                    <select
-                                      value={stop.station_id}
-                                      onChange={(e) => {
-                                        const newStops = [...newTripStops];
-                                        newStops[index].station_id = e.target.value;
-                                        setNewTripStops(newStops);
-                                      }}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                      required
-                                    >
-                                      <option value="">
-                                        {language === 'ar' ? 'اختر محطة' : language === 'de' ? 'Station wählen' : 'Select station'}
-                                      </option>
-                                      {stations.map((station: any) => (
-                                        <option key={station.id} value={station.id}>
-                                          {station.city_name} - {station.name}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                      {language === 'ar' ? 'وقت الوصول' : language === 'de' ? 'Ankunftszeit' : 'Arrival Time'}
-                                    </label>
-                                    <input
-                                      type="time"
-                                      value={stop.arrival_time || ''}
-                                      onChange={(e) => {
-                                        const newStops = [...newTripStops];
-                                        newStops[index].arrival_time = e.target.value;
-                                        setNewTripStops(newStops);
-                                      }}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                    />
-                                  </div>
-                                  <div>
-                                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                                      {language === 'ar' ? 'وقت المغادرة' : language === 'de' ? 'Abfahrtszeit' : 'Departure Time'}
-                                    </label>
-                                    <input
-                                      type="time"
-                                      value={stop.departure_time || ''}
-                                      onChange={(e) => {
-                                        const newStops = [...newTripStops];
-                                        newStops[index].departure_time = e.target.value;
-                                        setNewTripStops(newStops);
-                                      }}
-                                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
-                                    />
-                                  </div>
-                                </div>
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    const newStops = newTripStops.filter((_, i) => i !== index);
-                                    // Re-number the remaining stops
-                                    newStops.forEach((s, i) => s.stop_order = i + 1);
-                                    setNewTripStops(newStops);
-                                  }}
-                                  className="flex-shrink-0 text-red-600 hover:text-red-700 transition-colors p-1"
-                                  title={language === 'ar' ? 'حذف المحطة' : language === 'de' ? 'Haltestelle löschen' : 'Delete stop'}
-                                >
-                                  <X className="w-5 h-5" />
-                                </button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
                   </div>
 
                   {/* Actions - Sticky Footer */}
@@ -2971,7 +2569,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       onClick={() => {
                         setShowAddTripDialog(false);
                         setEditingTripId(null);
-                        setNewTripStops([]);
                         setNewTrip({
                           route_id: '',
                           company_id: '',
@@ -3103,110 +2700,72 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               </div>
             </div>
           )}
-        </>
+        </div>
       )}
 
-      {activeTab === 'users' && user?.role === 'admin' && (() => {
-        // Filter users based on search and role
-        const filteredUsers = users.filter((userItem: any) => {
-          // Search filter
-          const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim();
-          const matchesSearch = userSearchQuery === '' ||
-            userName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
-            userItem.email?.toLowerCase().includes(userSearchQuery.toLowerCase());
-          
-          // Role filter
-          const userRoles = Array.isArray(userItem.roles) ? userItem.roles : [];
-          const hasAdminRole = userRoles.includes('Administrator');
-          const hasAgentRole = userRoles.includes('Agent');
-          const hasUserRole = userRoles.includes('User') || userRoles.length === 0;
-          
-          const matchesRole =
-            userRoleFilter === 'all' ||
-            (userRoleFilter === 'admin' && hasAdminRole) ||
-            (userRoleFilter === 'agent' && hasAgentRole) ||
-            (userRoleFilter === 'user' && hasUserRole);
-          
-          return matchesSearch && matchesRole;
-        });
-
-        return (
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-            {/* Search and Filters */}
-            <div className="p-6 border-b border-gray-200 space-y-4">
-              <div className="flex flex-wrap gap-4 items-center">
-                {/* Search */}
-                <div className="flex-1 min-w-[300px]">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder={t.searchUsersPlaceholder}
-                      value={userSearchQuery}
-                      onChange={(e) => setUserSearchQuery(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-
-                {/* Role Filter */}
-                <div className="flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-gray-600" />
-                  <select
-                    value={userRoleFilter}
-                    onChange={(e) => setUserRoleFilter(e.target.value as 'all' | 'admin' | 'agent' | 'user')}
-                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  >
-                    <option value="all">{t.allRoles}</option>
-                    <option value="admin">{t.adminRole}</option>
-                    <option value="agent">{t.agentRole}</option>
-                    <option value="user">{t.userRole}</option>
-                  </select>
-                </div>
-
-                {/* Clear Filters */}
-                {(userSearchQuery || userRoleFilter !== 'all') && (
-                  <button
-                    onClick={() => {
-                      setUserSearchQuery('');
-                      setUserRoleFilter('all');
-                    }}
-                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-                  >
-                    {t.clearFilters}
-                  </button>
-                )}
-              </div>
-
-              {/* Results count */}
-              <div className="text-sm text-gray-600">
-                {filteredUsers.length} {filteredUsers.length === 1 ? t.userRole : t.userManagement}
-              </div>
-            </div>
-
-            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+      {activeTab === 'users' && user?.role === 'admin' && (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">
               {language === 'ar' ? 'المستخدمون' : language === 'de' ? 'Benutzer' : 'Users'}
             </h3>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowAddUserDialog(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <Plus className="w-5 h-5" />
-                {language === 'ar' ? 'إضافة مستخدم' : language === 'de' ? 'Benutzer hinzufügen' : 'Add User'}
-              </button>
-              <button
-                onClick={() => setShowDeletedUsers(!showDeletedUsers)}
-                className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                {showDeletedUsers 
-                  ? (language === 'ar' ? 'إخفاء المحذوفة' : language === 'de' ? 'Gelöschte ausblenden' : 'Hide Deleted')
-                  : (language === 'ar' ? 'إظهار المحذوفة' : language === 'de' ? 'Gelöschte anzeigen' : 'Show Deleted')
-                }
-              </button>
+            <button
+              onClick={() => setShowDeletedUsers(!showDeletedUsers)}
+              className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+            >
+              {showDeletedUsers 
+                ? (language === 'ar' ? 'إخفاء المحذوفة' : language === 'de' ? 'Gelöschte ausblenden' : 'Hide Deleted')
+                : (language === 'ar' ? 'إظهار المحذوفة' : language === 'de' ? 'Gelöschte anzeigen' : 'Show Deleted')
+              }
+            </button>
+          </div>
+
+          {/* Filters Section */}
+          <div className="p-6 bg-gray-50 border-b border-gray-200">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Name/Email Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'البحث بالاسم أو البريد الإلكتروني' : language === 'de' ? 'Suche nach Name oder E-Mail' : 'Search by Name or Email'}
+                </label>
+                <input
+                  type="text"
+                  value={filterName}
+                  onChange={(e) => setFilterName(e.target.value)}
+                  placeholder={language === 'ar' ? 'ابحث...' : language === 'de' ? 'Suchen...' : 'Search...'}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                />
+              </div>
+
+              {/* Role Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  {language === 'ar' ? 'فلتر حسب الدور' : language === 'de' ? 'Nach Rolle filtern' : 'Filter by Role'}
+                </label>
+                <select
+                  value={filterRole}
+                  onChange={(e) => setFilterRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-sm"
+                >
+                  <option value="">{language === 'ar' ? 'جميع الأدوار' : language === 'de' ? 'Alle Rollen' : 'All Roles'}</option>
+                  <option value="Administrator">{language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Administrator'}</option>
+                  <option value="Agent">{language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent'}</option>
+                  <option value="User">{language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User'}</option>
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              <div className="flex items-end">
+                <button
+                  onClick={clearUserFilters}
+                  className="w-full px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors text-sm font-medium"
+                >
+                  {language === 'ar' ? 'مسح الفلاتر' : language === 'de' ? 'Filter löschen' : 'Clear Filters'}
+                </button>
+              </div>
             </div>
           </div>
+
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 animate-spin text-green-600" />
@@ -3223,12 +2782,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {filteredUsers.length === 0 ? (
+                  {getFilteredUsers().length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-8 text-center text-gray-600">No users found</td>
                     </tr>
                   ) : (
-                    filteredUsers.map((userItem: any) => {
+                    getFilteredUsers().map((userItem: any) => {
                       const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim() || userItem.email;
                       const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
                       const isAdmin = roles.includes('Administrator') || roles.includes('ADMIN');
@@ -3285,50 +2844,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
           )}
         </div>
-        );
-      })()}
-
-      {/* Companies Tab */}
-      {activeTab === 'companies' && user?.role === 'admin' && (
-        <CompanyManagement language={language} />
       )}
 
-      {/* Ratings Tab */}
-      {activeTab === 'ratings' && user?.role === 'admin' && (
-        <RatingManagement language={language} />
-      )}
-
-      {/* Bookings Tab */}
-      {activeTab === 'bookings' && user?.role === 'admin' && (
-        <BookingManagement language={language} />
-      )}
-
-      {/* Invoices Tab */}
-      {activeTab === 'invoices' && user?.role === 'admin' && (
-        <InvoiceManagement language={language} />
-      )}
-
-      {activeTab === 'photos' && (
+      {activeTab === 'ratings' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+          <div className="p-4 border-b border-gray-200">
             <h3 className="text-lg font-semibold text-gray-900">
-              {language === 'ar' ? 'إدارة الصور' : language === 'de' ? 'Fotoverwaltung' : 'Photo Management'}
+              {t.ratingsManagement}
             </h3>
-            <button
-              onClick={() => {
-                setEditingImage(null);
-                setPhotoType('bus');
-                setEntityId('');
-                setSelectedFile(null);
-                setShowPhotoUploadDialog(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Upload className="w-5 h-5" />
-              {language === 'ar' ? 'تحميل صورة' : language === 'de' ? 'Foto hochladen' : 'Upload Photo'}
-            </button>
           </div>
-          
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 animate-spin text-green-600" />
@@ -3338,87 +2862,91 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
-                      {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px' }}>
-                      {language === 'ar' ? 'اسم الملف' : language === 'de' ? 'Dateiname' : 'File Name'}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '120px' }}>
-                      {language === 'ar' ? 'نوع الصورة' : language === 'de' ? 'Foto-Typ' : 'Photo Type'}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '100px' }}>
-                      {language === 'ar' ? 'معرف الكيان' : language === 'de' ? 'Entitäts-ID' : 'Entity ID'}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '180px' }}>
-                      {language === 'ar' ? 'تم الرفع بواسطة' : language === 'de' ? 'Hochgeladen von' : 'Uploaded By'}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px' }}>
-                      {language === 'ar' ? 'التاريخ' : language === 'de' ? 'Datum' : 'Date'}
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px' }}>
-                      {t.actions}
-                    </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.user}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.company}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.punctuality}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.friendliness}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.cleanliness}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.comment}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.date}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider">{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {images.length === 0 ? (
+                  {!ratings || ratings.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
-                        <Image className="w-12 h-12 mx-auto mb-2 text-gray-400" />
-                        <p>{language === 'ar' ? 'لا توجد صور' : language === 'de' ? 'Keine Fotos vorhanden' : 'No photos uploaded'}</p>
+                      <td colSpan={8} className="px-6 py-8 text-center text-gray-600">
+                        {language === 'ar' ? 'لا توجد تقييمات' : language === 'de' ? 'Keine Bewertungen' : 'No ratings found'}
                       </td>
                     </tr>
                   ) : (
-                    images.map((image: any) => (
-                      <tr key={image.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-3 text-sm text-gray-900">
-                          <img 
-                            src={image.image_url} 
-                            alt={image.file_name}
-                            className="w-16 h-16 object-cover rounded border border-gray-200"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"%3E%3Crect fill="%23eee" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="monospace" font-size="14" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
-                            }}
-                          />
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-900">{image.file_name || 'N/A'}</td>
-                        <td className="px-6 py-3">
-                          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                            image.entity_type === 'bus' ? 'bg-blue-100 text-blue-700' : 
-                            image.entity_type === 'station' ? 'bg-green-100 text-green-700' : 
-                            'bg-gray-100 text-gray-700'
-                          }`}>
-                            {image.entity_type === 'bus' ? (language === 'ar' ? 'باص' : language === 'de' ? 'Bus' : 'Bus') : 
-                             image.entity_type === 'station' ? (language === 'ar' ? 'محطة' : language === 'de' ? 'Station' : 'Station') : 
-                             image.entity_type}
-                          </span>
-                        </td>
-                        <td className="px-6 py-3 text-sm text-gray-900">{image.entity_id}</td>
-                        <td className="px-6 py-3 text-sm text-gray-900">{image.uploaded_by_name || image.uploaded_by_email || 'N/A'}</td>
-                        <td className="px-6 py-3 text-sm text-gray-900">
-                          {image.created_at ? new Date(image.created_at).toLocaleDateString(language === 'ar' ? 'ar-EG' : language === 'de' ? 'de-DE' : 'en-US') : 'N/A'}
-                        </td>
-                        <td className="px-6 py-3 text-sm">
-                          <div className="flex gap-2">
-                            <button 
-                              onClick={() => handleEditImage(image)}
-                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={loading}
-                            >
-                              {t.edit}
-                            </button>
-                            <button 
-                              onClick={() => handleDeleteImage(image.id)}
-                              className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                              disabled={loading}
-                            >
-                              {t.delete}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
+                    ratings.map((rating: any) => {
+                      console.log('Rendering rating:', rating);
+                      return (
+                        <tr key={rating.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-3 text-sm text-gray-900">{rating.user_name || rating.user_email}</td>
+                          <td className="px-6 py-3 text-sm text-gray-900">{rating.company_name || '-'}</td>
+                          <td className="px-6 py-3 text-sm text-gray-900">
+                            <div className="flex items-center gap-1">
+                              {rating.punctuality_rating || 0}
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900">
+                            <div className="flex items-center gap-1">
+                              {rating.friendliness_rating || 0}
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900">
+                            <div className="flex items-center gap-1">
+                              {rating.cleanliness_rating || 0}
+                              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                            </div>
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-900 max-w-xs truncate">
+                            {rating.comment || '-'}
+                          </td>
+                          <td className="px-6 py-3 text-sm text-gray-500">
+                            {rating.created_at 
+                              ? new Date(rating.created_at).toLocaleDateString(language === 'ar' ? 'ar-SA' : language === 'de' ? 'de-DE' : 'en-US')
+                              : '-'}
+                          </td>
+                          <td className="px-6 py-3 text-sm">
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('Edit button clicked for rating:', rating.id);
+                                  if (!loading) {
+                                    handleEditRatingClick(rating);
+                                  }
+                                }}
+                                disabled={loading}
+                                className="text-blue-600 hover:text-blue-700 flex items-center gap-1 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                title={t.editRating}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDeleteRating(rating.id);
+                                }}
+                                className="text-red-600 hover:text-red-700 flex items-center gap-1 cursor-pointer"
+                                title={t.deleteRating}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>
@@ -3427,142 +2955,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         </div>
       )}
 
-      {/* Photo Upload Dialog */}
-      {showPhotoUploadDialog && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowPhotoUploadDialog(false);
-            }
-          }}
-        >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
-              <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
-                <Upload className="w-6 h-6" />
-                {editingImage 
-                  ? (language === 'ar' ? 'تحديث الصورة' : language === 'de' ? 'Foto aktualisieren' : 'Update Photo')
-                  : t.uploadPhoto
-                }
-              </h2>
-              <button
-                onClick={() => {
-                  setShowPhotoUploadDialog(false);
-                  setEditingImage(null);
-                }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
-              <div className="space-y-4">
-                {editingImage && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-                    <p className="text-sm text-blue-700">
-                      {language === 'ar' ? 'تحديث صورة موجودة. تحديد ملف جديد سيستبدل الصورة الحالية.' : 
-                       language === 'de' ? 'Bestehendes Foto aktualisieren. Eine neue Datei auswählen ersetzt das aktuelle Foto.' : 
-                       'Updating existing photo. Select a new file to replace the current image.'}
-                    </p>
-                    <div className="mt-2">
-                      <img 
-                        src={editingImage.image_url} 
-                        alt={editingImage.file_name}
-                        className="w-32 h-32 object-cover rounded border border-blue-300"
-                      />
-                    </div>
-                  </div>
-                )}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.photoType}</label>
-                  <select
-                    value={photoType}
-                    onChange={(e) => setPhotoType(e.target.value as 'bus' | 'station')}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
-                    disabled={!!editingImage}
-                  >
-                    <option value="bus">{t.busPhoto}</option>
-                    <option value="station">{t.stationPhoto}</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {language === 'ar' ? 'معرف الكيان (معرف الحافلة أو معرف المحطة)' : language === 'de' ? 'Entitäts-ID (Bus-ID oder Stations-ID)' : 'Entity ID (Bus ID or Station ID)'}
-                  </label>
-                  <input
-                    type="number"
-                    value={entityId}
-                    onChange={(e) => setEntityId(e.target.value)}
-                    placeholder={language === 'ar' ? 'أدخل المعرف' : language === 'de' ? 'ID eingeben' : 'Enter ID'}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
-                    disabled={!!editingImage}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {t.selectFile}
-                    {editingImage && <span className="text-xs text-gray-500 ml-2">({language === 'ar' ? 'اختياري' : language === 'de' ? 'optional' : 'optional'})</span>}
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
-                  />
-                </div>
-                {uploadStatus === 'success' && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-700 text-sm">
-                    {t.uploadSuccess}
-                  </div>
-                )}
-                {uploadStatus === 'error' && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-                    {language === 'ar' ? 'فشل التحميل. يرجى المحاولة مرة أخرى.' : language === 'de' ? 'Upload fehlgeschlagen. Bitte versuchen Sie es erneut.' : 'Upload failed. Please try again.'}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-4 shadow-lg">
-              <button
-                onClick={() => {
-                  handleImageUpload();
-                }}
-                disabled={(!selectedFile && !editingImage) || !entityId || uploadStatus === 'success' || loading}
-                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 font-medium"
-              >
-                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                {editingImage 
-                  ? (language === 'ar' ? 'تحديث' : language === 'de' ? 'Aktualisieren' : 'Update')
-                  : t.uploadPhoto
-                }
-              </button>
-              <button
-                onClick={() => {
-                  setShowPhotoUploadDialog(false);
-                  setEditingImage(null);
-                  setUploadStatus('');
-                  setSelectedFile(null);
-                  setEntityId('');
-                }}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-              >
-                {t.cancel}
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Companies Tab */}
+      {activeTab === 'companies' && user?.role === 'admin' && (
+        <CompanyManagement language={language} />
       )}
 
-      {activeTab === 'photos_old_remove_this' && (
+      {activeTab === 'photos' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl text-gray-900 mb-6">{t.uploadPhoto}</h2>
           <div className="space-y-4">
@@ -3618,139 +3016,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       )}
 
       {activeTab === 'import' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl text-gray-900">{t.dataImport}</h2>
-            <button
-              onClick={() => setShowCSVImportDialog(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              <Upload className="w-5 h-5" />
-              {t.uploadCSV}
-            </button>
-          </div>
-          <div className="text-center py-12 text-gray-500">
-            <Upload className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <p>{language === 'ar' ? 'انقر على "تحميل CSV" لاستيراد بيانات جديدة' : language === 'de' ? 'Klicken Sie auf "CSV hochladen", um neue Daten zu importieren' : 'Click "Upload CSV" to import new data'}</p>
-          </div>
-        </div>
-      )}
-
-      {/* CSV Import Dialog */}
-      {showCSVImportDialog && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999] p-4 backdrop-blur-sm"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowCSVImportDialog(false);
-            }
-          }}
-        >
-          <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
-              <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
-                <Upload className="w-6 h-6" />
-                {t.dataImport}
-              </h2>
-              <button
-                onClick={() => setShowCSVImportDialog(false)}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">{t.uploadCSV}</label>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900"
-                  />
-                </div>
-                {csvFile && (
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleCSVPreview}
-                      className="flex-1 bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
-                    >
-                      <AlertCircle className="w-5 h-5" />
-                      {t.preview}
-                    </button>
-                    <button
-                      onClick={async () => {
-                        await handleCSVImport();
-                        setShowCSVImportDialog(false);
-                      }}
-                      disabled={loading}
-                      className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                    >
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
-                      {t.import}
-                    </button>
-                  </div>
-                )}
-                {csvPreview && (
-                  <div className="mt-4 border border-gray-200 rounded-lg p-4">
-                    <h3 className="text-sm font-semibold text-gray-900 mb-2">
-                      {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'} ({csvPreview.totalRows} {language === 'ar' ? 'صفوف' : language === 'de' ? 'Zeilen' : 'rows'})
-                    </h3>
-                    <div className="overflow-x-auto max-h-96">
-                      <table className="w-full text-xs">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {csvPreview.headers?.map((h: string, i: number) => (
-                              <th key={i} className="px-2 py-1 text-left border border-gray-300">{h}</th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {csvPreview.rows?.slice(0, 10).map((row: any[], i: number) => (
-                            <tr key={i} className="hover:bg-gray-50">
-                              {row.map((cell: any, j: number) => (
-                                <td key={j} className="px-2 py-1 border border-gray-300">{cell}</td>
-                              ))}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                      {csvPreview.totalRows > 10 && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          {language === 'ar' ? `عرض 10 من ${csvPreview.totalRows} صفوف` : language === 'de' ? `10 von ${csvPreview.totalRows} Zeilen angezeigt` : `Showing 10 of ${csvPreview.totalRows} rows`}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="sticky bottom-0 bg-white border-t border-gray-200 p-6 flex gap-4 shadow-lg">
-              <button
-                onClick={() => {
-                  setShowCSVImportDialog(false);
-                  setCsvFile(null);
-                  setCsvPreview(null);
-                }}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
-              >
-                {t.cancel}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'import_old_remove_this' && (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
           <h2 className="text-xl text-gray-900 mb-6">{t.dataImport}</h2>
           <div className="space-y-4">
@@ -3980,242 +3245,152 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         </div>
       )}
 
-      {/* Add User Dialog */}
-      {showAddUserDialog && (
+      {/* Edit Rating Dialog */}
+      {showEditRatingDialog && selectedRating && (
         <div 
-          className="fixed inset-0 flex items-center justify-center p-4"
-          style={{ 
-            zIndex: 99999,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            backdropFilter: 'blur(4px)',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-          }}
+          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[10000] p-4 backdrop-blur-md"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 10000 }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
-              setShowAddUserDialog(false);
-              setNewUserData({
-                first_name: '',
-                last_name: '',
-                email: '',
-                password: '',
-                phone: '',
-                role: 'user'
+              setShowEditRatingDialog(false);
+              setSelectedRating(null);
+              setEditRatingData({
+                punctuality_rating: 0,
+                friendliness_rating: 0,
+                cleanliness_rating: 0,
+                comment: '',
               });
-              setUserValidationErrors({});
             }
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[95vh] flex flex-col"
-            style={{ 
-              position: 'relative',
-              zIndex: 100000,
-              overflow: 'hidden',
-            }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200 relative z-[10001] border border-gray-200"
+            style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem' }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
-              <h2 className="text-2xl font-bold text-gray-900">
-                {language === 'ar' ? 'إضافة مستخدم جديد' : language === 'de' ? 'Neuen Benutzer hinzufügen' : 'Add New User'}
+            <div className="p-6 border-b border-gray-200">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t.editRating}
               </h2>
-              <button
-                onClick={() => {
-                  setShowAddUserDialog(false);
-                  setNewUserData({
-                    first_name: '',
-                    last_name: '',
-                    email: '',
-                    password: '',
-                    phone: '',
-                    role: 'user'
-                  });
-                  setUserValidationErrors({});
-                }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
-              >
-                <X className="w-6 h-6" />
-              </button>
             </div>
 
-            {/* Content - Scrollable */}
-            <div 
-              className="flex-1 p-6"
-              style={{
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                maxHeight: 'calc(95vh - 160px)',
-              }}
-            >
+            <div className="overflow-y-auto flex-1 p-6">
               <div className="space-y-4">
-                {/* First Name */}
+                {/* Punctuality Rating */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {language === 'ar' ? 'الاسم الأول' : language === 'de' ? 'Vorname' : 'First Name'} *
+                    {t.punctuality} <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={newUserData.first_name}
-                    onChange={(e) => {
-                      setNewUserData({ ...newUserData, first_name: e.target.value });
-                      if (userValidationErrors.first_name) {
-                        setUserValidationErrors({ ...userValidationErrors, first_name: undefined });
-                      }
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      userValidationErrors.first_name ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder={language === 'ar' ? 'أدخل الاسم الأول' : language === 'de' ? 'Vorname eingeben' : 'Enter first name'}
-                  />
-                  {userValidationErrors.first_name && (
-                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.first_name}</p>
-                  )}
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditRatingData({ ...editRatingData, punctuality_rating: star })}
+                        className="transition-colors"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= editRatingData.punctuality_rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Last Name */}
+                {/* Friendliness Rating */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {language === 'ar' ? 'اسم العائلة' : language === 'de' ? 'Nachname' : 'Last Name'} *
+                    {t.friendliness} <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
-                    value={newUserData.last_name}
-                    onChange={(e) => {
-                      setNewUserData({ ...newUserData, last_name: e.target.value });
-                      if (userValidationErrors.last_name) {
-                        setUserValidationErrors({ ...userValidationErrors, last_name: undefined });
-                      }
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      userValidationErrors.last_name ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder={language === 'ar' ? 'أدخل اسم العائلة' : language === 'de' ? 'Nachname eingeben' : 'Enter last name'}
-                  />
-                  {userValidationErrors.last_name && (
-                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.last_name}</p>
-                  )}
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditRatingData({ ...editRatingData, friendliness_rating: star })}
+                        className="transition-colors"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= editRatingData.friendliness_rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Email */}
+                {/* Cleanliness Rating */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {language === 'ar' ? 'البريد الإلكتروني' : language === 'de' ? 'E-Mail' : 'Email'} *
+                    {t.cleanliness} <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="email"
-                    value={newUserData.email}
-                    onChange={(e) => {
-                      setNewUserData({ ...newUserData, email: e.target.value });
-                      if (userValidationErrors.email) {
-                        setUserValidationErrors({ ...userValidationErrors, email: undefined });
-                      }
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      userValidationErrors.email ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder={language === 'ar' ? 'أدخل البريد الإلكتروني' : language === 'de' ? 'E-Mail eingeben' : 'Enter email'}
-                  />
-                  {userValidationErrors.email && (
-                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.email}</p>
-                  )}
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setEditRatingData({ ...editRatingData, cleanliness_rating: star })}
+                        className="transition-colors"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            star <= editRatingData.cleanliness_rating
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
                 </div>
 
-                {/* Password */}
+                {/* Comment */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {language === 'ar' ? 'كلمة المرور' : language === 'de' ? 'Passwort' : 'Password'} *
+                    {t.comment}
                   </label>
-                  <input
-                    type="password"
-                    value={newUserData.password}
-                    onChange={(e) => {
-                      setNewUserData({ ...newUserData, password: e.target.value });
-                      if (userValidationErrors.password) {
-                        setUserValidationErrors({ ...userValidationErrors, password: undefined });
-                      }
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      userValidationErrors.password ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder={language === 'ar' ? 'أدخل كلمة المرور' : language === 'de' ? 'Passwort eingeben' : 'Enter password'}
-                  />
-                  {userValidationErrors.password && (
-                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.password}</p>
-                  )}
-                </div>
-
-                {/* Phone */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {language === 'ar' ? 'رقم الهاتف' : language === 'de' ? 'Telefonnummer' : 'Phone Number'}
-                  </label>
-                  <input
-                    type="tel"
-                    value={newUserData.phone}
-                    onChange={(e) => {
-                      setNewUserData({ ...newUserData, phone: e.target.value });
-                      if (userValidationErrors.phone) {
-                        setUserValidationErrors({ ...userValidationErrors, phone: undefined });
-                      }
-                    }}
-                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent ${
-                      userValidationErrors.phone ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder={language === 'ar' ? 'أدخل رقم الهاتف' : language === 'de' ? 'Telefonnummer eingeben' : 'Enter phone number'}
-                  />
-                  {userValidationErrors.phone && (
-                    <p className="mt-1 text-sm text-red-600">{userValidationErrors.phone}</p>
-                  )}
-                </div>
-
-                {/* Role */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    {language === 'ar' ? 'الدور' : language === 'de' ? 'Rolle' : 'Role'} *
-                  </label>
-                  <select
-                    value={newUserData.role}
-                    onChange={(e) => setNewUserData({ ...newUserData, role: e.target.value })}
+                  <textarea
+                    value={editRatingData.comment}
+                    onChange={(e) => setEditRatingData({ ...editRatingData, comment: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                  >
-                    <option value="user">{language === 'ar' ? 'مستخدم' : language === 'de' ? 'Benutzer' : 'User'}</option>
-                    <option value="agent">{language === 'ar' ? 'وكيل' : language === 'de' ? 'Agent' : 'Agent'}</option>
-                    <option value="admin">{language === 'ar' ? 'مدير' : language === 'de' ? 'Administrator' : 'Admin'}</option>
-                  </select>
+                    rows={4}
+                    placeholder={language === 'ar' ? 'أدخل تعليقاً' : language === 'de' ? 'Kommentar eingeben' : 'Enter a comment'}
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Footer with buttons */}
-            <div className="sticky bottom-0 bg-gray-50 p-6 border-t border-gray-200 flex gap-3">
+            {/* Footer */}
+            <div className="bg-gray-50 border-t border-gray-200 p-6 flex gap-4 rounded-b-2xl">
               <button
                 onClick={() => {
-                  setShowAddUserDialog(false);
-                  setNewUserData({
-                    first_name: '',
-                    last_name: '',
-                    email: '',
-                    password: '',
-                    phone: '',
-                    role: 'user'
+                  setShowEditRatingDialog(false);
+                  setSelectedRating(null);
+                  setEditRatingData({
+                    punctuality_rating: 0,
+                    friendliness_rating: 0,
+                    cleanliness_rating: 0,
+                    comment: '',
                   });
-                  setUserValidationErrors({});
                 }}
-                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
               >
-                {language === 'ar' ? 'إلغاء' : language === 'de' ? 'Abbrechen' : 'Cancel'}
+                {t.cancel}
               </button>
               <button
-                onClick={handleAddUser}
-                disabled={loading}
+                onClick={handleUpdateRating}
+                disabled={loading || editRatingData.punctuality_rating === 0 || editRatingData.friendliness_rating === 0 || editRatingData.cleanliness_rating === 0}
                 className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-                {language === 'ar' ? 'إضافة' : language === 'de' ? 'Hinzufügen' : 'Add'}
+                {t.updateRating}
               </button>
             </div>
           </div>

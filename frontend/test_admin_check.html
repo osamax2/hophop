@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HopHop Admin Test</title>
+    <style>
+        body { font-family: Arial; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; }
+        h1 { color: #333; }
+        .test-section { margin: 20px 0; padding: 15px; background: #f9f9f9; border-left: 4px solid #4CAF50; }
+        .error { border-left-color: #f44336; }
+        .success { border-left-color: #4CAF50; }
+        .warning { border-left-color: #ff9800; }
+        pre { background: #1e1e1e; color: #d4d4d4; padding: 10px; overflow: auto; }
+        button { background: #2196F3; color: white; border: none; padding: 10px 20px; cursor: pointer; border-radius: 4px; margin: 5px; }
+        button:hover { background: #0b7dda; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 HopHop Admin Role Diagnostic</h1>
+        
+        <div class="test-section">
+            <h3>1. Token im localStorage</h3>
+            <div id="token-status"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2. API Test - /api/auth/me</h3>
+            <button onclick="testAPI()">Test API</button>
+            <div id="api-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3. Frontend Version Check</h3>
+            <div id="version-check"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. Browser Cache Check</h3>
+            <div id="cache-check"></div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <button onclick="clearAllCache()">🗑️ Clear All Cache & Reload</button>
+            <button onclick="testLogin()">🔐 Test Login</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Check Token
+        const token = localStorage.getItem('token');
+        const tokenDiv = document.getElementById('token-status');
+        if (token) {
+            tokenDiv.innerHTML = `<div class="success">✅ Token found: ${token.substring(0, 20)}...</div>`;
+        } else {
+            tokenDiv.innerHTML = `<div class="error">❌ No token in localStorage</div>`;
+        }
+
+        // 2. Test API
+        async function testAPI() {
+            const resultDiv = document.getElementById('api-result');
+            resultDiv.innerHTML = '<p>Testing...</p>';
+            
+            try {
+                const response = await fetch('/api/auth/me', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.user) {
+                    const user = data.user;
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <p>✅ API Response OK</p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                            <h4>Role Detection:</h4>
+                            <p>user.role = <strong>${user.role}</strong></p>
+                            <p>Should show admin menu? <strong>${user.role === 'admin' || user.role === 'agent' ? 'YES ✅' : 'NO ❌'}</strong></p>
+                            <p>Should show User Management? <strong>${user.role === 'admin' ? 'YES ✅' : 'NO ❌'}</strong></p>
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<div class="error">❌ Error: ${JSON.stringify(data)}</div>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">❌ Network Error: ${error.message}</div>`;
+            }
+        }
+
+        // 3. Version Check
+        const versionDiv = document.getElementById('version-check');
+        const scripts = Array.from(document.scripts).map(s => s.src).filter(s => s.includes('index-'));
+        if (scripts.length > 0) {
+            const hasCorrectVersion = scripts.some(s => s.includes('index-kIUtm0uZ.js'));
+            versionDiv.innerHTML = `
+                <div class="${hasCorrectVersion ? 'success' : 'warning'}">
+                    <p>Loaded scripts:</p>
+                    <pre>${scripts.join('\n')}</pre>
+                    <p>Expected: index-kIUtm0uZ.js</p>
+                    <p>${hasCorrectVersion ? '✅ Correct version loaded' : '⚠️ Wrong version or check main app'}</p>
+                </div>
+            `;
+        } else {
+            versionDiv.innerHTML = '<div class="warning">⚠️ No versioned scripts found (test page only)</div>';
+        }
+
+        // 4. Cache Check
+        const cacheDiv = document.getElementById('cache-check');
+        cacheDiv.innerHTML = `
+            <div class="warning">
+                <p>⚠️ To completely clear cache:</p>
+                <ol>
+                    <li>Chrome/Edge: Press <kbd>Ctrl+Shift+Delete</kbd> (Windows) or <kbd>Cmd+Shift+Delete</kbd> (Mac)</li>
+                    <li>Select "Cached images and files"</li>
+                    <li>Click "Clear data"</li>
+                    <li>Then press <kbd>Ctrl+Shift+R</kbd> or <kbd>Cmd+Shift+R</kbd> to hard reload</li>
+                </ol>
+                <p>Or open in <strong>Incognito/Private</strong> window</p>
+            </div>
+        `;
+
+        // Clear All Cache
+        function clearAllCache() {
+            localStorage.clear();
+            sessionStorage.clear();
+            alert('Cache cleared! Page will reload...');
+            window.location.reload(true);
+        }
+
+        // Test Login
+        async function testLogin() {
+            const email = prompt('Email:', 'admin@hophop.com');
+            const password = prompt('Password:', 'admin123');
+            
+            if (!email || !password) return;
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    alert('Login successful! Token saved. Reloading page...');
+                    window.location.reload();
+                } else {
+                    alert('Login failed: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        // Auto-test on load
+        if (token) {
+            setTimeout(testAPI, 500);
+        }
+    </script>
+</body>
+</html>
