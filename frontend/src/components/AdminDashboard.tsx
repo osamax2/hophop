@@ -66,6 +66,13 @@ const translations = {
     companyManagement: 'Unternehmensverwaltung',
     ratingsManagement: 'Bewertungsverwaltung',
     userManagement: 'Benutzerverwaltung',
+    searchUsers: 'Benutzer suchen',
+    searchUsersPlaceholder: 'Nach Name oder E-Mail suchen...',
+    filterByRole: 'Nach Rolle filtern',
+    allRoles: 'Alle Rollen',
+    adminRole: 'Administrator',
+    agentRole: 'Agent',
+    userRole: 'Benutzer',
     photoManagement: 'Fotoverwaltung',
     dataImport: 'Datenimport',
     analytics: 'Analyse & Statistiken',
@@ -166,6 +173,13 @@ const translations = {
     companyManagement: 'Company Management',
     ratingsManagement: 'Ratings Management',
     userManagement: 'User Management',
+    searchUsers: 'Search Users',
+    searchUsersPlaceholder: 'Search by name or email...',
+    filterByRole: 'Filter by Role',
+    allRoles: 'All Roles',
+    adminRole: 'Administrator',
+    agentRole: 'Agent',
+    userRole: 'User',
     photoManagement: 'Photo Management',
     dataImport: 'Data Import',
     analytics: 'Analytics & Statistics',
@@ -266,6 +280,13 @@ const translations = {
     companyManagement: 'إدارة الشركات',
     ratingsManagement: 'إدارة التقييمات',
     userManagement: 'إدارة المستخدمين',
+    searchUsers: 'بحث المستخدمين',
+    searchUsersPlaceholder: 'البحث بالاسم أو البريد الإلكتروني...',
+    filterByRole: 'تصفية حسب الدور',
+    allRoles: 'جميع الأدوار',
+    adminRole: 'مدير',
+    agentRole: 'وكيل',
+    userRole: 'مستخدم',
     photoManagement: 'إدارة الصور',
     dataImport: 'استيراد البيانات',
     analytics: 'التحليلات والإحصائيات',
@@ -381,6 +402,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // Users data
   const [users, setUsers] = useState<any[]>([]);
   const [showDeletedUsers, setShowDeletedUsers] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'all' | 'admin' | 'agent' | 'user'>('all');
   
   // Edit Profile Dialog
   const [showEditProfileDialog, setShowEditProfileDialog] = useState(false);
@@ -3069,9 +3092,85 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         </>
       )}
 
-      {activeTab === 'users' && user?.role === 'admin' && (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="p-4 border-b border-gray-200 flex justify-between items-center">
+      {activeTab === 'users' && user?.role === 'admin' && (() => {
+        // Filter users based on search and role
+        const filteredUsers = users.filter((userItem: any) => {
+          // Search filter
+          const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim();
+          const matchesSearch = userSearchQuery === '' ||
+            userName.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+            userItem.email?.toLowerCase().includes(userSearchQuery.toLowerCase());
+          
+          // Role filter
+          const userRoles = Array.isArray(userItem.roles) ? userItem.roles : [];
+          const hasAdminRole = userRoles.includes('Administrator');
+          const hasAgentRole = userRoles.includes('Agent');
+          const hasUserRole = userRoles.includes('User') || userRoles.length === 0;
+          
+          const matchesRole =
+            userRoleFilter === 'all' ||
+            (userRoleFilter === 'admin' && hasAdminRole) ||
+            (userRoleFilter === 'agent' && hasAgentRole) ||
+            (userRoleFilter === 'user' && hasUserRole);
+          
+          return matchesSearch && matchesRole;
+        });
+
+        return (
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+            {/* Search and Filters */}
+            <div className="p-6 border-b border-gray-200 space-y-4">
+              <div className="flex flex-wrap gap-4 items-center">
+                {/* Search */}
+                <div className="flex-1 min-w-[300px]">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder={t.searchUsersPlaceholder}
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+
+                {/* Role Filter */}
+                <div className="flex items-center gap-2">
+                  <Filter className="w-5 h-5 text-gray-600" />
+                  <select
+                    value={userRoleFilter}
+                    onChange={(e) => setUserRoleFilter(e.target.value as 'all' | 'admin' | 'agent' | 'user')}
+                    className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="all">{t.allRoles}</option>
+                    <option value="admin">{t.adminRole}</option>
+                    <option value="agent">{t.agentRole}</option>
+                    <option value="user">{t.userRole}</option>
+                  </select>
+                </div>
+
+                {/* Clear Filters */}
+                {(userSearchQuery || userRoleFilter !== 'all') && (
+                  <button
+                    onClick={() => {
+                      setUserSearchQuery('');
+                      setUserRoleFilter('all');
+                    }}
+                    className="px-4 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    {t.clearFilters}
+                  </button>
+                )}
+              </div>
+
+              {/* Results count */}
+              <div className="text-sm text-gray-600">
+                {filteredUsers.length} {filteredUsers.length === 1 ? t.userRole : t.userManagement}
+              </div>
+            </div>
+
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center">
             <h3 className="text-lg font-semibold text-gray-900">
               {language === 'ar' ? 'المستخدمون' : language === 'de' ? 'Benutzer' : 'Users'}
             </h3>
@@ -3110,12 +3209,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {users.length === 0 ? (
+                  {filteredUsers.length === 0 ? (
                     <tr>
                       <td colSpan={4} className="px-6 py-8 text-center text-gray-600">No users found</td>
                     </tr>
                   ) : (
-                    users.map((userItem: any) => {
+                    filteredUsers.map((userItem: any) => {
                       const userName = `${userItem.first_name || ''} ${userItem.last_name || ''}`.trim() || userItem.email;
                       const roles = Array.isArray(userItem.roles) ? userItem.roles : [];
                       const isAdmin = roles.includes('Administrator') || roles.includes('ADMIN');
@@ -3172,7 +3271,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* Companies Tab */}
       {activeTab === 'companies' && user?.role === 'admin' && (
