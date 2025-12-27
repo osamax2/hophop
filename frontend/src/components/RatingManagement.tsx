@@ -531,7 +531,7 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
                       <div className="flex items-center gap-1">
                         <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                         <span className="text-sm font-medium text-gray-900">
-                          {rating.average_rating.toFixed(1)}
+                          {rating.average_rating ? rating.average_rating.toFixed(1) : '0.0'}
                         </span>
                       </div>
                     </td>
