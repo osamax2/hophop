@@ -37,7 +37,7 @@ const translations = {
     passwordLowercase: 'Das Passwort muss mindestens einen Kleinbuchstaben enthalten',
     passwordNumber: 'Das Passwort muss mindestens eine Zahl enthalten',
     passwordSpecial: 'Das Passwort muss mindestens ein Sonderzeichen enthalten',
-    invalidEmail: 'Bitte geben Sie eine gültige E-Mail-Adresse mit @ und .com ein',
+    invalidEmail: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
     ageRestriction: 'Sie müssen mindestens 18 Jahre alt sein, um ein Konto zu erstellen',
   },
   en: {
@@ -66,7 +66,7 @@ const translations = {
     passwordLowercase: 'Password must contain at least one lowercase letter',
     passwordNumber: 'Password must contain at least one number',
     passwordSpecial: 'Password must contain at least one special character',
-    invalidEmail: 'Please enter a valid email address containing @ and .com',
+    invalidEmail: 'Please enter a valid email address',
     ageRestriction: 'You must be at least 18 years old to create an account',
   },
   ar: {
@@ -95,7 +95,7 @@ const translations = {
     passwordLowercase: 'يجب أن تحتوي كلمة المرور على حرف صغير واحد على الأقل',
     passwordNumber: 'يجب أن تحتوي كلمة المرور على رقم واحد على الأقل',
     passwordSpecial: 'يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل',
-    invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح يحتوي على @ و .com',
+    invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح',
     ageRestriction: 'يجب أن يكون عمرك 18 عامًا على الأقل لإنشاء حساب',
   },
 };
@@ -140,11 +140,10 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
 
   // Validation functions
   const validateEmail = (email: string): boolean => {
-    // Must contain @ and .com
+    // Must contain @ and a valid domain
     if (!email.includes('@')) return false;
-    if (!email.includes('.com')) return false;
-    // Basic email format validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.com$/;
+    // Accept all valid TLDs (com, de, sy, eu, org, net, etc.)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[a-zA-Z]{2,}$/;
     return emailRegex.test(email);
   };
 
