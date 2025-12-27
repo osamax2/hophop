@@ -176,7 +176,6 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
         u.last_name, 
         u.phone, 
         u.gender, 
-        u.birth_date,
         u.address,
         u.is_active,
         u.created_at,
@@ -220,7 +219,6 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
         last_name: user.last_name,
         phone: user.phone,
         gender: user.gender,
-        birth_date: user.birth_date,
         address: user.address,
         role: role,
         roles: roleNames,
@@ -244,7 +242,7 @@ router.get("/me", requireAuth, async (req: AuthedRequest, res) => {
 router.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.user?.id;
-    const { first_name, last_name, phone, gender, birth_date, address } = req.body;
+    const { first_name, last_name, phone, gender, address } = req.body;
 
     if (!userId) {
       return res.status(401).json({ message: "Unauthorized" });
@@ -270,10 +268,6 @@ router.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
       updateFields.push(`gender = $${paramIndex++}`);
       values.push(gender);
     }
-    if (birth_date !== undefined) {
-      updateFields.push(`birth_date = $${paramIndex++}`);
-      values.push(birth_date);
-    }
     if (address !== undefined) {
       updateFields.push(`address = $${paramIndex++}`);
       values.push(address);
@@ -291,7 +285,7 @@ router.patch("/me", requireAuth, async (req: AuthedRequest, res) => {
       UPDATE users
       SET ${updateFields.join(", ")}
       WHERE id = $${paramIndex}
-      RETURNING id, email, first_name, last_name, phone, gender, birth_date, address, is_active, created_at, updated_at
+      RETURNING id, email, first_name, last_name, phone, gender, address, is_active, created_at, updated_at
       `,
       values
     );

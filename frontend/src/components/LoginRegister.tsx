@@ -113,7 +113,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
     language: language,
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
-  const API_BASE = import.meta.env.VITE_API_BASE || "";
+  const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:4000";
 
   // Update formData.language when language prop changes
   useEffect(() => {
@@ -240,10 +240,38 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json();
-
+      // Check if response is ok and has content
       if (!res.ok) {
-        alert(data?.message || "Login/Register failed");
+        let errorMessage = "Login/Register failed";
+        try {
+          const errorText = await res.text();
+          if (errorText) {
+            try {
+              const errorData = JSON.parse(errorText);
+              errorMessage = errorData?.message || errorMessage;
+            } catch {
+              errorMessage = errorText || errorMessage;
+            }
+          }
+        } catch (err) {
+          console.error('Error parsing error response:', err);
+        }
+        alert(errorMessage);
+        return;
+      }
+
+      // Parse JSON response only if response is ok
+      let data;
+      try {
+        const responseText = await res.text();
+        if (!responseText) {
+          alert("Empty response from server");
+          return;
+        }
+        data = JSON.parse(responseText);
+      } catch (err) {
+        console.error('Error parsing JSON response:', err);
+        alert("Invalid response from server");
         return;
       }
 
@@ -255,24 +283,77 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
         return;
       }
 
-      // ✅ (اختياري لكن مهم) جيب بيانات المستخدم من /api/me
-      const meRes = await fetch(`${API_BASE}/api/me`, {
+      // ✅ جيب بيانات المستخدم من /api/auth/me
+      const meRes = await fetch(`${API_BASE}/api/auth/me`, {
         headers: { Authorization: "Bearer " + data.token },
       });
-      const meData = await meRes.json();
+      
+      if (!meRes.ok) {
+        console.error('Failed to fetch user data:', meRes.status, meRes.statusText);
+        const errorText = await meRes.text();
+        console.error('Error response:', errorText);
+        alert("Failed to fetch user data. Please try logging in again.");
+        return;
+      }
+      
+      let meData;
+      try {
+        const meText = await meRes.text();
+        console.log("Raw response text:", meText);
+        if (meText) {
+          meData = JSON.parse(meText);
+        } else {
+          console.error("Empty response from /api/auth/me");
+          alert("Empty response from server. Please try again.");
+          return;
+        }
+      } catch (err) {
+        console.error('Error parsing user data:', err);
+        alert("Error parsing user data. Please try again.");
+        return;
+      }
 
       // Debug: Log the response to see what we're getting
-      console.log("API /api/me response:", meData);
+      console.log("API /api/auth/me response:", meData);
+      console.log("API /api/auth/me user:", meData?.user);
+      console.log("API /api/auth/me roles:", meData?.user?.roles);
+      console.log("API /api/auth/me roles type:", typeof meData?.user?.roles);
+      console.log("API /api/auth/me roles is array?", Array.isArray(meData?.user?.roles));
 
-      // إذا /api/me بيرجع user أو أي شكل مختلف، عدله هون
-      const userRole = meData?.user?.role ?? meData?.role ?? "user";
-      console.log("Detected role:", userRole);
+      // تحديد الدور - endpoint /api/auth/me يعيد { user: { role: "...", roles: [...] } }
+      const userData = meData?.user || meData;
       
+      // استخدام role مباشرة من user object (backend يحسبه من roles array)
+      let userRole = userData?.role || "user";
+      
+      // إذا لم يكن role موجوداً، احسبه من roles array
+      if (!userData?.role && Array.isArray(userData?.roles) && userData.roles.length > 0) {
+        console.log("No role found, calculating from roles array:", userData.roles);
+        const roleNames = userData.roles.map((r: any) => {
+          if (typeof r === 'string') return r.toLowerCase();
+          if (r && typeof r === 'object') return (r.name || r.role || '').toLowerCase();
+          return '';
+        }).filter(Boolean);
+        
+        console.log("Role names (lowercase):", roleNames);
+        
+        if (roleNames.includes('administrator') || roleNames.includes('admin')) {
+          userRole = "admin";
+          console.log("Role set to admin from roles array");
+        } else if (roleNames.includes('agent')) {
+          userRole = "agent";
+          console.log("Role set to agent from roles array");
+        }
+      }
+      
+      console.log("Final detected role:", userRole);
+      
+      const userDataFinal = meData?.user || meData;
       const userObj: UserType = {
-        id: String(meData?.user?.id ?? meData?.id ?? "1"),
-        name: (meData?.user?.name ?? meData?.name ?? formData.name) || "User",
-        email: meData?.user?.email ?? meData?.email ?? formData.email,
-        phone: meData?.user?.phone ?? meData?.phone ?? formData.phone ?? "",
+        id: String(userDataFinal?.id ?? meData?.id ?? "1"),
+        name: (userDataFinal?.name ?? meData?.name ?? formData.name) || "User",
+        email: userDataFinal?.email ?? meData?.email ?? formData.email,
+        phone: userDataFinal?.phone ?? meData?.phone ?? formData.phone ?? "",
         role: userRole as any,
         language: formData.language as Language,
       };

@@ -516,7 +516,6 @@ app.get("/api/users/me", requireAuth, async (req: AuthedRequest, res) => {
       lastName: user.last_name,
       phone: user.phone,
       gender: user.gender,
-      birthDate: user.date_of_birth,
       address: user.address,
       roles: user.roles,
     });
@@ -539,7 +538,6 @@ app.patch("/api/users/me", requireAuth, async (req: AuthedRequest, res) => {
       lastName,
       phone,
       gender,
-      birthDate,
       address,
     } = req.body;
 
@@ -563,10 +561,6 @@ app.patch("/api/users/me", requireAuth, async (req: AuthedRequest, res) => {
       updates.push(`gender = $${idx++}`);
       values.push(gender);
     }
-    if (birthDate !== undefined) {
-      updates.push(`date_of_birth = $${idx++}::date`);
-      values.push(birthDate);
-    }
     if (address !== undefined) {
       updates.push(`address = $${idx++}`);
       values.push(address);
@@ -581,7 +575,7 @@ app.patch("/api/users/me", requireAuth, async (req: AuthedRequest, res) => {
       UPDATE users
       SET ${updates.join(", ")}, updated_at = NOW()
       WHERE id = $${idx}
-      RETURNING id, email, first_name, last_name, phone, gender, date_of_birth, address
+      RETURNING id, email, first_name, last_name, phone, gender, address
     `;
 
     const result = await pool.query(query, values);
@@ -595,7 +589,6 @@ app.patch("/api/users/me", requireAuth, async (req: AuthedRequest, res) => {
       lastName: user.last_name,
       phone: user.phone,
       gender: user.gender,
-      birthDate: user.date_of_birth,
       address: user.address,
     });
   } catch (error) {
