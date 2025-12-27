@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, RotateCcw, Loader2, Building2, Mail, Phone, MapPin, FileText } from 'lucide-react';
+import { Plus, Edit, Trash2, RotateCcw, Loader2, Building2, Mail, Phone, MapPin, FileText, X } from 'lucide-react';
 import type { Language } from '../App';
 
 interface CompanyManagementProps {
