@@ -94,7 +94,7 @@ router.get("/", async (req: AuthedRequest, res) => {
     // Search by user name/email
     if (search.trim()) {
       conditions.push(
-        `(u.username ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`
+        `(CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`
       );
       params.push(`%${search.trim()}%`);
       paramIndex++;
@@ -114,7 +114,7 @@ router.get("/", async (req: AuthedRequest, res) => {
         b.currency,
         b.created_at,
         b.deleted_at,
-        u.username AS user_name,
+        CONCAT(u.first_name, ' ', u.last_name) AS user_name,
         u.email AS user_email,
         t.departure_time,
         t.arrival_time,
@@ -170,7 +170,7 @@ router.get("/:id", async (req: AuthedRequest, res) => {
         b.currency,
         b.created_at,
         b.deleted_at,
-        u.username AS user_name,
+        CONCAT(u.first_name, ' ', u.last_name) AS user_name,
         u.email AS user_email,
         t.departure_time,
         t.arrival_time,

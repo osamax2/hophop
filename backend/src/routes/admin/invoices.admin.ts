@@ -94,7 +94,7 @@ router.get("/", async (req: AuthedRequest, res) => {
     // Search by invoice number, user name/email
     if (search.trim()) {
       conditions.push(
-        `(i.invoice_number ILIKE $${paramIndex} OR u.username ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`
+        `(i.invoice_number ILIKE $${paramIndex} OR CONCAT(u.first_name, ' ', u.last_name) ILIKE $${paramIndex} OR u.email ILIKE $${paramIndex})`
       );
       params.push(`%${search.trim()}%`);
       paramIndex++;
@@ -118,7 +118,7 @@ router.get("/", async (req: AuthedRequest, res) => {
         i.created_at,
         i.deleted_at,
         b.user_id,
-        u.username AS user_name,
+        CONCAT(u.first_name, ' ', u.last_name) AS user_name,
         u.email AS user_email,
         b.booking_status,
         b.seats_booked,
@@ -174,7 +174,7 @@ router.get("/:id", async (req: AuthedRequest, res) => {
         i.created_at,
         i.deleted_at,
         b.user_id,
-        u.username AS user_name,
+        CONCAT(u.first_name, ' ', u.last_name) AS user_name,
         u.email AS user_email,
         b.booking_status,
         b.seats_booked,
