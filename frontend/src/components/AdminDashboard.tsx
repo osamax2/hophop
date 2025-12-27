@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
