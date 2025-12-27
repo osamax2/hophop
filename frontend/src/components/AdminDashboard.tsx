@@ -6,6 +6,8 @@ import { CitySelector } from './CitySelector';
 import { ScheduleManagement } from './ScheduleManagement';
 import { CompanyManagement } from './CompanyManagement';
 import RatingManagement from './RatingManagement';
+import BookingManagement from './BookingManagement';
+import InvoiceManagement from './InvoiceManagement';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -66,6 +68,8 @@ const translations = {
     scheduleManagement: 'Fahrplanverwaltung',
     companyManagement: 'Unternehmensverwaltung',
     ratingsManagement: 'Bewertungsverwaltung',
+    bookingsManagement: 'Buchungsverwaltung',
+    invoicesManagement: 'Rechnungsverwaltung',
     userManagement: 'Benutzerverwaltung',
     searchUsers: 'Benutzer suchen',
     searchUsersPlaceholder: 'Nach Name oder E-Mail suchen...',
@@ -173,6 +177,8 @@ const translations = {
     scheduleManagement: 'Schedule Management',
     companyManagement: 'Company Management',
     ratingsManagement: 'Ratings Management',
+    bookingsManagement: 'Booking Management',
+    invoicesManagement: 'Invoice Management',
     userManagement: 'User Management',
     searchUsers: 'Search Users',
     searchUsersPlaceholder: 'Search by name or email...',
@@ -280,6 +286,8 @@ const translations = {
     scheduleManagement: 'إدارة الجداول',
     companyManagement: 'إدارة الشركات',
     ratingsManagement: 'إدارة التقييمات',
+    bookingsManagement: 'إدارة الحجوزات',
+    invoicesManagement: 'إدارة الفواتير',
     userManagement: 'إدارة المستخدمين',
     searchUsers: 'بحث المستخدمين',
     searchUsersPlaceholder: 'البحث بالاسم أو البريد الإلكتروني...',
@@ -384,7 +392,7 @@ const translations = {
 
 export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const t = translations[language];
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'photos' | 'import' | 'analytics'>('analytics');
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics'>('analytics');
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -1945,7 +1953,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     ...(user?.role === 'admin' ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
     // Companies management tab - Admin only
     ...(user?.role === 'admin' ? [{ id: 'companies' as const, label: t.companyManagement, icon: Building2 }] : []),
-    { id: 'ratings' as const, label: t.ratingsManagement, icon: Star },
+    // Ratings management tab - Admin only
+    ...(user?.role === 'admin' ? [{ id: 'ratings' as const, label: t.ratingsManagement, icon: Star }] : []),
+    // Bookings management tab - Admin only
+    ...(user?.role === 'admin' ? [{ id: 'bookings' as const, label: t.bookingsManagement, icon: Calendar }] : []),
+    // Invoices management tab - Admin only
+    ...(user?.role === 'admin' ? [{ id: 'invoices' as const, label: t.invoicesManagement, icon: Download }] : []),
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
     { id: 'import' as const, label: t.dataImport, icon: Upload },
   ];
@@ -3283,6 +3296,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Ratings Tab */}
       {activeTab === 'ratings' && user?.role === 'admin' && (
         <RatingManagement language={language} />
+      )}
+
+      {/* Bookings Tab */}
+      {activeTab === 'bookings' && user?.role === 'admin' && (
+        <BookingManagement language={language} />
+      )}
+
+      {/* Invoices Tab */}
+      {activeTab === 'invoices' && user?.role === 'admin' && (
+        <InvoiceManagement language={language} />
       )}
 
       {activeTab === 'photos' && (
