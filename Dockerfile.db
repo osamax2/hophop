@@ -1,8 +1,8 @@
 # PostgreSQL with init script
 FROM postgres:16-alpine
 
-# Copy init script
-COPY docker-init/01-init.sql /docker-entrypoint-initdb.d/
+# Copy init scripts (schema and data)
+COPY docker-init/*.sql /docker-entrypoint-initdb.d/
 
 # Set permissions
-RUN chmod 644 /docker-entrypoint-initdb.d/01-init.sql
+RUN chmod 644 /docker-entrypoint-initdb.d/*.sql
