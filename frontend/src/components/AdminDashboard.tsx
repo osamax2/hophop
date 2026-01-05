@@ -652,6 +652,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   useEffect(() => {
     if (activeTab === 'users') {
       loadUsers();
+      // Load companies for user creation/editing
+      if (companies.length === 0) {
+        loadTripFormData();
+      }
     }
   }, [activeTab, showDeletedUsers]);
 
@@ -1016,8 +1020,21 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      const usersData = await adminApi.getUsers(showDeletedUsers);
+      const url = showTrash 
+        ? '/api/admin/users?showTrash=true'
+        : '/api/admin/users';
+      
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) throw new Error('Failed to load users');
+      const usersData = await response.json();
       setUsers(usersData);
+      
       // Also load agent types
       const types = await adminApi.getAgentTypes();
       setAgentTypes(types);
@@ -1166,8 +1183,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
-  const handleDeleteUser = async (userId: number) => {
-    // Check if user is authenticated
+  const handleDeleteUser = async (userId: number, isInTrash: boolean = false) => {
     const token = localStorage.getItem("token");
     if (!token) {
       alert(language === 'ar' 
@@ -1179,11 +1195,17 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       return;
     }
 
-    const confirmMessage = language === 'ar' 
-      ? 'هل أنت متأكد من حذف هذا الحساب؟ لا يمكن التراجع عن هذا الإجراء.'
-      : language === 'de' 
-      ? 'Sind Sie sicher, dass Sie dieses Konto löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
-      : 'Are you sure you want to delete this account? This action cannot be undone.';
+    const confirmMessage = isInTrash
+      ? (language === 'ar' 
+        ? 'هل أنت متأكد من حذف هذا المستخدم نهائياً؟ لا يمكن التراجع عن هذا الإجراء.'
+        : language === 'de' 
+        ? 'Sind Sie sicher, dass Sie diesen Benutzer dauerhaft löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.'
+        : 'Are you sure you want to permanently delete this user? This action cannot be undone.')
+      : (language === 'ar' 
+        ? 'هل تريد نقل هذا المستخدم إلى سلة المهملات؟'
+        : language === 'de' 
+        ? 'Möchten Sie diesen Benutzer in den Papierkorb verschieben?'
+        : 'Move this user to trash?');
     
     if (!window.confirm(confirmMessage)) {
       return;
@@ -1191,12 +1213,32 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
     try {
       setLoading(true);
-      await adminApi.deleteUser(userId);
-      alert(language === 'ar' 
-        ? 'تم حذف الحساب بنجاح'
-        : language === 'de' 
-        ? 'Konto erfolgreich gelöscht'
-        : 'Account deleted successfully');
+      
+      if (isInTrash) {
+        // Permanent delete
+        await fetch(`/api/admin/users/${userId}?force=true`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+      } else {
+        // Soft delete (move to trash)
+        await adminApi.deleteUser(userId);
+      }
+      
+      alert(isInTrash
+        ? (language === 'ar' 
+          ? 'تم حذف المستخدم نهائياً'
+          : language === 'de' 
+          ? 'Benutzer dauerhaft gelöscht'
+          : 'User permanently deleted')
+        : (language === 'ar' 
+          ? 'تم نقل المستخدم إلى سلة المهملات'
+          : language === 'de' 
+          ? 'Benutzer in Papierkorb verschoben'
+          : 'User moved to trash'));
       
       setShowEditProfileDialog(false);
       setSelectedUserForEdit(null);
@@ -1207,11 +1249,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         password: '',
         role: 'User'
       });
-      loadUsers(); // Refresh users list
+      loadUsers();
     } catch (err: any) {
       console.error('Error deleting user:', err);
       
-      // Handle 401 Unauthorized - token expired or missing
       if (err.status === 401 || err.message?.includes('token') || err.message?.includes('Unauthorized')) {
         const authErrorMsg = language === 'ar' 
           ? 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى.' 
@@ -1225,11 +1266,54 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       }
 
       const errorMsg = err.message || (language === 'ar' 
-        ? 'فشل حذف الحساب. يرجى المحاولة مرة أخرى.'
+        ? 'فشل حذف المستخدم'
         : language === 'de' 
-        ? 'Fehler beim Löschen des Kontos. Bitte versuchen Sie es erneut.'
-        : 'Failed to delete account. Please try again.');
+        ? 'Fehler beim Löschen des Benutzers'
+        : 'Failed to delete user');
       alert(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRestoreUser = async (userId: number) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert(language === 'ar' 
+        ? 'انتهت صلاحية الجلسة'
+        : language === 'de' 
+        ? 'Sitzung abgelaufen'
+        : 'Session expired');
+      window.location.reload();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/admin/users/${userId}/restore`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to restore user');
+
+      alert(language === 'ar' 
+        ? 'تم استعادة المستخدم بنجاح'
+        : language === 'de' 
+        ? 'Benutzer erfolgreich wiederhergestellt'
+        : 'User restored successfully');
+      
+      loadUsers();
+    } catch (err: any) {
+      console.error('Error restoring user:', err);
+      alert(language === 'ar' 
+        ? 'فشل استعادة المستخدم'
+        : language === 'de' 
+        ? 'Fehler beim Wiederherstellen des Benutzers'
+        : 'Failed to restore user');
     } finally {
       setLoading(false);
     }
@@ -3393,7 +3477,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{t.userEmail}</th>
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.userRole}</th>
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}>{language === 'ar' ? 'الحالة' : language === 'de' ? 'Status' : 'Status'}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '120px', minWidth: '120px', maxWidth: '120px' }}>{t.actions}</th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -3448,22 +3532,71 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                               </span>
                             )}
                           </td>
-                          <td className="px-6 py-3 text-sm" style={{ width: '120px', minWidth: '120px', maxWidth: '120px' }}>
-                            <button 
-                              type="button"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                console.log('Button clicked for user:', userItem.id);
-                                if (!loading) {
-                                  handleEditProfileClick(userItem);
-                                }
-                              }}
-                              disabled={loading}
-                              className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
-                            >
-                              {t.editProfile}
-                            </button>
+                          <td className="px-6 py-3 text-sm" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
+                            {showTrash ? (
+                              <div className="flex gap-2">
+                                <button 
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (!loading) {
+                                      handleRestoreUser(userItem.id);
+                                    }
+                                  }}
+                                  disabled={loading}
+                                  className="text-green-600 hover:text-green-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                                >
+                                  {language === 'ar' ? 'استعادة' : language === 'de' ? 'Wiederherstellen' : 'Restore'}
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (!loading) {
+                                      handleDeleteUser(userItem.id, true);
+                                    }
+                                  }}
+                                  disabled={loading}
+                                  className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                                >
+                                  {language === 'ar' ? 'حذف نهائي' : language === 'de' ? 'Dauerhaft löschen' : 'Delete'}
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="flex gap-2">
+                                <button 
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('Button clicked for user:', userItem.id);
+                                    if (!loading) {
+                                      handleEditProfileClick(userItem);
+                                    }
+                                  }}
+                                  disabled={loading}
+                                  className="text-blue-600 hover:text-blue-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                                >
+                                  {t.editProfile}
+                                </button>
+                                <button 
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (!loading) {
+                                      handleDeleteUser(userItem.id, false);
+                                    }
+                                  }}
+                                  disabled={loading}
+                                  className="text-red-600 hover:text-red-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer font-medium"
+                                >
+                                  {language === 'ar' ? 'حذف' : language === 'de' ? 'Löschen' : 'Delete'}
+                                </button>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );
@@ -4508,14 +4641,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                             setShowCompanySuggestions(true);
                           }}
                           onFocus={() => setShowCompanySuggestions(true)}
+                          onBlur={() => setTimeout(() => setShowCompanySuggestions(false), 200)}
                           placeholder={language === 'ar' ? 'ابحث عن شركة...' : language === 'de' ? 'Firma suchen...' : 'Search company...'}
                           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                         />
-                      {showCompanySuggestions && companySearchQuery && (
+                      {showCompanySuggestions && (
                         <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
                           {companies
                             .filter((company: any) => 
-                              company.name.toLowerCase().includes(companySearchQuery.toLowerCase())
+                              !companySearchQuery || company.name.toLowerCase().includes(companySearchQuery.toLowerCase())
                             )
                             .slice(0, 10)
                             .map((company: any) => (
@@ -4534,7 +4668,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                             ))
                           }
                           {companies.filter((company: any) => 
-                            company.name.toLowerCase().includes(companySearchQuery.toLowerCase())
+                            !companySearchQuery || company.name.toLowerCase().includes(companySearchQuery.toLowerCase())
                           ).length === 0 && (
                             <div className="px-4 py-2 text-gray-500 italic">
                               {language === 'ar' ? 'لا توجد نتائج' : language === 'de' ? 'Keine Ergebnisse' : 'No results'}

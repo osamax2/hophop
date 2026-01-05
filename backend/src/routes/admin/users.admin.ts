@@ -41,6 +41,7 @@ async function getUserFromToken(req: any): Promise<{id: number, company_id: numb
 // GET /api/admin/users
 router.get("/", async (req, res) => {
   const showDeleted = req.query.showDeleted === 'true';
+  const showTrash = req.query.showTrash === 'true';
   
   // Get user from token to determine filtering
   const currentUser = await getUserFromToken(req);
@@ -49,16 +50,25 @@ router.get("/", async (req, res) => {
   // Add company filter for agent managers
   const companyFilter = isAgentManager ? `AND u.company_id = ${currentUser.company_id}` : '';
   
-  // Agent managers see ALL users of their company (active and inactive)
-  // Admins use the showDeleted toggle
-  const activeFilter = isAgentManager ? '' : (showDeleted ? 'AND u.is_active = false' : 'AND u.is_active = true');
+  // Build WHERE clause based on filters
+  let deletedFilter = '';
+  if (showTrash) {
+    // Show only deleted users (in trash)
+    deletedFilter = 'AND u.deleted_at IS NOT NULL';
+  } else if (showDeleted) {
+    // Show all users (both active and deleted)
+    deletedFilter = '';
+  } else {
+    // Show only active users (not deleted)
+    deletedFilter = 'AND u.deleted_at IS NULL';
+  }
   
-  console.log(`Fetching users, showDeleted: ${showDeleted}, isAgentManager: ${isAgentManager}, companyId: ${currentUser?.company_id}`);
+  console.log(`Fetching users, showDeleted: ${showDeleted}, showTrash: ${showTrash}, isAgentManager: ${isAgentManager}, companyId: ${currentUser?.company_id}`);
   
   const query = `
     SELECT
       u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active,
-      u.status,
+      u.status, u.deleted_at,
       u.company_id, u.user_type_id,
       tc.name AS company_name,
       ut.code AS agent_type, ut.name AS agent_type_name,
@@ -68,7 +78,7 @@ router.get("/", async (req, res) => {
     LEFT JOIN roles r ON r.id = ur.role_id
     LEFT JOIN transport_companies tc ON tc.id = u.company_id
     LEFT JOIN user_types ut ON ut.id = u.user_type_id
-    WHERE 1=1 ${activeFilter} ${companyFilter}
+    WHERE 1=1 ${deletedFilter} ${companyFilter}
     GROUP BY u.id, tc.name, ut.code, ut.name
     ORDER BY u.id DESC
     LIMIT 200
@@ -280,6 +290,161 @@ router.patch("/:id/profile", async (req, res) => {
     res.status(500).json({ message: "Failed to update user profile", error: String(e) });
   } finally {
     client.release();
+  }
+});
+
+// DELETE /api/admin/users/:id - Soft delete user (move to trash)
+router.delete("/:id", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const forceDelete = req.query.force === 'true';
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    // Check if user exists
+    const checkResult = await pool.query(
+      `SELECT id, deleted_at FROM users WHERE id = $1`,
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    const user = checkResult.rows[0];
+
+    if (forceDelete) {
+      // Permanent delete - only if already in trash
+      if (user.deleted_at === null) {
+        return res.status(400).json({ 
+          message: "Cannot permanently delete. Move to trash first." 
+        });
+      }
+      
+      console.log(`Permanently deleting user ${id}...`);
+      
+      try {
+        // Delete related records first
+        await pool.query('DELETE FROM user_roles WHERE user_id = $1', [id]);
+        await pool.query('DELETE FROM favorites WHERE user_id = $1', [id]);
+        await pool.query('DELETE FROM notifications WHERE user_id = $1', [id]);
+        
+        // Delete user
+        await pool.query('DELETE FROM users WHERE id = $1', [id]);
+        
+        console.log(`User ${id} permanently deleted`);
+        
+        return res.json({ 
+          ok: true, 
+          message: "User permanently deleted",
+          permanentDelete: true,
+          userId: id
+        });
+      } catch (error: any) {
+        console.error("Error permanently deleting user:", error);
+        return res.status(500).json({ 
+          message: "Error permanently deleting user", 
+          error: error.message || String(error),
+          code: error.code
+        });
+      }
+    } else {
+      // Soft delete: Set deleted_at timestamp
+      console.log(`User ${id} moving to trash (soft delete)`);
+      
+      await pool.query(
+        'UPDATE users SET deleted_at = CURRENT_TIMESTAMP, is_active = false WHERE id = $1',
+        [id]
+      );
+      
+      console.log(`User ${id} moved to trash`);
+      
+      return res.json({ 
+        ok: true, 
+        message: "User moved to trash",
+        softDelete: true,
+        userId: id
+      });
+    }
+  } catch (error: any) {
+    console.error("Error deleting user:", error);
+    res.status(500).json({ 
+      message: "Error deleting user", 
+      error: error.message || String(error),
+      code: error.code
+    });
+  }
+});
+
+// POST /api/admin/users/:id/restore - Restore user from trash
+router.post("/:id/restore", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    
+    if (isNaN(id)) {
+      return res.status(400).json({ message: "Invalid user ID" });
+    }
+
+    console.log(`Attempting to restore user ${id} from trash...`);
+
+    // Check if user exists and is in trash
+    const checkResult = await pool.query(
+      `SELECT id, deleted_at FROM users WHERE id = $1`,
+      [id]
+    );
+    
+    if (checkResult.rows.length === 0) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    const user = checkResult.rows[0];
+    
+    if (user.deleted_at === null) {
+      return res.status(400).json({ message: "User is not in trash" });
+    }
+
+    // Restore user by setting deleted_at to NULL and is_active to true
+    await pool.query(
+      'UPDATE users SET deleted_at = NULL, is_active = true WHERE id = $1',
+      [id]
+    );
+    
+    console.log(`User ${id} restored from trash`);
+    
+    // Get the restored user with all data
+    const restoredUser = await pool.query(
+      `
+      SELECT
+        u.id, u.email, u.first_name, u.last_name, u.phone, u.is_active,
+        u.status, u.company_id, u.user_type_id,
+        tc.name AS company_name,
+        ut.code AS agent_type, ut.name AS agent_type_name,
+        COALESCE(array_agg(r.name) FILTER (WHERE r.name IS NOT NULL), '{}') AS roles
+      FROM users u
+      LEFT JOIN user_roles ur ON ur.user_id = u.id
+      LEFT JOIN roles r ON r.id = ur.role_id
+      LEFT JOIN transport_companies tc ON tc.id = u.company_id
+      LEFT JOIN user_types ut ON ut.id = u.user_type_id
+      WHERE u.id = $1
+      GROUP BY u.id, tc.name, ut.code, ut.name
+      `,
+      [id]
+    );
+    
+    res.json({ 
+      ok: true, 
+      message: "User restored from trash",
+      user: restoredUser.rows[0]
+    });
+  } catch (error: any) {
+    console.error("Error restoring user:", error);
+    res.status(500).json({ 
+      message: "Error restoring user", 
+      error: error.message || String(error),
+      code: error.code
+    });
   }
 });
 
