@@ -945,7 +945,8 @@ CREATE TABLE public.users (
     status character varying(20) DEFAULT 'active'::character varying,
     verification_token character varying(255),
     verification_token_expires timestamp without time zone,
-    email_verified boolean DEFAULT false
+    email_verified boolean DEFAULT false,
+    deleted_at timestamp without time zone
 );
 
 
