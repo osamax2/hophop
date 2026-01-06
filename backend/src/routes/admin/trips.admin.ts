@@ -39,55 +39,105 @@ async function getUserFromToken(req: any): Promise<{id: number, company_id: numb
 
 // GET /api/admin/trips
 router.get("/", async (req, res) => {
-  const showAll = req.query.showAll === 'true';
-  const showTrash = req.query.showTrash === 'true';
-  
-  // Get user from token to determine filtering
-  const currentUser = await getUserFromToken(req);
-  const isAgentManager = currentUser && !currentUser.isAdmin && currentUser.agent_type === 'manager' && currentUser.company_id;
-  
-  let whereClause = '';
-  if (showTrash) {
-    whereClause = 'WHERE t.deleted_at IS NOT NULL';
-  } else {
-    whereClause = showAll ? 'WHERE t.deleted_at IS NULL' : 'WHERE t.is_active = true AND t.deleted_at IS NULL';
+  try {
+    const showAll = req.query.showAll === 'true';
+    const showTrash = req.query.showTrash === 'true';
+    
+    // Get user from token to determine filtering
+    const currentUser = await getUserFromToken(req);
+    const isAgentManager = currentUser && !currentUser.isAdmin && currentUser.agent_type === 'manager' && currentUser.company_id;
+    
+    // Check which columns exist in trips table
+    const columnsCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='trips' AND column_name IN ('deleted_at', 'is_active', 'image_id')
+    `);
+    
+    const existingColumns = columnsCheck.rows.map((row: any) => row.column_name);
+    const hasDeletedAt = existingColumns.includes('deleted_at');
+    const hasIsActive = existingColumns.includes('is_active');
+    const hasImageId = existingColumns.includes('image_id');
+    
+    console.log(`Trips table columns check: deleted_at=${hasDeletedAt}, is_active=${hasIsActive}, image_id=${hasImageId}`);
+    
+    let whereClause = '';
+    if (showTrash && hasDeletedAt) {
+      whereClause = 'WHERE t.deleted_at IS NOT NULL';
+    } else {
+      if (hasDeletedAt) {
+        whereClause = 'WHERE t.deleted_at IS NULL';
+      } else {
+        whereClause = 'WHERE 1=1'; // No deleted_at column, use dummy condition
+      }
+      
+      // Only filter by is_active if showAll is false
+      if (!showAll && hasIsActive) {
+        whereClause += ' AND t.is_active = true';
+      }
+    }
+    
+    // Auto-filter by company_id for agent managers (from token, not query params)
+    if (isAgentManager && currentUser.company_id) {
+      whereClause += ` AND t.company_id = ${currentUser.company_id}`;
+    }
+    
+    console.log(`Fetching trips, showAll: ${showAll}, showTrash: ${showTrash}, isAgentManager: ${isAgentManager}, companyId: ${currentUser?.company_id}, whereClause: ${whereClause}`);
+    
+    // Build SELECT statement - conditionally include image_id join
+    let imageJoin = '';
+    let imageSelect = '';
+    if (hasImageId) {
+      imageJoin = 'LEFT JOIN images img ON t.image_id = img.id';
+      imageSelect = 'img.image_url,';
+    }
+    
+    const query = `
+      SELECT
+        t.*,
+        c1.name as from_city,
+        c2.name as to_city,
+        COALESCE(comp.name, 'Unknown') AS company_name,
+        tt.label as transport_type_name,
+        tt.code as transport_type_code,
+        ${imageSelect}
+        COALESCE((
+          SELECT price FROM trip_fares tf 
+          WHERE tf.trip_id = t.id 
+          LIMIT 1
+        ), 0) as price
+      FROM trips t
+      JOIN routes r ON r.id = t.route_id
+      JOIN cities c1 ON c1.id = r.from_city_id
+      JOIN cities c2 ON c2.id = r.to_city_id
+      LEFT JOIN transport_companies comp ON t.company_id = comp.id
+      LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
+      ${imageJoin}
+      ${whereClause}
+      ORDER BY t.id DESC
+      LIMIT 200
+    `;
+    
+    console.log('Executing query:', query.substring(0, 200) + '...');
+    
+    const r = await pool.query(query);
+    
+    console.log(`Returning ${r.rows.length} trips`);
+    res.json(r.rows);
+  } catch (error: any) {
+    console.error('Error fetching trips:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      message: "Error fetching trips", 
+      error: error.message || String(error),
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
-  
-  // Auto-filter by company_id for agent managers (from token, not query params)
-  if (isAgentManager) {
-    whereClause += ` AND t.company_id = ${currentUser.company_id}`;
-  }
-  
-  console.log(`Fetching trips, showAll: ${showAll}, showTrash: ${showTrash}, isAgentManager: ${isAgentManager}, companyId: ${currentUser?.company_id}, whereClause: ${whereClause}`);
-  
-  const r = await pool.query(
-    `
-    SELECT
-      t.*,
-      c1.name as from_city,
-      c2.name as to_city,
-      COALESCE(comp.name, 'Unknown') AS company_name,
-      tt.label as transport_type_name,
-      tt.code as transport_type_code,
-      COALESCE((
-        SELECT price FROM trip_fares tf 
-        WHERE tf.trip_id = t.id 
-        LIMIT 1
-      ), 0) as price
-    FROM trips t
-    JOIN routes r ON r.id = t.route_id
-    JOIN cities c1 ON c1.id = r.from_city_id
-    JOIN cities c2 ON c2.id = r.to_city_id
-    LEFT JOIN transport_companies comp ON t.company_id = comp.id
-    LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
-    ${whereClause}
-    ORDER BY t.id DESC
-    LIMIT 200
-    `
-  );
-  
-  console.log(`Returning ${r.rows.length} trips`);
-  res.json(r.rows);
 });
 
 // GET /api/admin/trips/:id/steps - Get route stops for a trip
@@ -212,6 +262,11 @@ router.post("/", async (req, res) => {
   try {
     await client.query("BEGIN");
 
+    // Extract image_id from request body
+    const image_id = req.body.image_id !== undefined && req.body.image_id !== '' && req.body.image_id !== null 
+      ? Number(req.body.image_id) 
+      : null;
+
     // Insert trip
     const tripResult = await client.query(
       `
@@ -222,7 +277,7 @@ router.post("/", async (req, res) => {
         seats_total, seats_available,
         status, is_active,
         bus_number, driver_name,
-        equipment, cancellation_policy, extra_info
+        equipment, cancellation_policy, extra_info, image_id
       )
       VALUES (
         $1,$2,$3,
@@ -231,7 +286,7 @@ router.post("/", async (req, res) => {
         $9,$10,
         $11,$12,
         $13,$14,
-        $15,$16,$17
+        $15,$16,$17,$18
       )
       RETURNING *
       `,
@@ -242,7 +297,7 @@ router.post("/", async (req, res) => {
         seats_total, seats_total, // seats_available = seats_total initially
         status, is_active,
         bus_number, driver_name,
-        equipment, cancellation_policy, extra_info
+        equipment, cancellation_policy, extra_info, image_id
       ]
     );
 
@@ -292,12 +347,14 @@ router.post("/", async (req, res) => {
         t.*,
         c1.name as from_city,
         c2.name as to_city,
-        COALESCE(comp.name, 'Unknown') AS company_name
+        COALESCE(comp.name, 'Unknown') AS company_name,
+        img.image_url
       FROM trips t
       JOIN routes r ON r.id = t.route_id
       JOIN cities c1 ON c1.id = r.from_city_id
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
+      LEFT JOIN images img ON t.image_id = img.id
       WHERE t.id = $1
       `,
       [trip.id]
@@ -316,7 +373,7 @@ router.post("/", async (req, res) => {
 // PATCH /api/admin/trips/:id
 router.patch("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { price, currency, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id } = req.body;
+  const { price, currency, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id, image_id } = req.body;
 
   console.log(`PATCH /api/admin/trips/${id} - Request body:`, req.body);
 
@@ -360,6 +417,14 @@ router.patch("/:id", async (req, res) => {
   if (arrival_station_id !== undefined && arrival_station_id !== null && arrival_station_id !== '') {
     updates.push(`arrival_station_id = $${idx++}`);
     values.push(Number(arrival_station_id));
+  }
+  if (image_id !== undefined) {
+    if (image_id === null || image_id === '') {
+      updates.push(`image_id = NULL`);
+    } else {
+      updates.push(`image_id = $${idx++}`);
+      values.push(Number(image_id));
+    }
   }
 
   for (const key of allowed) {
@@ -438,12 +503,14 @@ router.patch("/:id", async (req, res) => {
         t.*,
         c1.name as from_city,
         c2.name as to_city,
-        COALESCE(comp.name, 'Unknown') AS company_name
+        COALESCE(comp.name, 'Unknown') AS company_name,
+        img.image_url
       FROM trips t
       JOIN routes r ON r.id = t.route_id
       JOIN cities c1 ON c1.id = r.from_city_id
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
+      LEFT JOIN images img ON t.image_id = img.id
       WHERE t.id = $1
       `,
       [id]
@@ -699,6 +766,7 @@ router.post("/:id/restore", async (req, res) => {
         COALESCE(comp.name, 'Unknown') AS company_name,
         tt.name as transport_type_name,
         tt.code as transport_type_code,
+        img.image_url,
         COALESCE((
           SELECT price FROM trip_fares tf 
           WHERE tf.trip_id = t.id 
@@ -710,6 +778,7 @@ router.post("/:id/restore", async (req, res) => {
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
       LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
+      LEFT JOIN images img ON t.image_id = img.id
       WHERE t.id = $1
       `,
       [id]

@@ -17,6 +17,8 @@ export interface Trip {
   equipment?: string;
   cancellation_policy?: string;
   extra_info?: string;
+  image_id?: number | null;
+  image_url?: string | null;
   created_at?: Date;
   updated_at?: Date;
 }
@@ -37,6 +39,7 @@ export interface CreateTripDto {
   equipment?: string;
   cancellation_policy?: string;
   extra_info?: string;
+  image_id?: number | null;
 }
 
 export interface UpdateTripDto {
@@ -55,6 +58,7 @@ export interface UpdateTripDto {
   equipment?: string;
   cancellation_policy?: string;
   extra_info?: string;
+  image_id?: number | null;
 }
 
 export class TripsService {
@@ -63,11 +67,13 @@ export class TripsService {
    */
   async findAll(limit: number = 100, offset: number = 0): Promise<Trip[]> {
     const result = await pool.query(
-      `SELECT id, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id,
-              departure_time, arrival_time, duration_minutes, seats_total, seats_available,
-              status, is_active, equipment, cancellation_policy, extra_info, created_at, updated_at
-       FROM trips
-       ORDER BY id DESC
+      `SELECT t.id, t.route_id, t.company_id, t.transport_type_id, t.departure_station_id, t.arrival_station_id,
+              t.departure_time, t.arrival_time, t.duration_minutes, t.seats_total, t.seats_available,
+              t.status, t.is_active, t.equipment, t.cancellation_policy, t.extra_info, 
+              t.image_id, i.image_url, t.created_at, t.updated_at
+       FROM trips t
+       LEFT JOIN images i ON t.image_id = i.id
+       ORDER BY t.id DESC
        LIMIT $1 OFFSET $2`,
       [limit, offset]
     );
@@ -79,11 +85,13 @@ export class TripsService {
    */
   async findById(id: number): Promise<Trip | null> {
     const result = await pool.query(
-      `SELECT id, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id,
-              departure_time, arrival_time, duration_minutes, seats_total, seats_available,
-              status, is_active, equipment, cancellation_policy, extra_info, created_at, updated_at
-       FROM trips
-       WHERE id = $1`,
+      `SELECT t.id, t.route_id, t.company_id, t.transport_type_id, t.departure_station_id, t.arrival_station_id,
+              t.departure_time, t.arrival_time, t.duration_minutes, t.seats_total, t.seats_available,
+              t.status, t.is_active, t.equipment, t.cancellation_policy, t.extra_info, 
+              t.image_id, i.image_url, t.created_at, t.updated_at
+       FROM trips t
+       LEFT JOIN images i ON t.image_id = i.id
+       WHERE t.id = $1`,
       [id]
     );
     return result.rows[0] || null;
@@ -102,16 +110,17 @@ export class TripsService {
     limit?: number;
     offset?: number;
   }): Promise<Trip[]> {
-    let query = `
+      let query = `
       SELECT
         t.id, t.route_id, t.company_id, t.transport_type_id,
         t.departure_station_id, t.arrival_station_id,
         t.departure_time, t.arrival_time, t.duration_minutes,
         t.seats_total, t.seats_available, t.status, t.is_active,
         t.equipment, t.cancellation_policy, t.extra_info,
-        t.created_at, t.updated_at
+        t.image_id, i.image_url, t.created_at, t.updated_at
       FROM trips t
       JOIN routes r ON t.route_id = r.id
+      LEFT JOIN images i ON t.image_id = i.id
       WHERE 1=1
     `;
     const values: any[] = [];
@@ -174,12 +183,12 @@ export class TripsService {
         departure_time, arrival_time, duration_minutes,
         seats_total, seats_available,
         status, is_active,
-        equipment, cancellation_policy, extra_info
+        equipment, cancellation_policy, extra_info, image_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6::timestamp, $7::timestamp, $8, $9, $10, $11, $12, $13, $14, $15)
+      VALUES ($1, $2, $3, $4, $5, $6::timestamp, $7::timestamp, $8, $9, $10, $11, $12, $13, $14, $15, $16)
       RETURNING id, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id,
                 departure_time, arrival_time, duration_minutes, seats_total, seats_available,
-                status, is_active, equipment, cancellation_policy, extra_info, created_at, updated_at`,
+                status, is_active, equipment, cancellation_policy, extra_info, image_id, created_at, updated_at`,
       [
         data.route_id,
         data.company_id,
@@ -196,8 +205,21 @@ export class TripsService {
         data.equipment || null,
         data.cancellation_policy || null,
         data.extra_info || null,
+        data.image_id !== undefined ? data.image_id : null,
       ]
     );
+    
+    // Fetch the created trip with image_url
+    if (result.rows[0] && result.rows[0].image_id) {
+      const imageResult = await pool.query(
+        `SELECT image_url FROM images WHERE id = $1`,
+        [result.rows[0].image_id]
+      );
+      if (imageResult.rows[0]) {
+        result.rows[0].image_url = imageResult.rows[0].image_url;
+      }
+    }
+    
     return result.rows[0];
   }
 
@@ -269,6 +291,10 @@ export class TripsService {
       updates.push(`extra_info = $${paramIndex++}`);
       values.push(data.extra_info);
     }
+    if (data.image_id !== undefined) {
+      updates.push(`image_id = $${paramIndex++}`);
+      values.push(data.image_id);
+    }
 
     if (updates.length === 0) {
       return this.findById(id);
@@ -283,11 +309,23 @@ export class TripsService {
        WHERE id = $${paramIndex}
        RETURNING id, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id,
                  departure_time, arrival_time, duration_minutes, seats_total, seats_available,
-                 status, is_active, equipment, cancellation_policy, extra_info, created_at, updated_at`,
+                 status, is_active, equipment, cancellation_policy, extra_info, image_id, created_at, updated_at`,
       values
     );
 
-    return result.rows[0] || null;
+    // Fetch image_url if image_id exists
+    const trip = result.rows[0];
+    if (trip && trip.image_id) {
+      const imageResult = await pool.query(
+        `SELECT image_url FROM images WHERE id = $1`,
+        [trip.image_id]
+      );
+      if (imageResult.rows[0]) {
+        trip.image_url = imageResult.rows[0].image_url;
+      }
+    }
+
+    return trip || null;
   }
 
   /**
