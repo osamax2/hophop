@@ -657,6 +657,9 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
               <thead className="bg-gray-50 text-left">
                 <tr>
                   <th className="px-4 py-3 text-xs text-gray-600 uppercase font-medium">ID</th>
+                  <th className="px-4 py-3 text-xs text-gray-600 uppercase font-medium">
+                    {language === 'ar' ? 'الصورة' : language === 'de' ? 'Bild' : 'Image'}
+                  </th>
                   <th className="px-4 py-3 text-xs text-gray-600 uppercase font-medium">{t.from}</th>
                   <th className="px-4 py-3 text-xs text-gray-600 uppercase font-medium">{t.to}</th>
                   <th className="px-4 py-3 text-xs text-gray-600 uppercase font-medium">{t.company}</th>
@@ -673,7 +676,7 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
               <tbody className="divide-y divide-gray-100">
                 {getFilteredTrips().length === 0 ? (
                   <tr>
-                    <td colSpan={12} className="px-6 py-12 text-center">
+                    <td colSpan={13} className="px-6 py-12 text-center">
                       <div className="text-gray-500 mb-4">
                         {showTrash ? t.noTrash : t.noTrips}
                       </div>
@@ -698,6 +701,20 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
                     >
                       <td className="px-4 py-3 text-gray-900 font-medium">
                         {language === 'ar' ? toArabicNumerals(trip.id) : trip.id}
+                      </td>
+                      <td className="px-4 py-3">
+                        {trip.image_url ? (
+                          <img
+                            src={trip.image_url.startsWith('http') ? trip.image_url : `${import.meta.env.VITE_API_BASE || ''}${trip.image_url}`}
+                            alt={`Trip ${trip.id}`}
+                            className="w-16 h-16 object-cover rounded-lg"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none';
+                            }}
+                          />
+                        ) : (
+                          <span className="text-xs text-gray-400">-</span>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-gray-900">
                         {getCityName(trip.from_city || 'N/A', language)}
