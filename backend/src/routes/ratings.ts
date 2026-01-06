@@ -4,6 +4,20 @@ import { requireAuth, AuthedRequest } from "../middleware/auth";
 
 const router = Router();
 
+// Helper function to check if user is admin or agent (company user)
+async function isAdminOrAgent(userId: number): Promise<boolean> {
+  const result = await pool.query(
+    `
+    SELECT r.name
+    FROM user_roles ur
+    JOIN roles r ON r.id = ur.role_id
+    WHERE ur.user_id = $1 AND (r.name = 'Administrator' OR r.name = 'Agent')
+    `,
+    [userId]
+  );
+  return result.rows.length > 0;
+}
+
 // GET /api/ratings - Get ratings for a company (optional: company_id query param)
 router.get("/", async (req, res) => {
   try {
@@ -98,6 +112,15 @@ router.get("/company/:companyId", async (req, res) => {
 router.post("/", requireAuth, async (req: AuthedRequest, res) => {
   try {
     const userId = req.user!.id;
+    
+    // Prevent admin and company users (agents) from creating ratings
+    const isAdminOrAgentUser = await isAdminOrAgent(userId);
+    if (isAdminOrAgentUser) {
+      return res.status(403).json({
+        message: "Admins and company users are not allowed to create ratings. Only regular users can rate companies.",
+      });
+    }
+    
     const { company_id, punctuality_rating, friendliness_rating, cleanliness_rating, comment } =
       req.body;
 
