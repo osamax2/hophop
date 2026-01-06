@@ -6,6 +6,10 @@ import { ratingsApi, companiesApi } from '../lib/api';
 interface ReviewsProps {
   language: Language;
   isLoggedIn: boolean;
+  user?: {
+    role?: string;
+    company_id?: number;
+  } | null;
 }
 
 const translations = {
@@ -53,8 +57,12 @@ const translations = {
   },
 };
 
-export function Reviews({ language, isLoggedIn }: ReviewsProps) {
+export function Reviews({ language, isLoggedIn, user }: ReviewsProps) {
   const t = translations[language];
+  
+  // Check if user is admin or company (agent) user
+  const isAdminOrCompany = user?.role === 'admin' || user?.role === 'agent' || (user?.company_id !== undefined && user?.company_id !== null);
+  const canRate = isLoggedIn && !isAdminOrCompany;
   const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [selectedCompany, setSelectedCompany] = useState('');
@@ -198,7 +206,7 @@ export function Reviews({ language, isLoggedIn }: ReviewsProps) {
               </div>
             )}
 
-            {isLoggedIn ? (
+            {canRate ? (
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Company Selection */}
                 <div>
@@ -271,6 +279,17 @@ export function Reviews({ language, isLoggedIn }: ReviewsProps) {
                   {t.submit}
                 </button>
               </form>
+            ) : isAdminOrCompany ? (
+              <div className="text-center py-8">
+                <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-sm text-gray-600">
+                  {language === 'ar' 
+                    ? 'الأدمن والشركات لا يمكنهم إنشاء التقييمات، يمكنهم فقط عرضها'
+                    : language === 'de'
+                    ? 'Admins und Unternehmen können keine Bewertungen erstellen, nur anzeigen'
+                    : 'Admins and companies cannot create ratings, only view them'}
+                </p>
+              </div>
             ) : (
               <div className="text-center py-8">
                 <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-3" />
