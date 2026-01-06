@@ -21,6 +21,7 @@ interface SearchResultsProps {
   favorites: string[];
   onToggleFavorite: (tripId: string) => void;
   isLoggedIn: boolean;
+  onNoTripsFound?: () => void;
 }
 
 const translations = {
@@ -39,6 +40,7 @@ const translations = {
     stops: 'Zwischenstopps',
     seats: 'Plätze frei',
     noResults: 'Keine Fahrten gefunden',
+    noResultsForDate: 'Keine Fahrten an diesem Datum verfügbar',
     tryDifferent: 'Versuchen Sie andere Suchkriterien',
     amenities: 'Ausstattung',
     morning: 'Morgen (6-12)',
@@ -63,6 +65,7 @@ const translations = {
     stops: 'Stops',
     seats: 'Seats available',
     noResults: 'No trips found',
+    noResultsForDate: 'No trips available on this date',
     tryDifferent: 'Try different search criteria',
     amenities: 'Amenities',
     morning: 'Morning (6-12)',
@@ -87,6 +90,7 @@ const translations = {
     stops: 'محطات التوقف',
     seats: 'مقاعد متاحة',
     noResults: 'لم يتم العثور على رحلات',
+    noResultsForDate: 'لا توجد رحلات في هذا التاريخ',
     tryDifferent: 'جرب معايير بحث مختلفة',
     amenities: 'المرافق',
     morning: 'صباح (6-12)',
@@ -120,7 +124,14 @@ export function SearchResults({
   favorites,
   onToggleFavorite,
   isLoggedIn,
+  onNoTripsFound,
 }: SearchResultsProps) {
+  console.log('SearchResults component rendered', { 
+    from: searchParams.from, 
+    to: searchParams.to, 
+    date: searchParams.date,
+    onNoTripsFound: !!onNoTripsFound 
+  });
   const t = translations[language];
 
   // Helper to convert to Arabic numerals
@@ -138,13 +149,21 @@ export function SearchResults({
   const [trips, setTrips] = useState<Trip[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [hasNoTrips, setHasNoTrips] = useState(false);
 
   // استدعاء الرحلات من الـ backend
   useEffect(() => {
+    console.log('SearchResults useEffect triggered', { 
+      from: searchParams.from, 
+      to: searchParams.to, 
+      date: searchParams.date 
+    });
     const fetchTrips = async () => {
       try {
+        console.log('fetchTrips started');
         setLoading(true);
         setError(null);
+        setHasNoTrips(false);
 
         // Get current translations based on language
         const currentTranslations = translations[language];
@@ -177,24 +196,52 @@ export function SearchResults({
         }
 
         const data: Trip[] = await res.json();
+        console.log('Trips data received:', data.length, 'trips');
         setTrips(data);
 
         // لو حاب، ممكن نضبط الرينج حسب الأسعار الفعلية
         if (data.length > 0) {
+          console.log('Trips found, setting hasNoTrips to false');
           const maxPrice = Math.max(...data.map((t) => t.price));
           setPriceRange([0, maxPrice]);
+          setHasNoTrips(false);
+          setLoading(false);
+        } else {
+          // إذا لم تكن هناك رحلات، تحديد الحالة واستدعاء callback
+          const hasFrom = searchParams.from && searchParams.from.trim() !== '';
+          const hasTo = searchParams.to && searchParams.to.trim() !== '';
+          console.log('No trips found. hasFrom:', hasFrom, 'hasTo:', hasTo, 'date:', searchParams.date, 'onNoTripsFound:', !!onNoTripsFound);
+          if ((hasFrom || hasTo) && searchParams.date && onNoTripsFound) {
+            console.log('Conditions met, calling onNoTripsFound callback');
+            setHasNoTrips(true);
+            setLoading(false);
+            // استدعاء callback مباشرة بعد تعيين الحالة
+            try {
+              onNoTripsFound();
+              console.log('onNoTripsFound callback executed successfully');
+            } catch (error) {
+              console.error('Error calling onNoTripsFound:', error);
+            }
+          } else {
+            console.log('Conditions not met, not calling callback');
+            setHasNoTrips(false);
+            setLoading(false);
+          }
         }
       } catch (err) {
         console.error(err);
         const currentTranslations = translations[language];
         setError(currentTranslations.loadError);
-      } finally {
         setLoading(false);
       }
     };
 
     fetchTrips();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.from, searchParams.to, searchParams.date, language]);
+
+  // هذا useEffect لم يعد ضرورياً لأننا نستدعي callback مباشرة في fetchTrips
+
 
   // Update error message when language changes if fields are still empty
   useEffect(() => {
@@ -271,16 +318,11 @@ export function SearchResults({
         {error}
       </div>
     );
-  } else if (filteredTrips.length === 0) {
-    content = (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
-        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <MapPin className="w-8 h-8 text-gray-400" />
-        </div>
-        <h3 className="text-xl text-gray-900 mb-2">{t.noResults}</h3>
-        <p className="text-gray-600">{t.tryDifferent}</p>
-      </div>
-    );
+  } else if ((!loading && trips.length === 0 && !error) || (hasNoTrips && !loading)) {
+    // إذا لم تكن هناك رحلات بعد التحميل، إرجاع null لإخفاء الصفحة
+    // سيتم عرض النافذة المنبثقة من App.tsx
+    console.log('Returning null - no trips found. hasNoTrips:', hasNoTrips, 'trips.length:', trips.length, 'loading:', loading, 'error:', error);
+    return null;
   } else {
     content = (
       <div className="space-y-4">

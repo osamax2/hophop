@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, MapPin, Calendar, Building2, Clock, Star, ShieldCheck, Bus, ArrowLeftRight, Mail, Phone, Facebook, Instagram } from 'lucide-react';
 import type { Language, SearchParams } from '../App';
 import logo from 'figma:asset/4dddb73877b28322b7848adc27f0f948198765ae.png';
@@ -8,6 +8,7 @@ interface HomePageProps {
   onSearch: (params: SearchParams) => void;
   language: Language;
   onContactClick?: () => void;
+  searchParams?: SearchParams | null;
 }
 
 const translations = {
@@ -173,13 +174,23 @@ const popularRoutes = [
   { from: 'دمشق', to: 'حمص', duration: '2h 30m' },
 ];
 
-export function HomePage({ onSearch, language, onContactClick }: HomePageProps) {
+export function HomePage({ onSearch, language, onContactClick, searchParams }: HomePageProps) {
   const t = translations[language];
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [busType, setBusType] = useState('');
+  const [from, setFrom] = useState(searchParams?.from || '');
+  const [to, setTo] = useState(searchParams?.to || '');
+  const [date, setDate] = useState(searchParams?.date || new Date().toISOString().split('T')[0]);
+  const [busType, setBusType] = useState(searchParams?.type || '');
   const [searchError, setSearchError] = useState('');
+  
+  // Update fields when searchParams change
+  useEffect(() => {
+    if (searchParams) {
+      setFrom(searchParams.from || '');
+      setTo(searchParams.to || '');
+      setDate(searchParams.date || new Date().toISOString().split('T')[0]);
+      setBusType(searchParams.type || '');
+    }
+  }, [searchParams]);
 
   const handleSwapCities = () => {
     const temp = from;

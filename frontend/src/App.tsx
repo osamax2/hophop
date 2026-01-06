@@ -44,6 +44,7 @@ export default function App() {
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [verifyToken, setVerifyToken] = useState<string | null>(null);
+  const [showNoTripsModal, setShowNoTripsModal] = useState(false);
 
   const isRTL = language === 'ar';
 
@@ -105,8 +106,22 @@ export default function App() {
   }, []);
 
   const handleSearch = (params: SearchParams) => {
+    console.log('handleSearch called with params:', params);
     setSearchParams(params);
     setCurrentPage('search-results');
+    setShowNoTripsModal(false);
+    console.log('Current page set to search-results');
+  };
+
+  const handleNoTripsFound = () => {
+    console.log('handleNoTripsFound called, showing modal');
+    console.log('Current page before:', currentPage);
+    // عرض النافذة مباشرة دون تغيير الصفحة
+    setShowNoTripsModal(true);
+    // العودة إلى الصفحة الرئيسية بعد عرض النافذة
+    setTimeout(() => {
+      setCurrentPage('home');
+    }, 100);
   };
 
   const handleViewDetails = (tripId: string) => {
@@ -171,6 +186,11 @@ export default function App() {
     localStorage.removeItem("token");
   };
 
+  // Debug: Log current page and search params
+  useEffect(() => {
+    console.log('App state changed - currentPage:', currentPage, 'searchParams:', searchParams, 'showNoTripsModal:', showNoTripsModal);
+  }, [currentPage, searchParams, showNoTripsModal]);
+
   return (
     <div className={`min-h-screen bg-gray-50 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <Navigation
@@ -188,6 +208,7 @@ export default function App() {
             onSearch={handleSearch} 
             language={language}
             onContactClick={() => setCurrentPage('contact')}
+            searchParams={searchParams}
           />
         )}
         
@@ -199,14 +220,18 @@ export default function App() {
         )}
         
         {currentPage === 'search-results' && searchParams && (
-          <SearchResults
-            searchParams={searchParams}
-            onViewDetails={handleViewDetails}
-            language={language}
-            favorites={favorites}
-            onToggleFavorite={toggleFavorite}
-            isLoggedIn={!!user}
-          />
+          <>
+            {console.log('Rendering SearchResults component')}
+            <SearchResults
+              searchParams={searchParams}
+              onViewDetails={handleViewDetails}
+              language={language}
+              favorites={favorites}
+              onToggleFavorite={toggleFavorite}
+              isLoggedIn={!!user}
+              onNoTripsFound={handleNoTripsFound}
+            />
+          </>
         )}
         
         {currentPage === 'trip-details' && selectedTripId && (
@@ -278,6 +303,67 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* No Trips Modal */}
+      {showNoTripsModal && (
+        <div 
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50"
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999 }}
+          onClick={() => {
+            console.log('Modal backdrop clicked, closing modal');
+            setShowNoTripsModal(false);
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full mx-4"
+            style={{ zIndex: 10000 }}
+            onClick={(e) => {
+              console.log('Modal content clicked');
+              e.stopPropagation();
+            }}
+          >
+            {console.log('Modal content rendering')}
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg
+                  className="w-8 h-8 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h3 className={`text-xl font-semibold text-gray-900 mb-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+                {language === 'ar'
+                  ? 'لا توجد رحلات في هذا التاريخ'
+                  : language === 'de'
+                  ? 'Keine Fahrten an diesem Datum verfügbar'
+                  : 'No trips available on this date'}
+              </h3>
+              <p className={`text-gray-600 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
+                {language === 'ar'
+                  ? 'جرب معايير بحث مختلفة'
+                  : language === 'de'
+                  ? 'Versuchen Sie andere Suchkriterien'
+                  : 'Try different search criteria'}
+              </p>
+            </div>
+            <button
+              onClick={() => setShowNoTripsModal(false)}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl transition-colors font-medium"
+            >
+              {language === 'ar' ? 'إغلاق' : language === 'de' ? 'Schließen' : 'Close'}
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
