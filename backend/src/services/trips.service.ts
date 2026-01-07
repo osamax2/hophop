@@ -80,18 +80,56 @@ export class TripsService {
   /**
    * الحصول على رحلة بواسطة ID
    */
-  async findById(id: number): Promise<Trip | null> {
+  async findById(id: number): Promise<any | null> {
     const result = await pool.query(
-      `SELECT t.id, t.route_id, t.company_id, t.transport_type_id, t.departure_station_id, t.arrival_station_id,
-              t.departure_time, t.arrival_time, t.duration_minutes, t.seats_total, t.seats_available,
+      `SELECT t.id, t.route_id, t.company_id, t.transport_type_id, 
+              t.departure_station_id, t.arrival_station_id,
+              t.departure_time, t.arrival_time, t.duration_minutes, 
+              t.seats_total, t.seats_available,
               t.status, t.is_active, t.equipment, t.cancellation_policy, t.extra_info, 
-              i.image_url, t.created_at, t.updated_at
+              t.created_at, t.updated_at,
+              i.image_url,
+              c.name as company_name,
+              tt.name as transport_type_name,
+              r.from_city_id, r.to_city_id,
+              fc.name_ar as from_city_ar, fc.name_en as from_city_en, fc.name_de as from_city_de,
+              tc.name_ar as to_city_ar, tc.name_en as to_city_en, tc.name_de as to_city_de,
+              ds.name as departure_station_name,
+              as2.name as arrival_station_name
        FROM trips t
        LEFT JOIN images i ON i.entity_type = 'trip' AND i.entity_id = t.id
+       LEFT JOIN companies c ON t.company_id = c.id
+       LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
+       LEFT JOIN routes r ON t.route_id = r.id
+       LEFT JOIN cities fc ON r.from_city_id = fc.id
+       LEFT JOIN cities tc ON r.to_city_id = tc.id
+       LEFT JOIN stations ds ON t.departure_station_id = ds.id
+       LEFT JOIN stations as2 ON t.arrival_station_id = as2.id
        WHERE t.id = $1`,
       [id]
     );
-    return result.rows[0] || null;
+    
+    const trip = result.rows[0];
+    if (!trip) return null;
+    
+    // Add formatted city names (default to English)
+    trip.from_city = trip.from_city_en || trip.from_city_ar || trip.from_city_de;
+    trip.to_city = trip.to_city_en || trip.to_city_ar || trip.to_city_de;
+    
+    // Fetch route stops/steps
+    const stopsResult = await pool.query(
+      `SELECT rs.*, s.name as station_name, s.city_id,
+              c.name_ar as city_ar, c.name_en as city_en, c.name_de as city_de
+       FROM route_steps rs
+       JOIN stations s ON rs.station_id = s.id
+       LEFT JOIN cities c ON s.city_id = c.id
+       WHERE rs.route_id = $1
+       ORDER BY rs.order_index ASC`,
+      [trip.route_id]
+    );
+    trip.stops = stopsResult.rows;
+    
+    return trip;
   }
 
   /**

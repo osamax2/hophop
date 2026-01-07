@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, AlertCircle, Loader2 } from 'lucide-react';
 import type { Language } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
+import { RouteMap } from './RouteMap';
 import { tripsApi, imagesApi } from '../lib/api';
 import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 
@@ -97,6 +98,7 @@ const translations = {
 export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, isLoggedIn }: TripDetailsProps) {
   const t = translations[language];
   const [trip, setTrip] = useState<any>(null);
+  const [tripImages, setTripImages] = useState<any[]>([]);
   const [busImages, setBusImages] = useState<any[]>([]);
   const [stationImages, setStationImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -134,10 +136,12 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
 
         // Fetch images for this trip
         try {
-          const [busImgs, stationImgs] = await Promise.all([
+          const [tripImgs, busImgs, stationImgs] = await Promise.all([
+            imagesApi.getByEntity('trip', data.id || 0),
             imagesApi.getByEntity('bus', data.company_id || 0),
             imagesApi.getByEntity('station', data.departure_station_id || 0),
           ]);
+          setTripImages(tripImgs);
           setBusImages(busImgs);
           setStationImages(stationImgs);
         } catch (imgErr) {
@@ -192,23 +196,23 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Route Map Placeholder */}
+            {/* Route Map */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-xl text-gray-900">{t.route}</h2>
               </div>
-              <div className="relative h-64 bg-gradient-to-br from-green-50 to-blue-50">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1737275853879-731f24015ec2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzeXJpYSUyMGRhbWFzY3VzJTIwY2l0eXxlbnwxfHx8fDE3NjQ4NjgzMzN8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                  alt="Route Map"
-                  className="w-full h-full object-cover opacity-40"
+              <div className="relative h-96">
+                <RouteMap
+                  fromCity={trip.from}
+                  toCity={trip.to}
+                  stops={trip.stops}
+                  departureStation={{
+                    name: trip.departure_station_name || trip.from,
+                  }}
+                  arrivalStation={{
+                    name: trip.arrival_station_name || trip.to,
+                  }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white bg-opacity-90 px-6 py-3 rounded-lg">
-                    <MapPin className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-700">Kartenansicht</p>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -291,15 +295,26 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
               </h2>
               
               <div className="space-y-6">
-                {/* Bus Photos */}
+                {/* Bus Photos (including trip images) */}
                 <div>
                   <h3 className="text-sm text-gray-700 mb-3">{t.busPhotos}</h3>
-                  {busImages.length === 0 ? (
+                  {tripImages.length === 0 && busImages.length === 0 ? (
                     <p className="text-sm text-gray-500">{t.noBusPhotos}</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {/* Show trip images first */}
+                      {tripImages.map((img: any) => (
+                        <div key={`trip-${img.id}`} className="aspect-video rounded-lg overflow-hidden">
+                          <ImageWithFallback
+                            src={img.image_url}
+                            alt={img.file_name || 'Trip photo'}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          />
+                        </div>
+                      ))}
+                      {/* Then bus images */}
                       {busImages.map((img: any) => (
-                        <div key={img.id} className="aspect-video rounded-lg overflow-hidden">
+                        <div key={`bus-${img.id}`} className="aspect-video rounded-lg overflow-hidden">
                           <ImageWithFallback
                             src={img.image_url}
                             alt={img.file_name || 'Bus photo'}
