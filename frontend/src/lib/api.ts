@@ -420,6 +420,13 @@ export const adminApi = {
     return handleResponse(response);
   },
 
+  getAllImages: async () => {
+    const response = await fetch(`${API_BASE}/api/admin/images/all`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
   previewCSV: async (file: File) => {
     const formData = new FormData();
     formData.append("file", file);
