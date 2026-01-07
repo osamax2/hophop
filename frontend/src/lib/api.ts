@@ -625,3 +625,34 @@ export const adminApi = {
     return handleResponse(response);
   },
 };
+
+// Booking APIs
+export const bookingsApi = {
+  createBooking: async (data: {
+    trip_id: number;
+    quantity: number;
+    fare_category_code?: string;
+    booking_option_code?: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/bookings`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  getMyBookings: async () => {
+    const response = await fetch(`${API_BASE}/api/bookings/my`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getBookingById: async (bookingId: number) => {
+    const response = await fetch(`${API_BASE}/api/bookings/${bookingId}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+};

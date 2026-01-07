@@ -3,6 +3,7 @@ import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, Ale
 import type { Language } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { RouteMap } from './RouteMap';
+import { BookingModal } from './BookingModal';
 import { tripsApi, imagesApi } from '../lib/api';
 import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 
@@ -103,6 +104,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
   const [stationImages, setStationImages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -393,8 +395,12 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
 
               {/* Actions */}
               <div className="space-y-3">
-                <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
-                  {t.bookNow}
+                <button 
+                  onClick={() => setShowBookingModal(true)}
+                  disabled={!isLoggedIn || trip.seatsAvailable === 0}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {!isLoggedIn ? t.loginToFavorite : trip.seatsAvailable === 0 ? 'Ausverkauft / Sold Out / نفذت الكمية' : t.bookNow}
                 </button>
                 
                 {isLoggedIn ? (
@@ -469,6 +475,16 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
             {t.alternativeTrips}
           </button>
         </div>
+      )}
+
+      {/* Booking Modal */}
+      {trip && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          trip={trip}
+          language={language}
+        />
       )}
     </div>
   );
