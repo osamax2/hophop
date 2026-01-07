@@ -33,6 +33,11 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-hophop}:${POSTGRES_PASSWORD:-hophop123}@db:5432/${POSTGRES_DB:-hophop}
       PORT: 4000
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      SMTP_HOST: ${SMTP_HOST:-mail.hophopsy.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-noreply@hophopsy.com}
+      SMTP_PASS: ${SMTP_PASS}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
     ports:
       - "4000:4000"
     volumes:
@@ -42,6 +47,12 @@ services:
         condition: service_healthy
     networks:
       - hophop-network
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "mail.hophopsy.com:87.106.51.243"
 
   # Frontend (React + Vite)
   frontend:

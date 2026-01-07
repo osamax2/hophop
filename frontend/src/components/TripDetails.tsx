@@ -122,6 +122,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
           arrivalTime: formatTime(data.arrival_time, language),
           duration: formatDuration(data.duration_minutes, language),
           price: data.price || 0,
+          currency: data.currency || 'SYP',
           company: data.company_name || 'Unknown',
           companyId: data.company_id,
           seatsAvailable: data.seats_available,
@@ -396,11 +397,21 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
               {/* Actions */}
               <div className="space-y-3">
                 <button 
-                  onClick={() => setShowBookingModal(true)}
-                  disabled={!isLoggedIn || trip.seatsAvailable === 0}
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!trip) return;
+                    if (trip.seatsAvailable === 0) {
+                      alert('Sold Out / Ausverkauft / نفذت الكمية');
+                      return;
+                    }
+                    setShowBookingModal(true);
+                  }}
+                  disabled={trip.seatsAvailable === 0}
                   className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {!isLoggedIn ? t.loginToFavorite : trip.seatsAvailable === 0 ? 'Ausverkauft / Sold Out / نفذت الكمية' : t.bookNow}
+                  {trip.seatsAvailable === 0 ? 'Ausverkauft / Sold Out / نفذت الكمية' : t.bookNow}
                 </button>
                 
                 {isLoggedIn ? (
@@ -484,6 +495,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
           onClose={() => setShowBookingModal(false)}
           trip={trip}
           language={language}
+          isLoggedIn={isLoggedIn}
         />
       )}
     </div>

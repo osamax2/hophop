@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Users, DollarSign, CreditCard, AlertCircle, Check, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { X, Users, DollarSign, CreditCard, AlertCircle, Check, Loader2, Clock } from 'lucide-react';
 import type { Language } from '../App';
 import { bookingsApi } from '../lib/api';
 import { formatCurrency } from '../lib/i18n-utils';
@@ -21,6 +21,7 @@ interface BookingModalProps {
     totalSeats: number;
   };
   language: Language;
+  isLoggedIn?: boolean;
 }
 
 const translations = {
@@ -55,6 +56,23 @@ const translations = {
     notEnoughSeats: 'Nicht genügend verfügbare Plätze',
     loginRequired: 'Anmeldung erforderlich',
     pleaseLogin: 'Bitte melden Sie sich an, um eine Buchung vorzunehmen',
+    guestBooking: 'Als Gast buchen',
+    guestInfo: 'Ihre Kontaktdaten',
+    guestName: 'Vollständiger Name',
+    guestEmail: 'E-Mail-Adresse',
+    guestPhone: 'Telefonnummer',
+    orLogin: 'Oder melden Sie sich an',
+    loginNow: 'Jetzt anmelden',
+    bookingPending: 'Buchung ausstehend!',
+    bookingPendingMessage: 'Ihre Buchungsanfrage wurde gesendet und wartet auf die Bestätigung durch das Unternehmen. Sie erhalten eine E-Mail, sobald die Buchung bestätigt wurde.',
+    requiredField: 'Dieses Feld ist erforderlich',
+    invalidEmail: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
+    passengerNames: 'Namen der Passagiere',
+    passengerName: 'Passagier',
+    mainPassenger: 'Hauptpassagier (Sie)',
+    thankYou: 'Vielen Dank für Ihre Buchung!',
+    thankYouMessage: 'Ihre Buchung wurde erfolgreich erstellt. Sie können den Status Ihrer Buchung jederzeit über den unten stehenden Link überprüfen.',
+    viewStatus: 'Weiter',
   },
   en: {
     bookTrip: 'Book Trip',
@@ -87,6 +105,23 @@ const translations = {
     notEnoughSeats: 'Not enough seats available',
     loginRequired: 'Login Required',
     pleaseLogin: 'Please login to make a booking',
+    guestBooking: 'Book as Guest',
+    guestInfo: 'Your Contact Information',
+    guestName: 'Full Name',
+    guestEmail: 'Email Address',
+    guestPhone: 'Phone Number',
+    orLogin: 'Or login',
+    loginNow: 'Login Now',
+    bookingPending: 'Booking Pending!',
+    bookingPendingMessage: 'Your booking request has been sent and is waiting for company confirmation. You will receive an email once the booking is confirmed.',
+    requiredField: 'This field is required',
+    invalidEmail: 'Please enter a valid email address',
+    thankYou: 'Thank you for your booking!',
+    thankYouMessage: 'Your booking has been created successfully. You can check your booking status anytime using the link below.',
+    viewStatus: 'Continue',
+    passengerNames: 'Passenger Names',
+    passengerName: 'Passenger',
+    mainPassenger: 'Main Passenger (You)',
   },
   ar: {
     bookTrip: 'حجز رحلة',
@@ -119,10 +154,27 @@ const translations = {
     notEnoughSeats: 'لا توجد مقاعد كافية متاحة',
     loginRequired: 'تسجيل الدخول مطلوب',
     pleaseLogin: 'الرجاء تسجيل الدخول لإجراء الحجز',
+    guestBooking: 'الحجز كضيف',
+    guestInfo: 'معلومات الاتصال الخاصة بك',
+    guestName: 'الاسم الكامل',
+    guestEmail: 'عنوان البريد الإلكتروني',
+    guestPhone: 'رقم الهاتف',
+    orLogin: 'أو تسجيل الدخول',
+    loginNow: 'تسجيل الدخول الآن',
+    bookingPending: 'الحجز قيد الانتظار!',
+    bookingPendingMessage: 'تم إرسال طلب الحجز الخاص بك وهو بانتظار تأكيد الشركة. سوف تتلقى بريدًا إلكترونيًا بمجرد تأكيد الحجز.',
+    requiredField: 'هذا الحقل مطلوب',
+    invalidEmail: 'يرجى إدخال عنوان بريد إلكتروني صالح',
+    passengerNames: 'أسماء الركاب',
+    passengerName: 'راكب',
+    mainPassenger: 'الراكب الرئيسي (أنت)',
+    thankYou: 'شكراً لحجزك معنا!',
+    thankYouMessage: 'تم إنشاء حجزك بنجاح. يمكنك التحقق من حالة حجزك في أي وقت باستخدام الرابط أدناه.',
+    viewStatus: 'متابعة',
   },
 };
 
-export function BookingModal({ isOpen, onClose, trip, language }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = false }: BookingModalProps) {
   const t = translations[language];
   const [quantity, setQuantity] = useState(1);
   const [fareCategory, setFareCategory] = useState('STANDARD');
@@ -130,13 +182,65 @@ export function BookingModal({ isOpen, onClose, trip, language }: BookingModalPr
   const [isProcessing, setIsProcessing] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState(600); // 10 minutes in seconds
+  
+  // Guest booking fields
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
+  const [guestPhone, setGuestPhone] = useState('');
+  
+  // Passenger names (for multiple seats)
+  const [passengerNames, setPassengerNames] = useState<string[]>([]);
+  
+  // Status link from booking response
+  const [statusLink, setStatusLink] = useState<string | null>(null);
+
+  // 10-minute timeout countdown
+  useEffect(() => {
+    if (!isOpen || bookingSuccess) return;
+
+    const timer = setInterval(() => {
+      setTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          onClose();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isOpen, bookingSuccess, onClose]);
+
+  // Reset timer when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setTimeRemaining(600);
+      setQuantity(1);
+      setFareCategory('STANDARD');
+      setBookingOption('DEFAULT');
+      setError(null);
+      setBookingSuccess(false);
+      setGuestName('');
+      setGuestEmail('');
+      setGuestPhone('');
+      setPassengerNames([]);
+      setStatusLink(null);
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
+
+  const minutes = Math.floor(timeRemaining / 60);
+  const seconds = timeRemaining % 60;
 
   const handleQuantityChange = (value: number) => {
     if (value >= 1 && value <= trip.seatsAvailable) {
       setQuantity(value);
       setError(null);
+      // Initialize passenger names array
+      setPassengerNames(new Array(value).fill(''));
     } else if (value > trip.seatsAvailable) {
       setError(t.notEnoughSeats);
     }
@@ -150,26 +254,63 @@ export function BookingModal({ isOpen, onClose, trip, language }: BookingModalPr
       return;
     }
 
+    // Validate passenger names if quantity > 1
+    if (quantity > 1) {
+      for (let i = 0; i < quantity; i++) {
+        if (!passengerNames[i]?.trim()) {
+          setError(`${t.requiredField}: ${t.passengerName} ${i + 1}`);
+          return;
+        }
+      }
+    }
+
+    // Validate guest fields if not logged in
+    if (!isLoggedIn) {
+      if (!guestName.trim()) {
+        setError(t.requiredField + ': ' + t.guestName);
+        return;
+      }
+      if (!guestEmail.trim()) {
+        setError(t.requiredField + ': ' + t.guestEmail);
+        return;
+      }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guestEmail)) {
+        setError(t.invalidEmail);
+        return;
+      }
+      if (!guestPhone.trim()) {
+        setError(t.requiredField + ': ' + t.guestPhone);
+        return;
+      }
+    }
+
     setIsProcessing(true);
     setError(null);
 
     try {
-      await bookingsApi.createBooking({
+      const bookingData: any = {
         trip_id: parseInt(trip.id),
         quantity,
         fare_category_code: fareCategory,
         booking_option_code: bookingOption,
-      });
+        passenger_names: quantity > 1 ? passengerNames : [guestName || 'Main Passenger'],
+      };
+
+      // Add guest info if not logged in
+      if (!isLoggedIn) {
+        bookingData.guest_name = guestName;
+        bookingData.guest_email = guestEmail;
+        bookingData.guest_phone = guestPhone;
+      }
+
+      const response = await bookingsApi.createBooking(bookingData);
+
+      // Save status link from response
+      if (response.status_link) {
+        setStatusLink(response.status_link);
+      }
 
       setBookingSuccess(true);
-      
-      // Close modal after 3 seconds
-      setTimeout(() => {
-        setBookingSuccess(false);
-        onClose();
-        // Optionally reload page or update seats
-        window.location.reload();
-      }, 3000);
     } catch (err: any) {
       setError(err.message || t.bookingError);
     } finally {
@@ -184,32 +325,70 @@ export function BookingModal({ isOpen, onClose, trip, language }: BookingModalPr
       setBookingOption('DEFAULT');
       setError(null);
       setBookingSuccess(false);
+      setGuestName('');
+      setGuestEmail('');
+      setGuestPhone('');
+      setPassengerNames([]);
+      setStatusLink(null);
       onClose();
     }
   };
-
+      
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 rounded-t-2xl flex items-center justify-between">
-          <h2 className="text-2xl font-bold">{t.bookTrip}</h2>
-          <button
-            onClick={handleClose}
-            disabled={isProcessing}
-            className="text-white/80 hover:text-white transition-colors disabled:opacity-50"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <div className="sticky top-0 bg-white border-b-2 border-gray-200 p-6 rounded-t-2xl shadow-sm">
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-2xl font-bold text-gray-900">{t.bookTrip}</h2>
+            <button
+              onClick={handleClose}
+              disabled={isProcessing}
+              className="text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          {!bookingSuccess && (
+            <div className="flex items-center gap-2 text-green-700 text-sm font-medium bg-green-50 px-3 py-2 rounded-lg border border-green-200">
+              <Clock className="w-4 h-4" />
+              <span>
+                {language === 'de' ? 'Verbleibende Zeit' : language === 'en' ? 'Time remaining' : 'الوقت المتبقي'}: {minutes}:{seconds.toString().padStart(2, '0')}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Success Message */}
         {bookingSuccess && (
-          <div className="m-6 p-4 bg-green-50 border border-green-200 rounded-lg flex items-start gap-3">
-            <Check className="w-6 h-6 text-green-600 flex-shrink-0 mt-0.5" />
-            <div>
-              <h3 className="font-semibold text-green-900 mb-1">{t.bookingSuccess}</h3>
-              <p className="text-sm text-green-700">{t.bookingSuccessMessage}</p>
+          <div className="p-8">
+            <div className="text-center space-y-6">
+              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Check className="w-10 h-10 text-green-600" />
+              </div>
+              
+              <div className="space-y-3">
+                <h3 className="text-2xl font-bold text-gray-900">{t.thankYou}</h3>
+                <p className="text-gray-600 max-w-md mx-auto">
+                  {t.thankYouMessage}
+                </p>
+              </div>
+
+              {statusLink && (
+                <button
+                  onClick={() => window.location.href = statusLink}
+                  className="w-full max-w-xs mx-auto block px-6 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl"
+                >
+                  {t.viewStatus}
+                </button>
+              )}
+
+              <button
+                onClick={handleClose}
+                className="text-gray-500 hover:text-gray-700 text-sm font-medium"
+              >
+                {t.close}
+              </button>
             </div>
           </div>
         )}
@@ -287,6 +466,32 @@ export function BookingModal({ isOpen, onClose, trip, language }: BookingModalPr
               </div>
             </div>
 
+            {/* Passenger Names (if quantity > 1) */}
+            {quantity > 1 && (
+              <div className="space-y-4 border-t-2 border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900">{t.passengerNames}</h3>
+                {Array.from({ length: quantity }).map((_, index) => (
+                  <div key={index} className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      {index === 0 ? t.mainPassenger : `${t.passengerName} ${index + 1}`} *
+                    </label>
+                    <input
+                      type="text"
+                      value={passengerNames[index] || ''}
+                      onChange={(e) => {
+                        const newNames = [...passengerNames];
+                        newNames[index] = e.target.value;
+                        setPassengerNames(newNames);
+                      }}
+                      disabled={isProcessing}
+                      className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-50"
+                      placeholder={language === 'de' ? 'Max Mustermann' : language === 'en' ? 'John Doe' : 'محمد أحمد'}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+
             {/* Fare Category */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">
@@ -321,6 +526,71 @@ export function BookingModal({ isOpen, onClose, trip, language }: BookingModalPr
                 <option value="EARLY_BIRD">{t.earlyBird}</option>
               </select>
             </div>
+
+            {/* Guest Information Form */}
+            {!isLoggedIn && (
+              <div className="space-y-4 border-t-2 border-gray-200 pt-6">
+                <h3 className="text-lg font-semibold text-gray-900">{t.guestInfo}</h3>
+                
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t.guestName} *
+                  </label>
+                  <input
+                    type="text"
+                    value={guestName}
+                    onChange={(e) => setGuestName(e.target.value)}
+                    disabled={isProcessing}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-50"
+                    placeholder={language === 'de' ? 'Max Mustermann' : language === 'en' ? 'John Doe' : 'محمد أحمد'}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t.guestEmail} *
+                  </label>
+                  <input
+                    type="email"
+                    value={guestEmail}
+                    onChange={(e) => setGuestEmail(e.target.value)}
+                    disabled={isProcessing}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-50"
+                    placeholder="example@email.com"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    {t.guestPhone} *
+                  </label>
+                  <input
+                    type="tel"
+                    value={guestPhone}
+                    onChange={(e) => setGuestPhone(e.target.value)}
+                    disabled={isProcessing}
+                    className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-green-500 disabled:bg-gray-50"
+                    placeholder="+49 123 456789"
+                  />
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <div className="flex-1 border-t border-gray-300"></div>
+                  <span className="text-sm text-gray-500">{t.orLogin}</span>
+                  <div className="flex-1 border-t border-gray-300"></div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    onClose();
+                    window.location.href = '/#login';
+                  }}
+                  className="w-full px-4 py-2 text-sm text-green-700 bg-green-50 border-2 border-green-200 rounded-lg hover:bg-green-100 transition-colors font-medium"
+                >
+                  {t.loginNow}
+                </button>
+              </div>
+            )}
 
             {/* Price Summary */}
             <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 space-y-2">

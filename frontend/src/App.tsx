@@ -10,6 +10,7 @@ import { LoginRegister } from './components/LoginRegister';
 import { Reviews } from './components/Reviews';
 import { ContactForm } from './components/ContactForm';
 import VerifyEmail from './components/VerifyEmail';
+import { BookingStatus } from './components/BookingStatus';
 import { favoritesApi } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
@@ -44,6 +45,7 @@ export default function App() {
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [verifyToken, setVerifyToken] = useState<string | null>(null);
+  const [bookingStatusToken, setBookingStatusToken] = useState<string | null>(null);
   const [showNoTripsModal, setShowNoTripsModal] = useState(false);
 
   const isRTL = language === 'ar';
@@ -56,6 +58,10 @@ export default function App() {
     if (path === '/verify-email') {
       setVerifyToken(urlParams.get('token'));
       setCurrentPage('verify-email');
+    } else if (path.startsWith('/booking-status/')) {
+      const token = path.split('/booking-status/')[1];
+      setBookingStatusToken(token);
+      setCurrentPage('booking-status');
     } else if (path.startsWith('/trip/')) {
       const tripId = path.split('/trip/')[1];
       setSelectedTripId(tripId);
@@ -112,6 +118,11 @@ export default function App() {
           url = `/verify-email?token=${verifyToken}`;
         }
         break;
+      case 'booking-status':
+        if (bookingStatusToken) {
+          url = `/booking-status/${bookingStatusToken}`;
+        }
+        break;
       default:
         url = '/';
     }
@@ -119,7 +130,7 @@ export default function App() {
     if (window.location.pathname + window.location.search !== url) {
       window.history.pushState({}, '', url);
     }
-  }, [currentPage, selectedTripId, searchParams, verifyToken]);
+  }, [currentPage, selectedTripId, searchParams, verifyToken, bookingStatusToken]);
 
   // Handle browser back/forward buttons
   useEffect(() => {
@@ -130,6 +141,10 @@ export default function App() {
       if (path === '/verify-email') {
         setVerifyToken(urlParams.get('token'));
         setCurrentPage('verify-email');
+      } else if (path.startsWith('/booking-status/')) {
+        const token = path.split('/booking-status/')[1];
+        setBookingStatusToken(token);
+        setCurrentPage('booking-status');
       } else if (path.startsWith('/trip/')) {
         const tripId = path.split('/trip/')[1];
         setSelectedTripId(tripId);
@@ -386,6 +401,13 @@ export default function App() {
           />
         )}
         
+        {currentPage === 'booking-status' && bookingStatusToken && (
+          <BookingStatus
+            token={bookingStatusToken}
+            language={language}
+          />
+        )}
+
         {currentPage === 'verify-email' && (
           <VerifyEmailWrapper 
             token={verifyToken}
