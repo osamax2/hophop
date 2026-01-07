@@ -281,6 +281,7 @@ export default function App() {
           <Reviews
             language={language}
             isLoggedIn={!!user}
+            user={user}
           />
         )}
         

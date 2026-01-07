@@ -487,8 +487,14 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     driver_name: '',
     equipment: '',
     cancellation_policy: '',
+    image_id: '',
     extra_info: '',
   });
+  
+  // Image preview state
+  const [imagePreview, setImagePreview] = useState<{ url: string; name: string } | null>(null);
+  const [imagePreviewError, setImagePreviewError] = useState<string>('');
+  const [loadingImagePreview, setLoadingImagePreview] = useState(false);
   
   // Image upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -1736,7 +1742,19 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         equipment: trip.equipment || '',
         cancellation_policy: trip.cancellation_policy || '',
         extra_info: trip.extra_info || '',
+        image_id: trip.image_id ? String(trip.image_id) : '',
       });
+      
+      // Load image preview if image_id exists
+      if (trip.image_id && trip.image_url) {
+        const API_BASE = import.meta.env.VITE_API_BASE || "";
+        const imageUrl = trip.image_url.startsWith('http') 
+          ? trip.image_url 
+          : `${API_BASE}${trip.image_url}`;
+        setImagePreview({ url: imageUrl, name: 'Trip Image' });
+      } else {
+        setImagePreview(null);
+      }
       
       console.log('Setting editingTripId and opening dialog...');
       setEditingTripId(tripId);
@@ -1877,6 +1895,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         equipment: newTrip.equipment || null,
         cancellation_policy: newTrip.cancellation_policy || null,
         extra_info: newTrip.extra_info || null,
+        image_id: newTrip.image_id && !isNaN(Number(newTrip.image_id)) && Number(newTrip.image_id) > 0 
+          ? Number(newTrip.image_id) 
+          : null,
       };
 
       console.log('handleSaveTrip - tripData prepared:', tripData);
@@ -1968,7 +1989,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         equipment: '',
         cancellation_policy: '',
         extra_info: '',
+        image_id: '',
       });
+      setImagePreview(null);
+      setImagePreviewError('');
     } catch (err: any) {
       console.error('Error saving trip:', err);
       
@@ -2017,7 +2041,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       equipment: '',
       cancellation_policy: '',
       extra_info: '',
+      image_id: '',
     });
+    setImagePreview(null);
+    setImagePreviewError('');
     setNewTripStops([]);
     setShowAddTripDialog(true);
   };
@@ -3092,6 +3119,130 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     />
                   </div>
 
+                  {/* Image ID with Preview */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {language === 'ar' ? 'معرّف الصورة (Image ID)' : language === 'de' ? 'Bild-ID' : 'Image ID'}
+                    </label>
+                    <div className="space-y-2">
+                      <input
+                        type="number"
+                        value={newTrip.image_id}
+                        onChange={async (e) => {
+                          const imageId = e.target.value;
+                          setNewTrip({ ...newTrip, image_id: imageId });
+                          setImagePreview(null);
+                          setImagePreviewError('');
+                          
+                          if (imageId && !isNaN(Number(imageId)) && Number(imageId) > 0) {
+                            setLoadingImagePreview(true);
+                            try {
+                              const API_BASE = import.meta.env.VITE_API_BASE || "";
+                              const response = await fetch(`${API_BASE}/api/images/${imageId}`);
+                              
+                              if (response.ok) {
+                                const imageData = await response.json();
+                                // Construct full image URL
+                                const imageUrl = imageData.url.startsWith('http') 
+                                  ? imageData.url 
+                                  : `${API_BASE}${imageData.url}`;
+                                setImagePreview({ url: imageUrl, name: imageData.name || 'Image' });
+                                setImagePreviewError('');
+                              } else {
+                                // Try to get error message from response
+                                let errorMessage = 'Unknown error';
+                                try {
+                                  const errorData = await response.json();
+                                  errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+                                } catch (e) {
+                                  errorMessage = `HTTP ${response.status}`;
+                                }
+                                
+                                console.error('Image fetch error:', response.status, errorMessage);
+                                
+                                // Show appropriate message based on status code
+                                if (response.status === 404) {
+                                  setImagePreviewError(
+                                    language === 'ar' 
+                                      ? 'الصورة غير موجودة' 
+                                      : language === 'de' 
+                                      ? 'Bild nicht gefunden' 
+                                      : 'Image not found'
+                                  );
+                                } else if (response.status === 400) {
+                                  setImagePreviewError(
+                                    language === 'ar' 
+                                      ? 'معرّف الصورة غير صحيح' 
+                                      : language === 'de' 
+                                      ? 'Ungültige Bild-ID' 
+                                      : 'Invalid image ID'
+                                  );
+                                } else {
+                                  setImagePreviewError(
+                                    language === 'ar' 
+                                      ? `خطأ في الخادم: ${errorMessage}` 
+                                      : language === 'de' 
+                                      ? `Serverfehler: ${errorMessage}` 
+                                      : `Server error: ${errorMessage}`
+                                  );
+                                }
+                              }
+                            } catch (error: any) {
+                              console.error('Error fetching image:', error);
+                              // Network error or other fetch errors
+                              const errorMsg = error.message || 'Network error';
+                              setImagePreviewError(
+                                language === 'ar' 
+                                  ? `خطأ في الاتصال: ${errorMsg}` 
+                                  : language === 'de' 
+                                  ? `Verbindungsfehler: ${errorMsg}` 
+                                  : `Connection error: ${errorMsg}`
+                              );
+                            } finally {
+                              setLoadingImagePreview(false);
+                            }
+                          }
+                        }}
+                        placeholder={language === 'ar' ? 'أدخل رقم الصورة' : language === 'de' ? 'Bildnummer eingeben' : 'Enter image ID'}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      />
+                      
+                      {loadingImagePreview && (
+                        <div className="text-sm text-gray-500">
+                          {language === 'ar' ? 'جاري التحميل...' : language === 'de' ? 'Wird geladen...' : 'Loading...'}
+                        </div>
+                      )}
+                      
+                      {imagePreviewError && (
+                        <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                          {imagePreviewError}
+                        </div>
+                      )}
+                      
+                      {imagePreview && (
+                        <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <p className="text-sm font-medium text-gray-700 mb-2">{t.preview || 'Preview'}</p>
+                          <img
+                            src={imagePreview.url}
+                            alt={imagePreview.name}
+                            className="max-w-full h-auto max-h-64 rounded-lg object-contain"
+                            onError={() => {
+                              setImagePreviewError(
+                                language === 'ar' 
+                                  ? 'فشل تحميل الصورة' 
+                                  : language === 'de' 
+                                  ? 'Bild konnte nicht geladen werden' 
+                                  : 'Failed to load image'
+                              );
+                              setImagePreview(null);
+                            }}
+                          />
+                          <p className="text-xs text-gray-500 mt-1">{imagePreview.name}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* Stops Section - Only for new trips */}
                   {!editingTripId && (
                     <div className="mt-6 border-t pt-6">
@@ -3663,6 +3814,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
                       {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'}
                     </th>
+                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '100px' }}>
+                      {language === 'ar' ? 'معرّف الصورة' : language === 'de' ? 'Bild-ID' : 'Image ID'}
+                    </th>
                     <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px' }}>
                       {language === 'ar' ? 'اسم الملف' : language === 'de' ? 'Dateiname' : 'File Name'}
                     </th>
@@ -3686,7 +3840,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 <tbody className="divide-y divide-gray-200">
                   {images.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="px-6 py-8 text-center text-gray-600">
+                      <td colSpan={8} className="px-6 py-8 text-center text-gray-600">
                         <Image className="w-12 h-12 mx-auto mb-2 text-gray-400" />
                         <p>{language === 'ar' ? 'لا توجد صور' : language === 'de' ? 'Keine Fotos vorhanden' : 'No photos uploaded'}</p>
                       </td>
@@ -3703,6 +3857,25 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                               (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"%3E%3Crect fill="%23eee" width="64" height="64"/%3E%3Ctext x="50%25" y="50%25" dominant-baseline="middle" text-anchor="middle" font-family="monospace" font-size="14" fill="%23999"%3ENo Image%3C/text%3E%3C/svg%3E';
                             }}
                           />
+                        </td>
+                        <td className="px-6 py-3 text-sm">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono font-semibold text-gray-900">{image.id}</span>
+                            <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(String(image.id));
+                                alert(language === 'ar' 
+                                  ? `تم نسخ المعرف ${image.id}` 
+                                  : language === 'de' 
+                                  ? `ID ${image.id} kopiert` 
+                                  : `ID ${image.id} copied`);
+                              }}
+                              className="text-blue-600 hover:text-blue-700 text-xs px-2 py-1 border border-blue-300 rounded hover:bg-blue-50 transition-colors"
+                              title={language === 'ar' ? 'نسخ المعرف' : language === 'de' ? 'ID kopieren' : 'Copy ID'}
+                            >
+                              {language === 'ar' ? 'نسخ' : language === 'de' ? 'Kopieren' : 'Copy'}
+                            </button>
+                          </div>
                         </td>
                         <td className="px-6 py-3 text-sm text-gray-900">{image.file_name || 'N/A'}</td>
                         <td className="px-6 py-3">

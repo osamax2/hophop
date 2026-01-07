@@ -44,6 +44,92 @@ const upload = multer({
   },
 });
 
+// GET /api/images/:id - Get image by ID (MUST come before GET / to avoid route conflict)
+router.get("/:id", async (req, res) => {
+  try {
+    const imageId = parseInt(req.params.id);
+    if (isNaN(imageId) || imageId <= 0) {
+      return res.status(400).json({ message: "Invalid image ID" });
+    }
+
+    console.log(`[GET /api/images/:id] Fetching image with ID: ${imageId}`);
+
+    // Check if is_active column exists first
+    const columnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='images' AND column_name='is_active'
+    `);
+    
+    const hasIsActiveColumn = columnCheck.rows.length > 0;
+    
+    // First check if image exists at all
+    let checkQuery = `SELECT id`;
+    if (hasIsActiveColumn) {
+      checkQuery += `, is_active`;
+    }
+    checkQuery += ` FROM images WHERE id = $1`;
+    
+    const checkResult = await pool.query(checkQuery, [imageId]);
+
+    if (checkResult.rows.length === 0) {
+      console.log(`[GET /api/images/:id] Image ${imageId} not found in database`);
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    if (hasIsActiveColumn) {
+      const imageStatus = checkResult.rows[0].is_active;
+      console.log(`[GET /api/images/:id] Image ${imageId} found, is_active: ${imageStatus}`);
+      
+      // Check for images where is_active is true or NULL (NULL means active by default)
+      const result = await pool.query(
+        `
+        SELECT id, image_url as url, file_name as name, mime_type as type
+        FROM images
+        WHERE id = $1 AND (is_active = true OR is_active IS NULL)
+        `,
+        [imageId]
+      );
+
+      if (result.rows.length === 0) {
+        // Image exists but is inactive
+        console.log(`[GET /api/images/:id] Image ${imageId} exists but is inactive`);
+        return res.status(404).json({ message: "Image is inactive" });
+      }
+      
+      console.log(`[GET /api/images/:id] Image ${imageId} found and active, returning data`);
+      res.json(result.rows[0]);
+    } else {
+      // No is_active column, just return the image
+      console.log(`[GET /api/images/:id] Image ${imageId} found (no is_active column), returning data`);
+      const result = await pool.query(
+        `
+        SELECT id, image_url as url, file_name as name, mime_type as type
+        FROM images
+        WHERE id = $1
+        `,
+        [imageId]
+      );
+      
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: "Image not found" });
+      }
+      
+      res.json(result.rows[0]);
+    }
+
+  } catch (error: any) {
+    console.error("[GET /api/images/:id] Error fetching image:", error);
+    console.error("[GET /api/images/:id] Error stack:", error?.stack);
+    const errorMessage = error?.message || String(error) || "Unknown database error";
+    res.status(500).json({ 
+      message: "Failed to fetch image from database", 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+    });
+  }
+});
+
 // GET /api/images - Get images by entity type and id
 router.get("/", async (req, res) => {
   try {
@@ -53,15 +139,28 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ message: "entity_type and entity_id are required" });
     }
 
-    const result = await pool.query(
-      `
+    // Check if is_active column exists
+    const columnCheck = await pool.query(`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name='images' AND column_name='is_active'
+    `);
+    
+    const hasIsActiveColumn = columnCheck.rows.length > 0;
+    
+    let query = `
       SELECT id, entity_type, entity_id, image_url, file_name, created_at
       FROM images
-      WHERE entity_type = $1 AND entity_id = $2 AND is_active = true
-      ORDER BY created_at DESC
-      `,
-      [entity_type, entity_id]
-    );
+      WHERE entity_type = $1 AND entity_id = $2
+    `;
+    
+    if (hasIsActiveColumn) {
+      query += ` AND (is_active = true OR is_active IS NULL)`;
+    }
+    
+    query += ` ORDER BY created_at DESC`;
+    
+    const result = await pool.query(query, [entity_type, entity_id]);
 
     res.json(result.rows);
   } catch (error) {
