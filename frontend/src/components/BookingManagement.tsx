@@ -561,7 +561,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {booking.user_name || booking.guest_name || '-'}
+                        {(booking.user_name?.trim() || booking.guest_name?.trim() || 'Guest')}
                       </div>
                       <div className="text-sm text-gray-500">
                         {booking.user_email || booking.guest_email || '-'}
@@ -576,7 +576,15 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                       {booking.from_city} → {booking.to_city}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="text-xs">{new Date(booking.departure_time).toLocaleString(language === 'ar' ? 'ar-EG' : language === 'de' ? 'de-DE' : 'en-US', { dateStyle: 'short', timeStyle: 'short' })}</div>
+                      <button
+                        onClick={() => {
+                          const event = new CustomEvent('navigate-to-trip', { detail: { tripId: booking.trip_id } });
+                          window.dispatchEvent(event);
+                        }}
+                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                      >
+                        {new Date(booking.departure_time).toLocaleString(language === 'ar' ? 'ar-EG' : language === 'de' ? 'de-DE' : 'en-US', { dateStyle: 'short', timeStyle: 'short' })}
+                      </button>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {booking.company_name}

@@ -680,6 +680,24 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   }, [activeTab, showTrash]);
 
+  // Listen for navigate-to-trip event from BookingManagement
+  useEffect(() => {
+    const handleNavigateToTrip = (event: any) => {
+      const { tripId } = event.detail;
+      setActiveTab('trips');
+      // You could also filter trips by tripId here if needed
+      setTimeout(() => {
+        const tripElement = document.querySelector(`[data-trip-id="${tripId}"]`);
+        if (tripElement) {
+          tripElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+    };
+
+    window.addEventListener('navigate-to-trip', handleNavigateToTrip);
+    return () => window.removeEventListener('navigate-to-trip', handleNavigateToTrip);
+  }, []);
+
   const loadAnalytics = async () => {
     try {
       setLoading(true);
