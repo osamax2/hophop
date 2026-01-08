@@ -705,7 +705,8 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={handleSaveEdit}
-                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 font-medium"
+                style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}
               >
                 {t.save}
               </button>
