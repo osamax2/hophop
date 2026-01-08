@@ -236,6 +236,7 @@ router.post("/", async (req: AuthedRequest, res) => {
         recipientName,
         bookingId: newBooking.id,
         isGuestBooking,
+        statusUrl: statusLink,
         tripDetails: {
           from: tripDetails.from_city,
           to: tripDetails.to_city,
