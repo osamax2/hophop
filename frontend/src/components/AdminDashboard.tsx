@@ -678,7 +678,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         loadTripFormData();
       }
     }
-  }, [activeTab, showDeletedUsers]);
+  }, [activeTab, showTrash]);
 
   const loadAnalytics = async () => {
     try {
@@ -3641,10 +3641,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 {language === 'ar' ? 'إضافة مستخدم' : language === 'de' ? 'Benutzer hinzufügen' : 'Add User'}
               </button>
               <button
-                onClick={() => setShowDeletedUsers(!showDeletedUsers)}
+                onClick={() => setShowTrash(!showTrash)}
                 className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
               >
-                {showDeletedUsers 
+                {showTrash 
                   ? (language === 'ar' ? 'إخفاء المحذوفة' : language === 'de' ? 'Gelöschte ausblenden' : 'Hide Deleted')
                   : (language === 'ar' ? 'إظهار المحذوفة' : language === 'de' ? 'Gelöschte anzeigen' : 'Show Deleted')
                 }
