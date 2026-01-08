@@ -1605,23 +1605,45 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   };
 
   const handleImageUpload = async () => {
-    if (!selectedFile || !entityId) {
-      alert('Please select a file and enter entity ID');
+    if (!entityId) {
+      alert('Please enter entity ID');
       return;
     }
 
     try {
       setLoading(true);
       setUploadStatus('idle');
-      await adminApi.uploadImage(selectedFile, photoType, parseInt(entityId));
+      
+      // If editing an existing image
+      if (editingImage) {
+        // Update metadata only (entity_type and entity_id)
+        await adminApi.updateImage(editingImage.id, {
+          entity_type: photoType,
+          entity_id: parseInt(entityId)
+        });
+        
+        // If a new file was selected, upload it as a separate image
+        if (selectedFile) {
+          await adminApi.uploadImage(selectedFile, photoType, parseInt(entityId));
+        }
+      } else {
+        // Create new image - file is required
+        if (!selectedFile) {
+          alert('Please select a file');
+          return;
+        }
+        await adminApi.uploadImage(selectedFile, photoType, parseInt(entityId));
+      }
+      
       setUploadStatus('success');
       setSelectedFile(null);
       setEntityId('');
+      setEditingImage(null);
       
-      // Reload images to show the new upload
+      // Reload images to show the changes
       await loadImages();
       
-      // Close dialog after successful upload
+      // Close dialog after successful operation
       setTimeout(() => {
         setUploadStatus('idle');
         setShowPhotoUploadDialog(false);

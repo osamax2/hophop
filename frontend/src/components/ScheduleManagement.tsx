@@ -831,7 +831,7 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-6 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-black p-6 flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold">{t.manageStops}</h2>
                 <p className="text-purple-200 text-sm mt-1">

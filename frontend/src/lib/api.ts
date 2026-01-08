@@ -428,6 +428,15 @@ export const adminApi = {
     return handleResponse(response);
   },
 
+  updateImage: async (imageId: number, data: { entity_type?: string; entity_id?: number }) => {
+    const response = await fetch(`${API_BASE}/api/admin/images/${imageId}`, {
+      method: "PATCH",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
   getAllImages: async () => {
     const response = await fetch(`${API_BASE}/api/admin/images/all`, {
       headers: getAuthHeaders(),
