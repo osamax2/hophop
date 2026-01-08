@@ -1,4 +1,4 @@
-import { Menu, X, Globe, User, LogOut, Home, Search, Calendar, Star, BarChart3 } from 'lucide-react';
+import { Menu, X, Globe, User, LogOut, Home, Search, Calendar, Star, BarChart3, CreditCard } from 'lucide-react';
 import { useState } from 'react';
 import type { Language, User as UserType } from '../App';
 import logo from 'figma:asset/4dddb73877b28322b7848adc27f0f948198765ae.png';
@@ -23,6 +23,7 @@ const translations = {
     profile: 'Profil',
     login: 'Anmelden',
     admin: 'Admin-Bereich',
+    subscriptions: 'Abonnements',
     logout: 'Abmelden',
   },
   en: {
@@ -35,6 +36,7 @@ const translations = {
     profile: 'Profile',
     login: 'Login',
     admin: 'Admin',
+    subscriptions: 'Subscriptions',
     logout: 'Logout',
   },
   ar: {
@@ -47,6 +49,7 @@ const translations = {
     profile: 'الملف الشخصي',
     login: 'تسجيل الدخول',
     admin: 'لوحة الإدارة',
+    subscriptions: 'الاشتراكات',
     logout: 'تسجيل الخروج',
   },
 };
@@ -70,6 +73,7 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   if (user?.role === 'admin' || user?.role === 'agent') {
     console.log("Adding admin menu item");
     menuItems.push({ id: 'admin', label: t.admin, icon: BarChart3 });
+    menuItems.push({ id: 'subscriptions', label: t.subscriptions, icon: CreditCard });
   } else {
     console.log("NOT adding admin menu item - role is:", user?.role);
   }

@@ -11,6 +11,7 @@ import { Reviews } from './components/Reviews';
 import { ContactForm } from './components/ContactForm';
 import VerifyEmail from './components/VerifyEmail';
 import { BookingStatus } from './components/BookingStatus';
+import SubscriptionPlans from './components/SubscriptionPlans';
 import { favoritesApi } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
@@ -72,6 +73,8 @@ export default function App() {
       setCurrentPage('profile');
     } else if (path === '/admin') {
       setCurrentPage('admin');
+    } else if (path === '/subscriptions') {
+      setCurrentPage('subscriptions');
     } else if (path === '/search') {
       const from = urlParams.get('from') || '';
       const to = urlParams.get('to') || '';
@@ -112,6 +115,9 @@ export default function App() {
         break;
       case 'admin':
         url = '/admin';
+        break;
+      case 'subscriptions':
+        url = '/subscriptions';
         break;
       case 'verify-email':
         if (verifyToken) {
@@ -155,6 +161,8 @@ export default function App() {
         setCurrentPage('profile');
       } else if (path === '/admin') {
         setCurrentPage('admin');
+      } else if (path === '/subscriptions') {
+        setCurrentPage('subscriptions');
       } else if (path === '/search') {
         const from = urlParams.get('from') || '';
         const to = urlParams.get('to') || '';
@@ -384,6 +392,10 @@ export default function App() {
             user={user}
             language={language}
           />
+        )}
+        
+        {currentPage === 'subscriptions' && (
+          <SubscriptionPlans />
         )}
         
         {currentPage === 'login' && (
