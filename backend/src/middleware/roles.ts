@@ -11,7 +11,7 @@ export function requireRole(allowed: string[]) {
       // Get user roles from database (both system roles and branch staff roles)
       const [systemRoles, branchRoles] = await Promise.all([
         pool.query(
-          `SELECT r.name, r.code
+          `SELECT r.name
            FROM user_roles ur
            JOIN roles r ON r.id = ur.role_id
            WHERE ur.user_id = $1`,
@@ -48,13 +48,6 @@ export function requireRole(allowed: string[]) {
         if (mapped) {
           userRoles.push(mapped);
           userRoles.push(mapped.toUpperCase());
-        }
-        
-        // Add code if it exists
-        if (row.code) {
-          userRoles.push(row.code);
-          userRoles.push(row.code.toUpperCase());
-          userRoles.push(row.code.toLowerCase());
         }
       });
       
