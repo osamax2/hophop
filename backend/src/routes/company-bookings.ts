@@ -66,6 +66,8 @@ router.get("/", requireAuth, requireRole(['company_admin', 'driver']), async (re
     `;
 
     const result = await pool.query(query, [companyId]);
+    console.log(`Company bookings for company ${companyId}:`, result.rows.length, 'bookings');
+    console.log('Sample booking:', result.rows[0]);
     res.json({ bookings: result.rows });
   } catch (error: any) {
     console.error("Error fetching company bookings:", error);
