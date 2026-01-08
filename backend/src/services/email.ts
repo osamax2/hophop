@@ -92,6 +92,9 @@ export class EmailService {
       ? this.getGuestBookingEmailTemplate(recipientName, tripDetails, bookingId, statusUrl)
       : this.getConfirmedBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
 
+    console.log(`📧 Sending ${isGuestBooking ? 'GUEST' : 'CONFIRMED'} booking email to ${recipientEmail} (Booking #${bookingId})`);
+    console.log(`   isGuestBooking: ${isGuestBooking}, hasQRCode: ${!!qrCodeDataUrl}`);
+
     try {
       await this.transporter.sendMail({
         from: `"HopHop Transport" <${process.env.SMTP_USER}>`,
@@ -100,7 +103,7 @@ export class EmailService {
         html: message,
       });
 
-      console.log(`✅ Booking email sent to ${recipientEmail}`);
+      console.log(`✅ ${isGuestBooking ? 'Guest' : 'Confirmed'} booking email sent successfully`);
     } catch (error) {
       console.error('❌ Error sending booking email:', error);
       console.error('   Note: This is expected in Docker on macOS. Will work in production.');
