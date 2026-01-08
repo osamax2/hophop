@@ -225,6 +225,11 @@ export const ratingsApi = {
     return handleResponse(response);
   },
 
+  getByCompany: async (companyId: number) => {
+    const response = await fetch(`${API_BASE}/api/ratings?company_id=${companyId}`);
+    return handleResponse(response);
+  },
+
   getCompanyAverage: async (companyId: number) => {
     const response = await fetch(`${API_BASE}/api/ratings/company/${companyId}`);
     return handleResponse(response);
@@ -415,6 +420,13 @@ export const adminApi = {
   deleteImage: async (imageId: number) => {
     const response = await fetch(`${API_BASE}/api/admin/images/${imageId}`, {
       method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getAllImages: async () => {
+    const response = await fetch(`${API_BASE}/api/admin/images/all`, {
       headers: getAuthHeaders(),
     });
     return handleResponse(response);
@@ -615,6 +627,78 @@ export const adminApi = {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
+    return handleResponse(response);
+  },
+};
+
+// Booking APIs
+export const bookingsApi = {
+  createBooking: async (data: {
+    trip_id: number;
+    quantity: number;
+    fare_category_code?: string;
+    booking_option_code?: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/bookings`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  getMyBookings: async () => {
+    const response = await fetch(`${API_BASE}/api/bookings/my`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getBookingById: async (bookingId: number) => {
+    const response = await fetch(`${API_BASE}/api/bookings/${bookingId}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+};
+
+// Company Bookings APIs
+export const companyBookingsApi = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE}/api/company-bookings`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  accept: async (bookingId: number) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/${bookingId}/accept`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  reject: async (bookingId: number, reason?: string) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/${bookingId}/reject`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+    return handleResponse(response);
+  },
+
+  verifyQR: async (qrData: string) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/verify-qr`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ qrData }),
+    });
+    return handleResponse(response);
+  },
+
+  getQRImage: async (bookingId: number) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/qr-image/${bookingId}`);
     return handleResponse(response);
   },
 };

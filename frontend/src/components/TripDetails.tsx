@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, AlertCircle, Loader2, Star } from 'lucide-react';
 import type { Language } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
-import { tripsApi, imagesApi } from '../lib/api';
+import { RouteMap } from './RouteMap';
+import { BookingModal } from './BookingModal';
+import { tripsApi, imagesApi, ratingsApi } from '../lib/api';
 import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 
 interface TripDetailsProps {
@@ -39,6 +41,9 @@ const translations = {
     loginToFavorite: 'Melden Sie sich an, um Favoriten zu speichern',
     noBusPhotos: 'Keine Bus-Fotos verfügbar',
     noStationPhotos: 'Keine Haltestellen-Fotos verfügbar',
+    companyReviews: 'Bewertungen der Gesellschaft',
+    averageRating: 'Durchschnittsbewertung',
+    noReviewsYet: 'Noch keine Bewertungen',
   },
   en: {
     tripDetails: 'Trip Details',
@@ -65,6 +70,9 @@ const translations = {
     loginToFavorite: 'Sign in to save favorites',
     noBusPhotos: 'No bus photos available',
     noStationPhotos: 'No station photos available',
+    companyReviews: 'Company Reviews',
+    averageRating: 'Average Rating',
+    noReviewsYet: 'No reviews yet',
   },
   ar: {
     tripDetails: 'تفاصيل الرحلة',
@@ -91,16 +99,22 @@ const translations = {
     loginToFavorite: 'سجل الدخول لحفظ المفضلة',
     noBusPhotos: 'لا توجد صور للباص',
     noStationPhotos: 'لا توجد صور للمحطات',
+    companyReviews: 'تقييمات الشركة',
+    averageRating: 'متوسط التقييم',
+    noReviewsYet: 'لا توجد تقييمات بعد',
   },
 };
 
 export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, isLoggedIn }: TripDetailsProps) {
   const t = translations[language];
   const [trip, setTrip] = useState<any>(null);
+  const [tripImages, setTripImages] = useState<any[]>([]);
   const [busImages, setBusImages] = useState<any[]>([]);
   const [stationImages, setStationImages] = useState<any[]>([]);
+  const [companyReviews, setCompanyReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showBookingModal, setShowBookingModal] = useState(false);
 
   useEffect(() => {
     const fetchTrip = async () => {
@@ -118,6 +132,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
           arrivalTime: formatTime(data.arrival_time, language),
           duration: formatDuration(data.duration_minutes, language),
           price: data.price || 0,
+          currency: data.currency || 'SYP',
           company: data.company_name || 'Unknown',
           companyId: data.company_id,
           seatsAvailable: data.seats_available,
@@ -132,14 +147,19 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
         
         setTrip(formattedTrip);
 
-        // Fetch images for this trip
+        // Fetch images and reviews for this trip
         try {
-          const [busImgs, stationImgs] = await Promise.all([
+          const [tripImgs, busImgs, stationImgs, reviews] = await Promise.all([
+            imagesApi.getByEntity('trip', data.id || 0),
             imagesApi.getByEntity('bus', data.company_id || 0),
             imagesApi.getByEntity('station', data.departure_station_id || 0),
+            ratingsApi.getByCompany(data.company_id || 0).catch(() => []),
           ]);
+          console.log('Company reviews fetched:', reviews.length, 'reviews for company_id:', data.company_id);
+          setTripImages(tripImgs);
           setBusImages(busImgs);
           setStationImages(stationImgs);
+          setCompanyReviews(reviews);
         } catch (imgErr) {
           console.error('Error fetching images:', imgErr);
           // Images are optional, so we continue
@@ -192,23 +212,23 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Route Map Placeholder */}
+            {/* Route Map */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
               <div className="p-6 border-b border-gray-200">
                 <h2 className="text-xl text-gray-900">{t.route}</h2>
               </div>
-              <div className="relative h-64 bg-gradient-to-br from-green-50 to-blue-50">
-                <ImageWithFallback
-                  src="https://images.unsplash.com/photo-1737275853879-731f24015ec2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxzeXJpYSUyMGRhbWFzY3VzJTIwY2l0eXxlbnwxfHx8fDE3NjQ4NjgzMzN8MA&ixlib=rb-4.1.0&q=80&w=1080"
-                  alt="Route Map"
-                  className="w-full h-full object-cover opacity-40"
+              <div className="relative h-96">
+                <RouteMap
+                  fromCity={trip.from}
+                  toCity={trip.to}
+                  stops={trip.stops}
+                  departureStation={{
+                    name: trip.departure_station_name || trip.from,
+                  }}
+                  arrivalStation={{
+                    name: trip.arrival_station_name || trip.to,
+                  }}
                 />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="bg-white bg-opacity-90 px-6 py-3 rounded-lg">
-                    <MapPin className="w-8 h-8 text-green-600 mx-auto mb-2" />
-                    <p className="text-sm text-gray-700">Kartenansicht</p>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -291,15 +311,26 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
               </h2>
               
               <div className="space-y-6">
-                {/* Bus Photos */}
+                {/* Bus Photos (including trip images) */}
                 <div>
                   <h3 className="text-sm text-gray-700 mb-3">{t.busPhotos}</h3>
-                  {busImages.length === 0 ? (
+                  {tripImages.length === 0 && busImages.length === 0 ? (
                     <p className="text-sm text-gray-500">{t.noBusPhotos}</p>
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                      {/* Show trip images first */}
+                      {tripImages.map((img: any) => (
+                        <div key={`trip-${img.id}`} className="aspect-video rounded-lg overflow-hidden">
+                          <ImageWithFallback
+                            src={img.image_url}
+                            alt={img.file_name || 'Trip photo'}
+                            className="w-full h-full object-cover hover:scale-105 transition-transform"
+                          />
+                        </div>
+                      ))}
+                      {/* Then bus images */}
                       {busImages.map((img: any) => (
-                        <div key={img.id} className="aspect-video rounded-lg overflow-hidden">
+                        <div key={`bus-${img.id}`} className="aspect-video rounded-lg overflow-hidden">
                           <ImageWithFallback
                             src={img.image_url}
                             alt={img.file_name || 'Bus photo'}
@@ -378,8 +409,22 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
 
               {/* Actions */}
               <div className="space-y-3">
-                <button className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors">
-                  {t.bookNow}
+                <button 
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (!trip) return;
+                    if (trip.seatsAvailable === 0) {
+                      alert('Sold Out / Ausverkauft / نفذت الكمية');
+                      return;
+                    }
+                    setShowBookingModal(true);
+                  }}
+                  disabled={trip.seatsAvailable === 0}
+                  className="w-full bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {trip.seatsAvailable === 0 ? 'Ausverkauft / Sold Out / نفذت الكمية' : t.bookNow}
                 </button>
                 
                 {isLoggedIn ? (
@@ -441,6 +486,118 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
               </div>
             </div>
           </div>
+
+          {/* Company Reviews Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.companyReviews}</h2>
+            {companyReviews.length > 0 ? (
+              <div className="space-y-6">
+                {/* Average Rating */}
+                <div className="flex items-center gap-4 pb-6 border-b border-gray-200">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-gray-900">
+                      {(companyReviews.reduce((acc, r) => acc + ((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3), 0) / companyReviews.length).toFixed(1)}
+                    </div>
+                    <div className="flex items-center justify-center gap-1 mt-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-5 h-5 ${
+                            star <= Math.round(companyReviews.reduce((acc, r) => acc + ((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3), 0) / companyReviews.length)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      {companyReviews.length} {language === 'de' ? 'Bewertungen' : language === 'en' ? 'reviews' : 'تقييمات'}
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-24">{language === 'de' ? 'Pünktlichkeit' : language === 'en' ? 'Punctuality' : 'الالتزام بالمواعيد'}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-600 rounded-full"
+                          style={{ width: `${(companyReviews.reduce((acc, r) => acc + r.punctuality_rating, 0) / companyReviews.length / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 w-8">
+                        {(companyReviews.reduce((acc, r) => acc + r.punctuality_rating, 0) / companyReviews.length).toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-24">{language === 'de' ? 'Freundlichkeit' : language === 'en' ? 'Friendliness' : 'اللطف'}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-600 rounded-full"
+                          style={{ width: `${(companyReviews.reduce((acc, r) => acc + r.friendliness_rating, 0) / companyReviews.length / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 w-8">
+                        {(companyReviews.reduce((acc, r) => acc + r.friendliness_rating, 0) / companyReviews.length).toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-24">{language === 'de' ? 'Sauberkeit' : language === 'en' ? 'Cleanliness' : 'النظافة'}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-600 rounded-full"
+                          style={{ width: `${(companyReviews.reduce((acc, r) => acc + r.cleanliness_rating, 0) / companyReviews.length / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 w-8">
+                        {(companyReviews.reduce((acc, r) => acc + r.cleanliness_rating, 0) / companyReviews.length).toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reviews List */}
+                <div className="space-y-4">
+                  {companyReviews.slice(0, 5).map((review, index) => (
+                    <div key={index} className="border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-green-700 font-medium text-sm">
+                            {review.user_name ? review.user_name.charAt(0).toUpperCase() : 'U'}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">{review.user_name || 'Anonymous'}</span>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 ${
+                                    star <= Math.round((review.punctuality_rating + review.friendliness_rating + review.cleanliness_rating) / 3)
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-gray-700 text-sm">{review.comment}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(review.created_at).toLocaleDateString(language === 'de' ? 'de-DE' : language === 'en' ? 'en-US' : 'ar-SA')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                {t.noReviewsYet}
+              </div>
+            )}
+          </div>
         </div>
       ) : (
         // Unavailable Trip
@@ -454,6 +611,17 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
             {t.alternativeTrips}
           </button>
         </div>
+      )}
+
+      {/* Booking Modal */}
+      {trip && (
+        <BookingModal
+          isOpen={showBookingModal}
+          onClose={() => setShowBookingModal(false)}
+          trip={trip}
+          language={language}
+          isLoggedIn={isLoggedIn}
+        />
       )}
     </div>
   );

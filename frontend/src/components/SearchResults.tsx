@@ -115,6 +115,7 @@ type Trip = {
   amenities: string[];
   stops: number;
   seatsAvailable: number;
+  image_url?: string | null;
 };
 
 export function SearchResults({
@@ -332,6 +333,20 @@ export function SearchResults({
             className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
           >
             <div className="flex flex-col md:flex-row md:items-center gap-6">
+              {/* Trip Image */}
+              {trip.image_url && (
+                <div className="md:w-32 md:h-32 w-full h-48 flex-shrink-0">
+                  <img
+                    src={trip.image_url}
+                    alt={`${trip.company} bus`}
+                    className="w-full h-full object-cover rounded-lg"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+              
               {/* Time Info */}
               <div className="flex items-center gap-6 flex-1">
                 <div className="text-center">

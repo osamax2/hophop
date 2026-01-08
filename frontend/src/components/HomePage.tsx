@@ -424,14 +424,14 @@ export function HomePage({ onSearch, language, onContactClick, searchParams }: H
             <p className="text-gray-600 text-sm leading-relaxed">{t.featureRatingText}</p>
           </div>
 
-          {/* Secure Booking - Temporarily hidden */}
-          {/* <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all border border-gray-100">
+          {/* Secure Booking */}
+          <div className="bg-white rounded-2xl p-6 shadow-md hover:shadow-xl transition-all border border-gray-100">
             <div className="w-14 h-14 bg-emerald-600 rounded-2xl flex items-center justify-center mb-4">
               <ShieldCheck className="w-7 h-7 text-white" />
             </div>
             <h3 className="text-gray-900 text-lg mb-2">{t.featureBooking}</h3>
             <p className="text-gray-600 text-sm leading-relaxed">{t.featureBookingText}</p>
-          </div> */}
+          </div>
         </div>
       </div>
 

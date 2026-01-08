@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check, Scan, ListChecks } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
@@ -8,6 +8,8 @@ import { CompanyManagement } from './CompanyManagement';
 import RatingManagement from './RatingManagement';
 import BookingManagement from './BookingManagement';
 import InvoiceManagement from './InvoiceManagement';
+import CompanyBookings from './CompanyBookings';
+import QRScanner from './QRScanner';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -414,10 +416,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // Determine user access level
   const isAdmin = user?.role === 'admin';
   const isAgentManager = user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id;
+  const isDriver = user?.role === 'agent' && (user?.agent_type === 'driver' || user?.agent_type === 'driver_assistant');
   
   // Default tab based on role
-  const defaultTab = isAdmin ? 'analytics' : 'schedules';
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics'>(defaultTab);
+  const defaultTab = isAdmin ? 'analytics' : isDriver ? 'qr-scanner' : isAgentManager ? 'company-bookings' : 'schedules';
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics' | 'company-bookings' | 'qr-scanner'>(defaultTab);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -487,14 +490,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     driver_name: '',
     equipment: '',
     cancellation_policy: '',
-    image_id: '',
     extra_info: '',
   });
   
-  // Image preview state
-  const [imagePreview, setImagePreview] = useState<{ url: string; name: string } | null>(null);
-  const [imagePreviewError, setImagePreviewError] = useState<string>('');
-  const [loadingImagePreview, setLoadingImagePreview] = useState(false);
+  // Trip photo state
+  const [tripImageId, setTripImageId] = useState<number | null>(null);
+  const [busImages, setBusImages] = useState<any[]>([]);
+  const [uploadingBusPhoto, setUploadingBusPhoto] = useState(false);
   
   // Image upload
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -603,6 +605,17 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   }, [newTrip.departure_time, newTrip.arrival_time]);
 
+  const loadBusImages = async () => {
+    try {
+      const allImages = await adminApi.getAllImages();
+      // Filter for bus and trip images
+      const busImgs = allImages.filter((img: any) => img.entity_type === 'bus' || img.entity_type === 'trip');
+      setBusImages(busImgs);
+    } catch (err) {
+      console.error('Error loading bus images:', err);
+    }
+  };
+
   const loadTripFormData = async () => {
     try {
       const [companiesData, transportTypesData, stationsData, citiesData] = await Promise.all([
@@ -617,6 +630,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setTransportTypes(transportTypesData);
       setStations(stationsData);
       setCities(Array.isArray(citiesData) ? citiesData : []);
+      // Load bus images for trip photo selection
+      await loadBusImages();
     } catch (err) {
       console.error('Error loading trip form data:', err);
       alert('فشل تحميل البيانات. تأكد من أن الخادم يعمل.');
@@ -1742,18 +1757,20 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         equipment: trip.equipment || '',
         cancellation_policy: trip.cancellation_policy || '',
         extra_info: trip.extra_info || '',
-        image_id: trip.image_id ? String(trip.image_id) : '',
       });
       
-      // Load image preview if image_id exists
-      if (trip.image_id && trip.image_url) {
-        const API_BASE = import.meta.env.VITE_API_BASE || "";
-        const imageUrl = trip.image_url.startsWith('http') 
-          ? trip.image_url 
-          : `${API_BASE}${trip.image_url}`;
-        setImagePreview({ url: imageUrl, name: 'Trip Image' });
-      } else {
-        setImagePreview(null);
+      // Load trip image if it exists
+      try {
+        const allImages = await adminApi.getAllImages();
+        const tripImage = allImages.find((img: any) => img.entity_type === 'trip' && img.entity_id === tripId);
+        if (tripImage) {
+          setTripImageId(tripImage.id);
+        } else {
+          setTripImageId(null);
+        }
+      } catch (imgErr) {
+        console.log('Could not load trip image:', imgErr);
+        setTripImageId(null);
       }
       
       console.log('Setting editingTripId and opening dialog...');
@@ -1895,9 +1912,6 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         equipment: newTrip.equipment || null,
         cancellation_policy: newTrip.cancellation_policy || null,
         extra_info: newTrip.extra_info || null,
-        image_id: newTrip.image_id && !isNaN(Number(newTrip.image_id)) && Number(newTrip.image_id) > 0 
-          ? Number(newTrip.image_id) 
-          : null,
       };
 
       console.log('handleSaveTrip - tripData prepared:', tripData);
@@ -1908,6 +1922,26 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         console.log('handleSaveTrip - Calling adminApi.updateTrip with ID:', editingTripId);
         const updatedTrip = await adminApi.updateTrip(editingTripId, tripData);
         console.log('handleSaveTrip - updateTrip response:', updatedTrip);
+        
+        // Update trip image if selected
+        if (tripImageId) {
+          try {
+            // Update the image entity_id to link it to this trip
+            await fetch(`/api/admin/images/${tripImageId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              },
+              body: JSON.stringify({
+                entity_type: 'trip',
+                entity_id: editingTripId,
+              }),
+            });
+          } catch (imgErr) {
+            console.error('Error updating trip image:', imgErr);
+          }
+        }
         
         // The backend returns the complete trip with JOIN data (from_city, to_city, company_name)
         // Replace the entire trip object to ensure all fields are updated
@@ -1924,6 +1958,25 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       } else {
         // Create new trip
         const newCreatedTrip = await adminApi.createTrip(tripData);
+        
+        // Link image to newly created trip
+        if (tripImageId && newCreatedTrip.id) {
+          try {
+            await fetch(`/api/admin/images/${tripImageId}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}`,
+              },
+              body: JSON.stringify({
+                entity_type: 'trip',
+                entity_id: newCreatedTrip.id,
+              }),
+            });
+          } catch (imgErr) {
+            console.error('Error linking trip image:', imgErr);
+          }
+        }
         
         // Add stops if any were defined
         if (newTripStops.length > 0 && newCreatedTrip.id) {
@@ -1970,6 +2023,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setShowAddTripDialog(false);
       setEditingTripId(null);
       setNewTripStops([]);
+      setTripImageId(null);
       setNewTrip({
         from_city: '',
         to_city: '',
@@ -1989,10 +2043,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         equipment: '',
         cancellation_policy: '',
         extra_info: '',
-        image_id: '',
       });
-      setImagePreview(null);
-      setImagePreviewError('');
     } catch (err: any) {
       console.error('Error saving trip:', err);
       
@@ -2020,6 +2071,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
   const handleAddTrip = () => {
     setEditingTripId(null);
+    setTripImageId(null);
     // For Agent Managers, automatically set their company_id
     const agentManagerCompanyId = (user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id) 
       ? String(user.company_id) 
@@ -2041,10 +2093,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       equipment: '',
       cancellation_policy: '',
       extra_info: '',
-      image_id: '',
     });
-    setImagePreview(null);
-    setImagePreviewError('');
     setNewTripStops([]);
     setShowAddTripDialog(true);
   };
@@ -2211,11 +2260,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   }
 
   // canAccessDashboard uses the isAdmin and isAgentManager defined at the top
-  const canAccessDashboard = isAdmin || isAgentManager;
+  const canAccessDashboard = isAdmin || isAgentManager || isDriver;
 
   const tabs = [
     // Analytics - Admin only
     ...(isAdmin ? [{ id: 'analytics' as const, label: t.analytics, icon: BarChart3 }] : []),
+    // Company Bookings - Agent Manager only
+    ...(isAgentManager ? [{ id: 'company-bookings' as const, label: language === 'de' ? 'Firmenbuchungen' : language === 'ar' ? 'حجوزات الشركة' : 'Company Bookings', icon: ListChecks }] : []),
+    // QR Scanner - Driver or Driver Assistant only
+    ...(isDriver ? [{ id: 'qr-scanner' as const, label: language === 'de' ? 'QR-Scanner' : language === 'ar' ? 'ماسح QR' : 'QR Scanner', icon: Scan }] : []),
     { id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar },
     // Users management tab - Admin or Agent Manager
     ...((isAdmin || isAgentManager) ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
@@ -3119,128 +3172,111 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     />
                   </div>
 
-                  {/* Image ID with Preview */}
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {language === 'ar' ? 'معرّف الصورة (Image ID)' : language === 'de' ? 'Bild-ID' : 'Image ID'}
+                  {/* Bus Photo Section */}
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700">
+                      {language === 'ar' ? 'صورة الباص' : language === 'de' ? 'Busfoto' : 'Bus Photo'}
                     </label>
-                    <div className="space-y-2">
-                      <input
-                        type="number"
-                        value={newTrip.image_id}
-                        onChange={async (e) => {
-                          const imageId = e.target.value;
-                          setNewTrip({ ...newTrip, image_id: imageId });
-                          setImagePreview(null);
-                          setImagePreviewError('');
-                          
-                          if (imageId && !isNaN(Number(imageId)) && Number(imageId) > 0) {
-                            setLoadingImagePreview(true);
-                            try {
-                              const API_BASE = import.meta.env.VITE_API_BASE || "";
-                              const response = await fetch(`${API_BASE}/api/images/${imageId}`);
+                    
+                    {/* Photo Selector */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Dropdown to select existing photo */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          {language === 'ar' ? 'اختر صورة موجودة' : language === 'de' ? 'Vorhandenes Foto wählen' : 'Select Existing Photo'}
+                        </label>
+                        <select
+                          value={tripImageId || ''}
+                          onChange={(e) => setTripImageId(e.target.value ? Number(e.target.value) : null)}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        >
+                          <option value="">
+                            {language === 'ar' ? 'لا توجد صورة' : language === 'de' ? 'Kein Foto' : 'No photo'}
+                          </option>
+                          {busImages.map((img: any) => (
+                            <option key={img.id} value={img.id}>
+                              {img.file_name || `Image ${img.id}`} ({img.entity_type})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      
+                      {/* Upload new photo */}
+                      <div>
+                        <label className="block text-xs font-medium text-gray-600 mb-1">
+                          {language === 'ar' ? 'أو ارفع صورة جديدة' : language === 'de' ? 'Oder neues Foto hochladen' : 'Or Upload New Photo'}
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              if (!file) return;
                               
-                              if (response.ok) {
-                                const imageData = await response.json();
-                                // Construct full image URL
-                                const imageUrl = imageData.url.startsWith('http') 
-                                  ? imageData.url 
-                                  : `${API_BASE}${imageData.url}`;
-                                setImagePreview({ url: imageUrl, name: imageData.name || 'Image' });
-                                setImagePreviewError('');
-                              } else {
-                                // Try to get error message from response
-                                let errorMessage = 'Unknown error';
-                                try {
-                                  const errorData = await response.json();
-                                  errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
-                                } catch (e) {
-                                  errorMessage = `HTTP ${response.status}`;
-                                }
+                              try {
+                                setUploadingBusPhoto(true);
+                                const formData = new FormData();
+                                formData.append('image', file);
+                                formData.append('entity_type', 'bus');
+                                formData.append('entity_id', '0'); // Temporary ID, will be updated when trip is created
                                 
-                                console.error('Image fetch error:', response.status, errorMessage);
+                                const response = await fetch('/api/admin/images', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                                  },
+                                  body: formData,
+                                });
                                 
-                                // Show appropriate message based on status code
-                                if (response.status === 404) {
-                                  setImagePreviewError(
-                                    language === 'ar' 
-                                      ? 'الصورة غير موجودة' 
-                                      : language === 'de' 
-                                      ? 'Bild nicht gefunden' 
-                                      : 'Image not found'
-                                  );
-                                } else if (response.status === 400) {
-                                  setImagePreviewError(
-                                    language === 'ar' 
-                                      ? 'معرّف الصورة غير صحيح' 
-                                      : language === 'de' 
-                                      ? 'Ungültige Bild-ID' 
-                                      : 'Invalid image ID'
-                                  );
-                                } else {
-                                  setImagePreviewError(
-                                    language === 'ar' 
-                                      ? `خطأ في الخادم: ${errorMessage}` 
-                                      : language === 'de' 
-                                      ? `Serverfehler: ${errorMessage}` 
-                                      : `Server error: ${errorMessage}`
-                                  );
-                                }
+                                if (!response.ok) throw new Error('Upload failed');
+                                
+                                const uploadedImage = await response.json();
+                                setTripImageId(uploadedImage.id);
+                                await loadBusImages(); // Reload images list
+                                
+                                alert(language === 'ar' ? 'تم رفع الصورة بنجاح' : language === 'de' ? 'Foto erfolgreich hochgeladen' : 'Photo uploaded successfully');
+                              } catch (err) {
+                                console.error('Error uploading photo:', err);
+                                alert(language === 'ar' ? 'فشل رفع الصورة' : language === 'de' ? 'Fehler beim Hochladen' : 'Upload failed');
+                              } finally {
+                                setUploadingBusPhoto(false);
+                                e.target.value = ''; // Reset file input
                               }
-                            } catch (error: any) {
-                              console.error('Error fetching image:', error);
-                              // Network error or other fetch errors
-                              const errorMsg = error.message || 'Network error';
-                              setImagePreviewError(
-                                language === 'ar' 
-                                  ? `خطأ في الاتصال: ${errorMsg}` 
-                                  : language === 'de' 
-                                  ? `Verbindungsfehler: ${errorMsg}` 
-                                  : `Connection error: ${errorMsg}`
-                              );
-                            } finally {
-                              setLoadingImagePreview(false);
-                            }
-                          }
-                        }}
-                        placeholder={language === 'ar' ? 'أدخل رقم الصورة' : language === 'de' ? 'Bildnummer eingeben' : 'Enter image ID'}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                      />
-                      
-                      {loadingImagePreview && (
-                        <div className="text-sm text-gray-500">
-                          {language === 'ar' ? 'جاري التحميل...' : language === 'de' ? 'Wird geladen...' : 'Loading...'}
-                        </div>
-                      )}
-                      
-                      {imagePreviewError && (
-                        <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                          {imagePreviewError}
-                        </div>
-                      )}
-                      
-                      {imagePreview && (
-                        <div className="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                          <p className="text-sm font-medium text-gray-700 mb-2">{t.preview || 'Preview'}</p>
-                          <img
-                            src={imagePreview.url}
-                            alt={imagePreview.name}
-                            className="max-w-full h-auto max-h-64 rounded-lg object-contain"
-                            onError={() => {
-                              setImagePreviewError(
-                                language === 'ar' 
-                                  ? 'فشل تحميل الصورة' 
-                                  : language === 'de' 
-                                  ? 'Bild konnte nicht geladen werden' 
-                                  : 'Failed to load image'
-                              );
-                              setImagePreview(null);
                             }}
+                            className="flex-1 text-sm"
+                            disabled={uploadingBusPhoto}
                           />
-                          <p className="text-xs text-gray-500 mt-1">{imagePreview.name}</p>
+                          {uploadingBusPhoto && (
+                            <Loader2 className="w-5 h-5 animate-spin text-green-600" />
+                          )}
                         </div>
-                      )}
+                      </div>
                     </div>
+                    
+                    {/* Photo Preview */}
+                    {tripImageId && (
+                      <div className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p className="text-sm font-medium text-gray-700 mb-2">
+                          {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'}
+                        </p>
+                        <img
+                          src={busImages.find(img => img.id === tripImageId)?.image_url || `https://via.placeholder.com/400x300?text=Image+${tripImageId}`}
+                          alt="Bus preview"
+                          className="max-w-full h-auto max-h-48 rounded-lg object-contain"
+                          onError={(e) => {
+                            e.currentTarget.src = 'https://via.placeholder.com/400x300?text=Image+Not+Found';
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setTripImageId(null)}
+                          className="mt-2 text-sm text-red-600 hover:text-red-800"
+                        >
+                          {language === 'ar' ? 'إزالة الصورة' : language === 'de' ? 'Foto entfernen' : 'Remove Photo'}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   {/* Stops Section - Only for new trips */}
@@ -3779,6 +3815,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Invoices Tab */}
       {activeTab === 'invoices' && (isAdmin || isAgentManager) && (
         <InvoiceManagement language={language} companyId={isAgentManager ? user?.company_id : undefined} />
+      )}
+
+      {/* Company Bookings Tab */}
+      {activeTab === 'company-bookings' && isAgentManager && (
+        <CompanyBookings />
+      )}
+
+      {/* QR Scanner Tab */}
+      {activeTab === 'qr-scanner' && isDriver && (
+        <QRScanner />
       )}
 
       {activeTab === 'photos' && (

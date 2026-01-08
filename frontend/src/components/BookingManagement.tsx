@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { X, Search, Filter, Trash2, RotateCcw, AlertCircle, Loader2 } from 'lucide-react';
 
 interface Booking {
@@ -193,6 +194,18 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
   const [editStatus, setEditStatus] = useState('');
   const [editSeats, setEditSeats] = useState(0);
   const [editPrice, setEditPrice] = useState(0);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (editingBooking) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [editingBooking]);
 
   useEffect(() => {
     fetchCompanies();
@@ -611,9 +624,17 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
       )}
 
       {/* Edit Modal */}
-      {editingBooking && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      {editingBooking && ReactDOM.createPortal(
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[99999]" 
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setEditingBooking(null);
+            }
+          }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-bold">{t.editBooking}</h3>
               <button
@@ -687,7 +708,8 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

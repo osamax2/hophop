@@ -2083,3 +2083,37 @@ html {
   inherits: false;
   initial-value: 1;
 }
+
+/* Leaflet map styles */
+.leaflet-container {
+  font-family: inherit;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 8px;
+}
+
+.leaflet-popup-content {
+  margin: 8px 12px;
+  font-size: 14px;
+}
+
+/* Modal root styles - ensure modals appear on top of everything */
+#modal-root {
+  position: relative;
+  z-index: 999999;
+}
+
+/* Ensure body doesn't create stacking context issues */
+body {
+  position: relative;
+  transform: none !important;
+  perspective: none !important;
+  filter: none !important;
+}
+
+/* Force modals to be on top */
+#modal-root > div {
+  position: fixed !important;
+  z-index: 999999 !important;
+}

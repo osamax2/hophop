@@ -4,6 +4,8 @@ import { pool } from "./db";
 import authRoutes from "./routes/auth";
 import { requireAuth, AuthedRequest } from "./middleware/auth";
 import bookingsRoutes from "./routes/bookings";
+import bookingStatusRoutes from "./routes/booking-status";
+import companyBookingsRoutes from "./routes/company-bookings";
 import favoritesRoutes from "./routes/favorites";
 import ratingsRoutes from "./routes/ratings";
 import imagesRoutes from "./routes/images";
@@ -28,6 +30,8 @@ app.use("/uploads", express.static("uploads"));
 // ✅ Auth Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/bookings", bookingsRoutes);
+app.use("/api/booking-status", bookingStatusRoutes);
+app.use("/api/company-bookings", companyBookingsRoutes);
 app.use("/api/favorites", favoritesRoutes);
 app.use("/api/ratings", ratingsRoutes);
 app.use("/api/images", imagesRoutes);

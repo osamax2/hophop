@@ -164,4 +164,53 @@ router.delete("/:id", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+// PATCH /api/admin/images/:id - Update image metadata (entity_type, entity_id)
+router.patch("/:id", requireAuth, async (req: AuthedRequest, res) => {
+  try {
+    const imageId = parseInt(req.params.id);
+    if (isNaN(imageId)) {
+      return res.status(400).json({ message: "Invalid image ID" });
+    }
+
+    const { entity_type, entity_id } = req.body;
+
+    // Validate entity_type if provided
+    if (entity_type && !["bus", "station", "trip"].includes(entity_type)) {
+      return res.status(400).json({ message: "Invalid entity_type. Must be 'bus', 'station', or 'trip'" });
+    }
+
+    const updates: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    if (entity_type !== undefined) {
+      updates.push(`entity_type = $${idx++}`);
+      values.push(entity_type);
+    }
+
+    if (entity_id !== undefined) {
+      updates.push(`entity_id = $${idx++}`);
+      values.push(entity_id);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    values.push(imageId);
+    const query = `UPDATE images SET ${updates.join(", ")} WHERE id = $${idx} RETURNING *`;
+    
+    const result = await pool.query(query, values);
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: "Image not found" });
+    }
+
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error("Error updating image:", error);
+    res.status(500).json({ message: "Error updating image", error: String(error) });
+  }
+});
+
 export default router;

@@ -51,15 +51,14 @@ router.get("/", async (req, res) => {
     const columnsCheck = await pool.query(`
       SELECT column_name 
       FROM information_schema.columns 
-      WHERE table_name='trips' AND column_name IN ('deleted_at', 'is_active', 'image_id')
+      WHERE table_name='trips' AND column_name IN ('deleted_at', 'is_active')
     `);
     
     const existingColumns = columnsCheck.rows.map((row: any) => row.column_name);
     const hasDeletedAt = existingColumns.includes('deleted_at');
     const hasIsActive = existingColumns.includes('is_active');
-    const hasImageId = existingColumns.includes('image_id');
     
-    console.log(`Trips table columns check: deleted_at=${hasDeletedAt}, is_active=${hasIsActive}, image_id=${hasImageId}`);
+    console.log(`Trips table columns check: deleted_at=${hasDeletedAt}, is_active=${hasIsActive}`);
     
     let whereClause = '';
     if (showTrash && hasDeletedAt) {
@@ -84,14 +83,6 @@ router.get("/", async (req, res) => {
     
     console.log(`Fetching trips, showAll: ${showAll}, showTrash: ${showTrash}, isAgentManager: ${isAgentManager}, companyId: ${currentUser?.company_id}, whereClause: ${whereClause}`);
     
-    // Build SELECT statement - conditionally include image_id join
-    let imageJoin = '';
-    let imageSelect = '';
-    if (hasImageId) {
-      imageJoin = 'LEFT JOIN images img ON t.image_id = img.id';
-      imageSelect = 'img.image_url,';
-    }
-    
     const query = `
       SELECT
         t.*,
@@ -100,7 +91,6 @@ router.get("/", async (req, res) => {
         COALESCE(comp.name, 'Unknown') AS company_name,
         tt.label as transport_type_name,
         tt.code as transport_type_code,
-        ${imageSelect}
         COALESCE((
           SELECT price FROM trip_fares tf 
           WHERE tf.trip_id = t.id 
@@ -112,7 +102,6 @@ router.get("/", async (req, res) => {
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
       LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
-      ${imageJoin}
       ${whereClause}
       ORDER BY t.id DESC
       LIMIT 200
@@ -262,11 +251,6 @@ router.post("/", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // Extract image_id from request body
-    const image_id = req.body.image_id !== undefined && req.body.image_id !== '' && req.body.image_id !== null 
-      ? Number(req.body.image_id) 
-      : null;
-
     // Insert trip
     const tripResult = await client.query(
       `
@@ -277,7 +261,7 @@ router.post("/", async (req, res) => {
         seats_total, seats_available,
         status, is_active,
         bus_number, driver_name,
-        equipment, cancellation_policy, extra_info, image_id
+        equipment, cancellation_policy, extra_info
       )
       VALUES (
         $1,$2,$3,
@@ -286,7 +270,7 @@ router.post("/", async (req, res) => {
         $9,$10,
         $11,$12,
         $13,$14,
-        $15,$16,$17,$18
+        $15,$16,$17
       )
       RETURNING *
       `,
@@ -297,7 +281,7 @@ router.post("/", async (req, res) => {
         seats_total, seats_total, // seats_available = seats_total initially
         status, is_active,
         bus_number, driver_name,
-        equipment, cancellation_policy, extra_info, image_id
+        equipment, cancellation_policy, extra_info
       ]
     );
 
@@ -347,14 +331,12 @@ router.post("/", async (req, res) => {
         t.*,
         c1.name as from_city,
         c2.name as to_city,
-        COALESCE(comp.name, 'Unknown') AS company_name,
-        img.image_url
+        COALESCE(comp.name, 'Unknown') AS company_name
       FROM trips t
       JOIN routes r ON r.id = t.route_id
       JOIN cities c1 ON c1.id = r.from_city_id
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
-      LEFT JOIN images img ON t.image_id = img.id
       WHERE t.id = $1
       `,
       [trip.id]
@@ -373,7 +355,7 @@ router.post("/", async (req, res) => {
 // PATCH /api/admin/trips/:id
 router.patch("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  const { price, currency, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id, image_id } = req.body;
+  const { price, currency, route_id, company_id, transport_type_id, departure_station_id, arrival_station_id } = req.body;
 
   console.log(`PATCH /api/admin/trips/${id} - Request body:`, req.body);
 
@@ -417,14 +399,6 @@ router.patch("/:id", async (req, res) => {
   if (arrival_station_id !== undefined && arrival_station_id !== null && arrival_station_id !== '') {
     updates.push(`arrival_station_id = $${idx++}`);
     values.push(Number(arrival_station_id));
-  }
-  if (image_id !== undefined) {
-    if (image_id === null || image_id === '') {
-      updates.push(`image_id = NULL`);
-    } else {
-      updates.push(`image_id = $${idx++}`);
-      values.push(Number(image_id));
-    }
   }
 
   for (const key of allowed) {
@@ -504,13 +478,19 @@ router.patch("/:id", async (req, res) => {
         c1.name as from_city,
         c2.name as to_city,
         COALESCE(comp.name, 'Unknown') AS company_name,
-        img.image_url
+        tt.label as transport_type_name,
+        tt.code as transport_type_code,
+        COALESCE((
+          SELECT price FROM trip_fares tf 
+          WHERE tf.trip_id = t.id 
+          LIMIT 1
+        ), 0) as price
       FROM trips t
       JOIN routes r ON r.id = t.route_id
       JOIN cities c1 ON c1.id = r.from_city_id
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
-      LEFT JOIN images img ON t.image_id = img.id
+      LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
       WHERE t.id = $1
       `,
       [id]
@@ -766,7 +746,6 @@ router.post("/:id/restore", async (req, res) => {
         COALESCE(comp.name, 'Unknown') AS company_name,
         tt.name as transport_type_name,
         tt.code as transport_type_code,
-        img.image_url,
         COALESCE((
           SELECT price FROM trip_fares tf 
           WHERE tf.trip_id = t.id 
@@ -778,7 +757,6 @@ router.post("/:id/restore", async (req, res) => {
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
       LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
-      LEFT JOIN images img ON t.image_id = img.id
       WHERE t.id = $1
       `,
       [id]
