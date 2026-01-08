@@ -14,6 +14,10 @@ interface Booking {
   deleted_at: string | null;
   user_name: string;
   user_email: string;
+  user_phone?: string;
+  guest_name?: string;
+  guest_email?: string;
+  guest_phone?: string;
   departure_time: string;
   arrival_time: string;
   company_id: number;
@@ -550,11 +554,16 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">
-                        {booking.user_name}
+                        {booking.user_name || booking.guest_name || '-'}
                       </div>
                       <div className="text-sm text-gray-500">
-                        {booking.user_email}
+                        {booking.user_email || booking.guest_email || '-'}
                       </div>
+                      {(booking.user_phone || booking.guest_phone) && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          📞 {booking.user_phone || booking.guest_phone}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {booking.from_city} → {booking.to_city}
