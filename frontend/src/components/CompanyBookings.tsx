@@ -28,6 +28,7 @@ interface Booking {
   from_city: string;
   to_city: string;
   departure_time: string;
+  company_name?: string;
   trip_id: number;
 }
 
@@ -271,6 +272,16 @@ export default function CompanyBookings() {
                       <p className="text-gray-500">→ {booking.to_city}</p>
                     </div>
                   </div>
+                  
+                  {booking.company_name && (
+                    <div className="flex items-start gap-2">
+                      <div className="w-4 h-4 mt-0.5">🚌</div>
+                      <div>
+                        <p className="font-semibold text-gray-900">Unternehmen</p>
+                        <p className="text-gray-600">{booking.company_name}</p>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex items-start gap-2">
                     <Calendar className="w-4 h-4 text-blue-600 mt-0.5" />

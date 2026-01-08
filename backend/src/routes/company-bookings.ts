@@ -13,60 +13,112 @@ const router = Router();
  * Get all bookings for company's trips
  * Requires: company_admin or driver role
  */
-router.get("/", requireAuth, requireRole(['company_admin', 'driver']), async (req: AuthedRequest, res) => {
+router.get("/", requireAuth, requireRole(['admin', 'company_admin', 'driver']), async (req: AuthedRequest, res) => {
   try {
     const userId = req.user!.id;
 
-    // Get company_id for this user
+    // Get company_id and roles for this user
     const userResult = await pool.query(
-      'SELECT company_id FROM users WHERE id = $1',
+      `SELECT u.company_id, ARRAY_AGG(r.name) as roles
+       FROM users u
+       LEFT JOIN user_roles ur ON u.id = ur.user_id
+       LEFT JOIN roles r ON ur.role_id = r.id
+       WHERE u.id = $1
+       GROUP BY u.id, u.company_id`,
       [userId]
     );
 
-    if (!userResult.rows[0]?.company_id) {
-      return res.status(403).json({ message: "No company associated with this user" });
+    const userData = userResult.rows[0];
+    const isAdmin = userData?.roles?.includes('admin');
+    const companyId = userData?.company_id;
+
+    // Admin can see all bookings, company users only their company's bookings
+    let query: string;
+    let queryParams: any[];
+
+    if (isAdmin) {
+      // Admin sees ALL bookings
+      query = `
+        SELECT 
+          b.id,
+          b.user_id,
+          b.trip_id,
+          b.seats_booked,
+          b.total_price,
+          b.currency,
+          b.booking_status,
+          b.booking_date,
+          b.guest_name,
+          b.guest_email,
+          b.guest_phone,
+          b.status_token,
+          b.qr_code_data,
+          b.created_at,
+          b.updated_at,
+          t.departure_time,
+          t.arrival_time,
+          r.id as route_id,
+          fc.name as from_city,
+          tc.name as to_city,
+          u.first_name || ' ' || u.last_name as user_name,
+          u.email as user_email,
+          u.phone as user_phone,
+          comp.name as company_name
+        FROM bookings b
+        JOIN trips t ON t.id = b.trip_id
+        JOIN routes r ON r.id = t.route_id
+        JOIN cities fc ON fc.id = r.from_city_id
+        JOIN cities tc ON tc.id = r.to_city_id
+        LEFT JOIN users u ON u.id = b.user_id
+        LEFT JOIN transport_companies comp ON t.company_id = comp.id
+        ORDER BY b.created_at DESC
+      `;
+      queryParams = [];
+    } else {
+      // Company users only see their company's bookings
+      if (!companyId) {
+        return res.status(403).json({ message: "No company associated with this user" });
+      }
+
+      query = `
+        SELECT 
+          b.id,
+          b.user_id,
+          b.trip_id,
+          b.seats_booked,
+          b.total_price,
+          b.currency,
+          b.booking_status,
+          b.booking_date,
+          b.guest_name,
+          b.guest_email,
+          b.guest_phone,
+          b.status_token,
+          b.qr_code_data,
+          b.created_at,
+          b.updated_at,
+          t.departure_time,
+          t.arrival_time,
+          r.id as route_id,
+          fc.name as from_city,
+          tc.name as to_city,
+          u.first_name || ' ' || u.last_name as user_name,
+          u.email as user_email,
+          u.phone as user_phone
+        FROM bookings b
+        JOIN trips t ON t.id = b.trip_id
+        JOIN routes r ON r.id = t.route_id
+        JOIN cities fc ON fc.id = r.from_city_id
+        JOIN cities tc ON tc.id = r.to_city_id
+        LEFT JOIN users u ON u.id = b.user_id
+        WHERE t.company_id = $1
+        ORDER BY b.created_at DESC
+      `;
+      queryParams = [companyId];
     }
 
-    const companyId = userResult.rows[0].company_id;
-
-    // Get all bookings for trips operated by this company
-    const query = `
-      SELECT 
-        b.id,
-        b.user_id,
-        b.trip_id,
-        b.seats_booked,
-        b.total_price,
-        b.currency,
-        b.booking_status,
-        b.booking_date,
-        b.guest_name,
-        b.guest_email,
-        b.guest_phone,
-        b.status_token,
-        b.qr_code_data,
-        b.created_at,
-        b.updated_at,
-        t.departure_time,
-        t.arrival_time,
-        r.id as route_id,
-        fc.name as from_city,
-        tc.name as to_city,
-        u.first_name || ' ' || u.last_name as user_name,
-        u.email as user_email,
-        u.phone as user_phone
-      FROM bookings b
-      JOIN trips t ON t.id = b.trip_id
-      JOIN routes r ON r.id = t.route_id
-      JOIN cities fc ON fc.id = r.from_city_id
-      JOIN cities tc ON tc.id = r.to_city_id
-      LEFT JOIN users u ON u.id = b.user_id
-      WHERE t.company_id = $1
-      ORDER BY b.created_at DESC
-    `;
-
-    const result = await pool.query(query, [companyId]);
-    console.log(`Company bookings for company ${companyId}:`, result.rows.length, 'bookings');
+    const result = await pool.query(query, queryParams);
+    console.log(`Company bookings (admin=${isAdmin}, companyId=${companyId}):`, result.rows.length, 'bookings');
     console.log('Sample booking:', result.rows[0]);
     res.json({ bookings: result.rows });
   } catch (error: any) {
