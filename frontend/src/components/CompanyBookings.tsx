@@ -22,6 +22,7 @@ interface Booking {
   user_email?: string;
   guest_email?: string;
   guest_name?: string;
+  guest_phone?: string;
   user_name?: string;
   from_city: string;
   to_city: string;
@@ -223,11 +224,19 @@ export default function CompanyBookings() {
                       </h3>
                       {getStatusBadge(booking.booking_status)}
                     </div>
-                    <div className="flex items-center gap-2 text-gray-600 text-sm">
-                      <User className="w-4 h-4" />
-                      <span>{booking.user_name || booking.guest_name || 'Unbekannt'}</span>
-                      <span className="text-gray-400">•</span>
-                      <span>{booking.user_email || booking.guest_email}</span>
+                    <div className="flex flex-col gap-1 text-gray-600 text-sm">
+                      <div className="flex items-center gap-2">
+                        <User className="w-4 h-4" />
+                        <span className="font-medium">{booking.user_name || booking.guest_name || 'Unbekannt'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="ml-6">{booking.user_email || booking.guest_email}</span>
+                      </div>
+                      {booking.guest_phone && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="ml-6">📞 {booking.guest_phone}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   
