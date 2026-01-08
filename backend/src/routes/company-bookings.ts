@@ -35,9 +35,11 @@ router.get("/", requireAuth, requireRole(['company_admin', 'driver']), async (re
         b.id,
         b.user_id,
         b.trip_id,
-        b.seats_booked as quantity,
+        b.seats_booked,
         b.total_price,
-        b.booking_status as status,
+        b.currency,
+        b.booking_status,
+        b.booking_date,
         b.guest_name,
         b.guest_email,
         b.guest_phone,
@@ -64,7 +66,7 @@ router.get("/", requireAuth, requireRole(['company_admin', 'driver']), async (re
     `;
 
     const result = await pool.query(query, [companyId]);
-    res.json(result.rows);
+    res.json({ bookings: result.rows });
   } catch (error: any) {
     console.error("Error fetching company bookings:", error);
     res.status(500).json({ message: "Error fetching bookings", error: String(error) });
