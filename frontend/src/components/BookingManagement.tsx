@@ -51,6 +51,7 @@ const translations = {
     id: 'ID',
     user: 'Benutzer',
     route: 'Route',
+    trip: 'Fahrt',
     seats: 'Sitze',
     price: 'Preis',
     createdAt: 'Erstellt am',
@@ -101,6 +102,7 @@ const translations = {
     id: 'ID',
     user: 'User',
     route: 'Route',
+    trip: 'Trip',
     seats: 'Seats',
     price: 'Price',
     createdAt: 'Created At',
@@ -151,6 +153,7 @@ const translations = {
     id: 'المعرف',
     user: 'المستخدم',
     route: 'المسار',
+    trip: 'الرحلة',
     seats: 'المقاعد',
     price: 'السعر',
     createdAt: 'تاريخ الإنشاء',
@@ -524,7 +527,11 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                     {t.route}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t.company}
+                    {t.trip}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">                    {t.trip}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">                    {t.company}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t.status}
@@ -567,6 +574,9 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {booking.from_city} → {booking.to_city}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <div className="text-xs">{new Date(booking.departure_time).toLocaleString(language === 'ar' ? 'ar-EG' : language === 'de' ? 'de-DE' : 'en-US', { dateStyle: 'short', timeStyle: 'short' })}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {booking.company_name}
