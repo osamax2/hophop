@@ -350,7 +350,7 @@ router.patch("/:id", async (req: AuthedRequest, res) => {
             recipientEmail,
             recipientName: recipientName || 'Guest',
             bookingId: parseInt(id),
-            isGuestBooking: !details.user_email,
+            isGuestBooking: false, // Always send confirmed email with QR code when confirming booking
             qrCodeDataUrl,
             statusUrl,
             tripDetails: {
