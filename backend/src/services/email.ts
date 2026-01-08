@@ -96,12 +96,33 @@ export class EmailService {
     console.log(`   isGuestBooking: ${isGuestBooking}, hasQRCode: ${!!qrCodeDataUrl}`);
 
     try {
-      await this.transporter.sendMail({
+      const mailOptions: any = {
         from: `"HopHop Transport" <${process.env.SMTP_USER}>`,
         to: recipientEmail,
         subject: subject,
         html: message,
-      });
+      };
+
+      // If we have a QR code, attach it as an inline image using CID
+      if (qrCodeDataUrl && !isGuestBooking) {
+        // Extract base64 data from data URL
+        const base64Data = qrCodeDataUrl.replace(/^data:image\/png;base64,/, '');
+        
+        mailOptions.attachments = [{
+          filename: 'qr-code.png',
+          content: base64Data,
+          encoding: 'base64',
+          cid: 'qrcode@hophop' // Content-ID for embedding in HTML
+        }];
+
+        // Update message to use cid instead of data URL
+        mailOptions.html = message.replace(
+          new RegExp(qrCodeDataUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g'),
+          'cid:qrcode@hophop'
+        );
+      }
+
+      await this.transporter.sendMail(mailOptions);
 
       console.log(`✅ ${isGuestBooking ? 'Guest' : 'Confirmed'} booking email sent successfully`);
     } catch (error) {
