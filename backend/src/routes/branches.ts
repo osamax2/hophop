@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { authenticateToken, requireCompanyAdmin } from "../middleware/auth";
+import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { pool } from "../db";
 
 const router = Router();
 
 // Get all branches for a company
-router.get("/company/:companyId", authenticateToken, async (req, res) => {
+router.get("/company/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
     
@@ -27,7 +27,7 @@ router.get("/company/:companyId", authenticateToken, async (req, res) => {
 });
 
 // Get single branch
-router.get("/:id", authenticateToken, async (req, res) => {
+router.get("/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -51,7 +51,7 @@ router.get("/:id", authenticateToken, async (req, res) => {
 });
 
 // Create new branch
-router.post("/", authenticateToken, requireCompanyAdmin, async (req, res) => {
+router.post("/", requireAuth, async (req, res) => {
   try {
     const { company_id, name, address, city_id, phone, email } = req.body;
     
@@ -78,7 +78,7 @@ router.post("/", authenticateToken, requireCompanyAdmin, async (req, res) => {
 });
 
 // Update branch
-router.put("/:id", authenticateToken, requireCompanyAdmin, async (req, res) => {
+router.put("/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, address, city_id, phone, email, is_active } = req.body;
@@ -109,7 +109,7 @@ router.put("/:id", authenticateToken, requireCompanyAdmin, async (req, res) => {
 });
 
 // Delete branch
-router.delete("/:id", authenticateToken, requireCompanyAdmin, async (req, res) => {
+router.delete("/:id", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -142,7 +142,7 @@ router.delete("/:id", authenticateToken, requireCompanyAdmin, async (req, res) =
 });
 
 // Get staff for a branch
-router.get("/:id/staff", authenticateToken, async (req, res) => {
+router.get("/:id/staff", requireAuth, async (req, res) => {
   try {
     const { id } = req.params;
     

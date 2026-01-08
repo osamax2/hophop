@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { authenticateToken, requireCompanyAdmin } from "../middleware/auth";
+import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { pool } from "../db";
 
 const router = Router();
@@ -21,7 +21,7 @@ router.get("/plans", async (req, res) => {
 });
 
 // Get company's current subscription
-router.get("/company/:companyId", authenticateToken, async (req, res) => {
+router.get("/company/:companyId", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
     
@@ -48,7 +48,7 @@ router.get("/company/:companyId", authenticateToken, async (req, res) => {
 });
 
 // Get subscription history for a company
-router.get("/company/:companyId/history", authenticateToken, requireCompanyAdmin, async (req, res) => {
+router.get("/company/:companyId/history", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
     
@@ -69,7 +69,7 @@ router.get("/company/:companyId/history", authenticateToken, requireCompanyAdmin
 });
 
 // Upgrade/Change subscription
-router.post("/company/:companyId/upgrade", authenticateToken, requireCompanyAdmin, async (req, res) => {
+router.post("/company/:companyId/upgrade", requireAuth, async (req, res) => {
   const client = await pool.connect();
   
   try {
@@ -122,7 +122,7 @@ router.post("/company/:companyId/upgrade", authenticateToken, requireCompanyAdmi
 });
 
 // Get payment history
-router.get("/company/:companyId/payments", authenticateToken, requireCompanyAdmin, async (req, res) => {
+router.get("/company/:companyId/payments", requireAuth, async (req, res) => {
   try {
     const { companyId } = req.params;
     
@@ -144,7 +144,7 @@ router.get("/company/:companyId/payments", authenticateToken, requireCompanyAdmi
 });
 
 // Record a payment
-router.post("/payments", authenticateToken, requireCompanyAdmin, async (req, res) => {
+router.post("/payments", requireAuth, async (req, res) => {
   try {
     const { 
       company_subscription_id, 
