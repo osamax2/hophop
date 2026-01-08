@@ -38,32 +38,49 @@ export function requireRole(allowed: string[]) {
       
       // Add system roles
       systemRoles.rows.forEach((row) => {
-        const mapped = roleMap[row.name] || row.code?.toLowerCase() || row.name.toLowerCase();
-        userRoles.push(mapped);
-        // Also add uppercase version for backward compatibility
+        // Add the raw name (e.g., "ADMIN", "AGENT", "Administrator")
+        userRoles.push(row.name);
+        userRoles.push(row.name.toUpperCase());
+        userRoles.push(row.name.toLowerCase());
+        
+        // Add mapped name if it exists
+        const mapped = roleMap[row.name];
+        if (mapped) {
+          userRoles.push(mapped);
+          userRoles.push(mapped.toUpperCase());
+        }
+        
+        // Add code if it exists
         if (row.code) {
+          userRoles.push(row.code);
           userRoles.push(row.code.toUpperCase());
+          userRoles.push(row.code.toLowerCase());
         }
       });
       
       // Add branch staff roles
       branchRoles.rows.forEach((row) => {
+        userRoles.push(row.code);
         userRoles.push(row.code.toLowerCase());
+        userRoles.push(row.code.toUpperCase());
       });
+      
+      // Remove duplicates
+      const uniqueRoles = [...new Set(userRoles)];
       
       // Check if user has any of the allowed roles (case-insensitive)
       const hasPermission = allowed.some((allowedRole) => 
-        userRoles.some(userRole => 
+        uniqueRoles.some(userRole => 
           userRole.toLowerCase() === allowedRole.toLowerCase()
         )
       );
       
       if (!hasPermission) {
-        console.debug("Permission denied for user", userId, "- Required:", allowed, "User has:", userRoles);
+        console.debug("Permission denied for user", userId, "- Required:", allowed, "User has:", uniqueRoles);
         return res.status(403).json({ 
           message: "Forbidden - insufficient permissions",
           required: allowed,
-          userRoles: userRoles
+          userRoles: uniqueRoles
         });
       }
 
