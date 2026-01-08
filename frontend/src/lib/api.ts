@@ -704,7 +704,9 @@ export const companyBookingsApi = {
     const response = await fetch(`${API_BASE}/api/company-bookings/qr-image/${bookingId}`);
     return handleResponse(response);
   },
+};
 
+export const contactApi = {
   submitContactForm: async (data: {
     name: string;
     email: string;

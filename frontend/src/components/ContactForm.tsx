@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, Phone, User, MessageSquare, Send, X } from 'lucide-react';
 import type { Language } from '../App';
-import { api } from '../lib/api';
+import { contactApi } from '../lib/api';
 
 interface ContactFormProps {
   language: Language;
@@ -137,7 +137,7 @@ export function ContactForm({ language, onClose }: ContactFormProps) {
     setIsSubmitting(true);
 
     try {
-      await api.submitContactForm(formData);
+      await contactApi.submitContactForm(formData);
 
       // Show success message
       alert(t.success);
