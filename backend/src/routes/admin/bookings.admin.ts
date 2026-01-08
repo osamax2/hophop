@@ -299,6 +299,73 @@ router.patch("/:id", async (req: AuthedRequest, res) => {
       total_price: parseFloat(result.rows[0].total_price),
     };
 
+    // If status changed to confirmed and no QR code exists, generate one and send email
+    if (booking_status === 'confirmed' && !booking.qr_code_data) {
+      const crypto = require('crypto');
+      const QRCode = require('qrcode');
+      const { emailService } = require('../../services/email');
+
+      // Generate QR code
+      const qrData = crypto.randomBytes(32).toString('hex');
+      await pool.query(
+        'UPDATE bookings SET qr_code_data = $1 WHERE id = $2',
+        [qrData, id]
+      );
+
+      // Get full booking details for email
+      const bookingDetails = await pool.query(`
+        SELECT b.*, u.email as user_email, u.first_name,
+               fc.name as from_city, tc.name as to_city,
+               t.departure_time, t.arrival_time,
+               comp.name as company_name
+        FROM bookings b
+        LEFT JOIN users u ON u.id = b.user_id
+        JOIN trips t ON t.id = b.trip_id
+        JOIN routes r ON r.id = t.route_id
+        JOIN cities fc ON fc.id = r.from_city_id
+        JOIN cities tc ON tc.id = r.to_city_id
+        JOIN transport_companies comp ON comp.id = t.company_id
+        WHERE b.id = $1
+      `, [id]);
+
+      const details = bookingDetails.rows[0];
+      const recipientEmail = details.user_email || details.guest_email;
+      const recipientName = details.user_email ? details.first_name : details.guest_name;
+
+      if (recipientEmail && emailService) {
+        try {
+          const qrCodeDataUrl = await QRCode.toDataURL(qrData, {
+            width: 300,
+            margin: 2,
+            color: { dark: '#000000', light: '#FFFFFF' }
+          });
+
+          const statusUrl = `${process.env.FRONTEND_URL || 'http://localhost'}/booking-status/${details.status_token}`;
+
+          await emailService.sendBookingConfirmation({
+            recipientEmail,
+            recipientName: recipientName || 'Guest',
+            bookingId: parseInt(id),
+            isGuestBooking: !details.user_email,
+            qrCodeDataUrl,
+            statusUrl,
+            tripDetails: {
+              from: details.from_city,
+              to: details.to_city,
+              departureTime: new Date(details.departure_time).toLocaleString('de-DE'),
+              arrivalTime: new Date(details.arrival_time).toLocaleString('de-DE'),
+              company: details.company_name,
+              seats: details.seats_booked,
+              totalPrice: details.total_price,
+              currency: details.currency
+            }
+          });
+        } catch (emailError) {
+          console.error('Failed to send confirmation email:', emailError);
+        }
+      }
+    }
+
     res.json({
       message: "Booking updated successfully",
       booking,
