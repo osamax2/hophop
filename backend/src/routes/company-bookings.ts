@@ -206,6 +206,8 @@ router.put("/:id/accept", requireAuth, requireRole(['company_admin']), async (re
           }
         });
         
+        console.log(`📱 QR Code generated for booking #${bookingId}, length: ${qrCodeDataUrl?.length || 0} characters`);
+        
         // Get arrival time from trip
         const tripRes = await pool.query(
           'SELECT arrival_time, company_id FROM trips WHERE id = $1',

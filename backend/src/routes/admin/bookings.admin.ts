@@ -344,6 +344,8 @@ router.patch("/:id", async (req: AuthedRequest, res) => {
             color: { dark: '#000000', light: '#FFFFFF' }
           });
 
+          console.log(`📱 QR Code generated for booking #${id}, length: ${qrCodeDataUrl?.length || 0} characters`);
+
           const statusUrl = `${process.env.FRONTEND_URL || 'http://localhost'}/booking-status/${details.status_token}`;
 
           await emailService.sendBookingConfirmation({
