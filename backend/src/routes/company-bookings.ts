@@ -11,9 +11,9 @@ const router = Router();
 /**
  * GET /api/company-bookings
  * Get all bookings for company's trips
- * Requires: company_admin or driver role
+ * Requires: admin, company_admin, driver, or driver_assistant role
  */
-router.get("/", requireAuth, requireRole(['admin', 'company_admin', 'driver']), async (req: AuthedRequest, res) => {
+router.get("/", requireAuth, requireRole(['admin', 'company_admin', 'driver', 'driver_assistant']), async (req: AuthedRequest, res) => {
   try {
     const userId = req.user!.id;
 
@@ -364,9 +364,9 @@ router.put("/:id/reject", requireAuth, requireRole(['company_admin']), async (re
 /**
  * POST /api/company-bookings/verify-qr
  * Verify a booking QR code
- * Requires: company_admin or driver role
+ * Requires: company_admin, driver, or driver_assistant role
  */
-router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver']), async (req: AuthedRequest, res) => {
+router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', 'driver_assistant']), async (req: AuthedRequest, res) => {
   try {
     const { qrData } = req.body;
     const userId = req.user!.id;
