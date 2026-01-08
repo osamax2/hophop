@@ -24,6 +24,7 @@ interface Booking {
   guest_name?: string;
   guest_phone?: string;
   user_name?: string;
+  user_phone?: string;
   from_city: string;
   to_city: string;
   departure_time: string;
@@ -230,11 +231,11 @@ export default function CompanyBookings() {
                         <span className="font-medium">{booking.user_name || booking.guest_name || 'Unbekannt'}</span>
                       </div>
                       <div className="flex items-center gap-2 text-xs">
-                        <span className="ml-6">{booking.user_email || booking.guest_email}</span>
+                        <span className="ml-6">📧 {booking.user_email || booking.guest_email}</span>
                       </div>
-                      {booking.guest_phone && (
+                      {(booking.guest_phone || booking.user_phone) && (
                         <div className="flex items-center gap-2 text-xs">
-                          <span className="ml-6">📞 {booking.guest_phone}</span>
+                          <span className="ml-6">📞 {booking.guest_phone || booking.user_phone}</span>
                         </div>
                       )}
                     </div>

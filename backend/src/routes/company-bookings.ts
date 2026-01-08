@@ -51,7 +51,8 @@ router.get("/", requireAuth, requireRole(['company_admin', 'driver']), async (re
         fc.name as from_city,
         tc.name as to_city,
         u.first_name || ' ' || u.last_name as user_name,
-        u.email as user_email
+        u.email as user_email,
+        u.phone as user_phone
       FROM bookings b
       JOIN trips t ON t.id = b.trip_id
       JOIN routes r ON r.id = t.route_id
