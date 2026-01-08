@@ -704,4 +704,21 @@ export const companyBookingsApi = {
     const response = await fetch(`${API_BASE}/api/company-bookings/qr-image/${bookingId}`);
     return handleResponse(response);
   },
+
+  submitContactForm: async (data: {
+    name: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/contact`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
 };

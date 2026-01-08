@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Mail, Phone, User, MessageSquare, Send, X } from 'lucide-react';
 import type { Language } from '../App';
+import { api } from '../lib/api';
 
 interface ContactFormProps {
   language: Language;
@@ -136,21 +137,7 @@ export function ContactForm({ language, onClose }: ContactFormProps) {
     setIsSubmitting(true);
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-      
-      const response = await fetch(`${API_BASE_URL}/api/contact`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Error sending message');
-      }
+      await api.submitContactForm(formData);
 
       // Show success message
       alert(t.success);
