@@ -3,7 +3,10 @@ const API_BASE = import.meta.env.VITE_API_BASE || "";
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("token");
   if (!token) {
-    console.warn("No authentication token found in localStorage");
+    // Only log this in development or when it's actually needed
+    if (import.meta.env.DEV) {
+      console.debug("No authentication token found in localStorage");
+    }
   }
   return {
     "Content-Type": "application/json",
