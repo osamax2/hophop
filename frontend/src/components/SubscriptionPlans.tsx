@@ -23,9 +23,18 @@ const SubscriptionPlans: React.FC = () => {
 
   const fetchPlans = async () => {
     try {
-      const response = await fetch('/api/subscriptions/plans');
+      const API_BASE = import.meta.env.VITE_API_BASE || '';
+      const response = await fetch(`${API_BASE}/api/subscriptions/plans`);
       const data = await response.json();
-      setPlans(data);
+      
+      // Ensure price_per_month is a number
+      const normalizedPlans = data.map((plan: any) => ({
+        ...plan,
+        price_per_month: Number(plan.price_per_month) || 0,
+        max_branches: Number(plan.max_branches) || 0,
+      }));
+      
+      setPlans(normalizedPlans);
     } catch (error) {
       console.error('Error fetching plans:', error);
     } finally {
@@ -137,10 +146,11 @@ const SubscriptionPlans: React.FC = () => {
   };
 
   const convertPrice = (price: number) => {
+    const numPrice = Number(price) || 0;
     if (selectedCurrency === 'USD') {
-      return (price * 1.1).toFixed(2); // Approximate conversion
+      return (numPrice * 1.1).toFixed(2); // Approximate conversion
     }
-    return price.toFixed(2);
+    return numPrice.toFixed(2);
   };
 
   if (loading) {
