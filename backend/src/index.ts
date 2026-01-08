@@ -11,6 +11,7 @@ import ratingsRoutes from "./routes/ratings";
 import imagesRoutes from "./routes/images";
 import notificationsRoutes from "./routes/notifications";
 import adminRoutes from "./routes/admin";
+import contactRoutes from "./routes/contact";
 // CRUD Routes
 import usersRoutes from "./routes/users";
 import bookingsCrudRoutes from "./routes/bookings-crud";
@@ -37,6 +38,7 @@ app.use("/api/ratings", ratingsRoutes);
 app.use("/api/images", imagesRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/companies", companiesRoutes);
+app.use("/api/contact", contactRoutes);
 
 // ✅ CRUD Routes
 app.use("/api/users", usersRoutes);

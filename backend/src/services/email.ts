@@ -680,6 +680,126 @@ export class EmailService {
       // Don't throw - booking should succeed even if email fails
     }
   }
+
+  async sendContactFormSubmission(data: {
+    name: string;
+    email: string;
+    phone: string;
+    subject: string;
+    message: string;
+  }): Promise<void> {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('📧 Contact form email not sent - SMTP not configured');
+      return;
+    }
+
+    const { name, email, phone, subject, message } = data;
+    const emailSubject = `📬 Kontaktformular: ${subject}`;
+
+    console.log(`📧 Sending contact form to info@hophopsy.com from ${name} (${email})`);
+
+    try {
+      await this.transporter.sendMail({
+        from: `"HopHop Contact Form" <${process.env.SMTP_USER}>`,
+        to: 'info@hophopsy.com',
+        replyTo: email, // Allow direct reply to sender
+        subject: emailSubject,
+        html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .info-box { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #10b981; }
+    .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .info-label { font-weight: bold; color: #666; }
+    .message-box { background: #e0f2fe; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #0284c7; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">📬 Neue Kontaktanfrage</h1>
+      <p style="margin: 10px 0 0 0;">HopHop Contact Form Submission</p>
+    </div>
+    
+    <div class="content">
+      <h2 style="color: #10b981; margin-top: 0;">Kontaktinformationen</h2>
+      
+      <div class="info-box">
+        <div class="info-row">
+          <span class="info-label">👤 Name:</span>
+          <span><strong>${name}</strong></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📧 E-Mail:</span>
+          <span><a href="mailto:${email}" style="color: #10b981;">${email}</a></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📱 Telefon:</span>
+          <span><a href="tel:${phone}" style="color: #10b981;">${phone}</a></span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">📋 Betreff:</span>
+          <span><strong>${subject}</strong></span>
+        </div>
+      </div>
+
+      <h3 style="color: #0284c7;">💬 Nachricht:</h3>
+      <div class="message-box">
+        <p style="white-space: pre-wrap; margin: 0;">${message}</p>
+      </div>
+
+      <div style="background: #fef3c7; padding: 15px; border-radius: 8px; border-left: 4px solid #f59e0b; margin: 20px 0;">
+        <p style="margin: 0;"><strong>⚡ Schnellantwort:</strong></p>
+        <p style="margin: 5px 0 0 0;">
+          Sie können direkt auf diese E-Mail antworten, um ${name} zu kontaktieren.
+        </p>
+        <p style="margin: 5px 0 0 0;">
+          <strong>Reply-To:</strong> <a href="mailto:${email}" style="color: #f59e0b;">${email}</a>
+        </p>
+      </div>
+
+      <p style="margin-top: 30px; font-size: 12px; color: #666; text-align: center;">
+        Diese Nachricht wurde über das Kontaktformular von hophopsy.com gesendet<br>
+        Zeitstempel: ${new Date().toLocaleString('de-DE', { 
+          dateStyle: 'full', 
+          timeStyle: 'long',
+          timeZone: 'Asia/Damascus'
+        })}
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+        text: `
+Neue Kontaktanfrage über HopHop Website
+
+Name: ${name}
+E-Mail: ${email}
+Telefon: ${phone}
+Betreff: ${subject}
+
+Nachricht:
+${message}
+
+---
+Sie können direkt auf diese E-Mail antworten, um ${name} zu kontaktieren.
+Gesendet: ${new Date().toLocaleString('de-DE')}
+        `.trim()
+      });
+
+      console.log(`✅ Contact form email sent to info@hophopsy.com`);
+    } catch (error) {
+      console.error('❌ Error sending contact form email:', error);
+      throw error;
+    }
+  }
 }
 
 export const emailService = new EmailService();

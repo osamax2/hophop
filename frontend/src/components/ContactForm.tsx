@@ -135,32 +135,25 @@ export function ContactForm({ language, onClose }: ContactFormProps) {
 
     setIsSubmitting(true);
 
-    // Simulate sending to fake email
-    setTimeout(() => {
-      // Log to console (fake email)
-      console.log('Contact Form Submission:', {
-        to: 'info@hophop.com',
-        from: formData.email,
-        subject: formData.subject,
-        body: `
-Name: ${formData.name}
-Email: ${formData.email}
-Phone: ${formData.phone}
-Subject: ${formData.subject}
-
-Message:
-${formData.message}
-        `,
+    try {
+      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
+      
+      const response = await fetch(`${API_BASE_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Error sending message');
+      }
+
       // Show success message
-      alert(t.success + '\n\n' + JSON.stringify({
-        name: formData.name,
-        email: formData.email,
-        phone: formData.phone,
-        subject: formData.subject,
-        message: formData.message,
-      }, null, 2));
+      alert(t.success);
 
       // Reset form
       setFormData({
@@ -171,13 +164,17 @@ ${formData.message}
         message: '',
       });
       setErrors({});
-      setIsSubmitting(false);
 
       // Close modal if onClose is provided
       if (onClose) {
-        setTimeout(() => onClose(), 1000);
+        setTimeout(() => onClose(), 500);
       }
-    }, 1000);
+    } catch (error: any) {
+      console.error('Error submitting contact form:', error);
+      alert(t.error + ': ' + (error.message || 'Unknown error'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (field: string, value: string) => {
