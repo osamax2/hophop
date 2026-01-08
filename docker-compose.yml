@@ -33,13 +33,15 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-hophop}:${POSTGRES_PASSWORD:-hophop123}@db:5432/${POSTGRES_DB:-hophop}
       PORT: 4000
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
       SMTP_HOST: ${SMTP_HOST:-mail.hophopsy.com}
       SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
       SMTP_USER: ${SMTP_USER:-noreply@hophopsy.com}
-      SMTP_PASS: ${SMTP_PASS}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      SMTP_FROM: ${SMTP_FROM:-noreply@hophopsy.com}
+      SMTP_FROM_NAME: ${SMTP_FROM_NAME:-HopHop Syria}
     ports:
-      - "4000:4000"
+      - "8081:4000"
     volumes:
       - backend_uploads:/app/uploads
     depends_on:
@@ -47,22 +49,20 @@ services:
         condition: service_healthy
     networks:
       - hophop-network
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-      - "mail.hophopsy.com:87.106.51.243"
 
   # Frontend (React + Vite)
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE: ${VITE_API_BASE:-https://hophopsy.com/api}
     container_name: hophop-frontend
     restart: unless-stopped
+    environment:
+      VITE_API_BASE: ${VITE_API_BASE:-https://hophopsy.com/api}
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
       - backend
     networks:

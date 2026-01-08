@@ -3,6 +3,12 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Build argument for API URL
+ARG VITE_API_BASE=https://hophopsy.com/api
+
+# Set environment variable for build
+ENV VITE_API_BASE=${VITE_API_BASE}
+
 # Copy package files
 COPY package*.json ./
 
@@ -12,7 +18,7 @@ RUN npm install
 # Copy source code
 COPY . .
 
-# Build the app
+# Build the app with environment variable
 RUN npm run build
 
 # Production stage with nginx
