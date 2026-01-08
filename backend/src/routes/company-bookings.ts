@@ -307,7 +307,49 @@ router.put("/:id/reject", requireAuth, requireRole(['company_admin']), async (re
       [bookingId]
     );
 
-    // TODO: Send rejection email to user/guest with reason
+    // Send rejection email to user/guest
+    const bookingDetails = await pool.query(`
+      SELECT b.*, u.email as user_email, u.first_name,
+             fc.name as from_city, tc.name as to_city,
+             t.departure_time,
+             comp.name as company_name
+      FROM bookings b
+      LEFT JOIN users u ON u.id = b.user_id
+      JOIN trips t ON t.id = b.trip_id
+      JOIN routes r ON r.id = t.route_id
+      JOIN cities fc ON fc.id = r.from_city_id
+      JOIN cities tc ON tc.id = r.to_city_id
+      JOIN transport_companies comp ON comp.id = t.company_id
+      WHERE b.id = $1
+    `, [bookingId]);
+
+    const details = bookingDetails.rows[0];
+    const recipientEmail = details.user_email || details.guest_email;
+    const recipientName = details.user_email ? details.first_name : details.guest_name;
+
+    if (recipientEmail) {
+      try {
+        const { emailService } = require('../services/email');
+        await emailService.sendBookingCancellation({
+          recipientEmail,
+          recipientName: recipientName || 'Guest',
+          bookingId,
+          reason,
+          tripDetails: {
+            from: details.from_city,
+            to: details.to_city,
+            departureTime: new Date(details.departure_time).toLocaleString('de-DE'),
+            company: details.company_name,
+            seats: details.seats_booked,
+            totalPrice: parseFloat(details.total_price),
+            currency: details.currency
+          }
+        });
+        console.log(`✅ Rejection email sent for booking #${bookingId}`);
+      } catch (emailError) {
+        console.error('Failed to send rejection email:', emailError);
+      }
+    }
 
     res.json({ 
       message: "Booking rejected successfully",

@@ -413,6 +413,141 @@ export class EmailService {
     }
   }
 
+  async sendBookingCancellation(data: {
+    recipientEmail: string;
+    recipientName: string;
+    bookingId: number;
+    reason?: string;
+    tripDetails: {
+      from: string;
+      to: string;
+      departureTime: string;
+      company: string;
+      seats: number;
+      totalPrice: number;
+      currency: string;
+    };
+  }): Promise<void> {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('📧 Email not sent - SMTP not configured');
+      return;
+    }
+
+    const { recipientEmail, recipientName, bookingId, reason, tripDetails } = data;
+    const subject = '❌ Buchung storniert / Booking Cancelled / تم إلغاء الحجز';
+
+    console.log(`📧 Sending cancellation email to ${recipientEmail} (Booking #${bookingId})`);
+
+    const reasonText = reason 
+      ? `
+        <div style="background: #fee2e2; padding: 15px; border-radius: 8px; border-left: 4px solid #dc2626; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Grund der Stornierung:</strong></p>
+          <p style="margin: 5px 0 0 0;">${reason}</p>
+        </div>
+        <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+          <p style="margin: 0;"><strong>Cancellation Reason:</strong></p>
+          <p style="margin: 5px 0 0 0;">${reason}</p>
+        </div>
+        <div style="background: #fef3c7; padding: 15px; border-radius: 8px; margin: 20px 0; direction: rtl;">
+          <p style="margin: 0;"><strong>سبب الإلغاء:</strong></p>
+          <p style="margin: 5px 0 0 0;">${reason}</p>
+        </div>
+      `
+      : '';
+
+    try {
+      await this.transporter.sendMail({
+        from: `"HopHop Transport" <${process.env.SMTP_USER}>`,
+        to: recipientEmail,
+        subject: subject,
+        html: `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .booking-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #dc2626; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .detail-label { font-weight: bold; color: #666; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 style="margin: 0; font-size: 28px;">❌ Buchung storniert</h1>
+      <p style="margin: 10px 0 0 0;">Booking Cancelled / تم إلغاء الحجز</p>
+    </div>
+    
+    <div class="content">
+      <p><strong>Liebe/r ${recipientName},</strong></p>
+      <p>Ihre Buchung #${bookingId} wurde storniert.</p>
+
+      <p><strong>Dear ${recipientName},</strong></p>
+      <p>Your booking #${bookingId} has been cancelled.</p>
+
+      <p style="direction: rtl;"><strong>عزيزي ${recipientName}،</strong></p>
+      <p style="direction: rtl;">تم إلغاء حجزك #${bookingId}.</p>
+
+      ${reasonText}
+
+      <div class="booking-details">
+        <h3 style="margin-top: 0; color: #dc2626;">📋 Stornierte Buchung / Cancelled Booking / الحجز الملغى</h3>
+        <div class="detail-row">
+          <span class="detail-label">Strecke / Route / المسار:</span>
+          <span>${tripDetails.from} → ${tripDetails.to}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Abfahrt / Departure / المغادرة:</span>
+          <span>${tripDetails.departureTime}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Unternehmen / Company / الشركة:</span>
+          <span>${tripDetails.company}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Plätze / Seats / المقاعد:</span>
+          <span>${tripDetails.seats}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Betrag / Amount / المبلغ:</span>
+          <span><strong>${tripDetails.totalPrice} ${tripDetails.currency}</strong></span>
+        </div>
+      </div>
+
+      <div style="background: #e0f2fe; padding: 15px; border-radius: 8px; border-left: 4px solid #0284c7; margin: 20px 0;">
+        <p style="margin: 0;"><strong>💳 Rückerstattung:</strong> Falls bereits bezahlt, wird der Betrag innerhalb von 5-7 Werktagen erstattet.</p>
+        <p style="margin: 5px 0 0 0;"><strong>💳 Refund:</strong> If already paid, the amount will be refunded within 5-7 business days.</p>
+        <p style="margin: 5px 0 0 0; direction: rtl;"><strong>💳 استرداد المبلغ:</strong> إذا تم الدفع، سيتم استرداد المبلغ خلال 5-7 أيام عمل.</p>
+      </div>
+
+      <p style="text-align: center; margin-top: 30px;">
+        <a href="${process.env.FRONTEND_URL || 'http://localhost'}" style="display: inline-block; padding: 12px 30px; background: #3b82f6; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">
+          🔍 Neue Fahrt suchen / Search New Trip / البحث عن رحلة جديدة
+        </a>
+      </p>
+
+      <p style="margin-top: 30px; font-size: 12px; color: #666; text-align: center;">
+        Bei Fragen kontaktieren Sie uns unter support@hophopsy.com<br>
+        For questions contact us at support@hophopsy.com<br>
+        للاستفسارات اتصل بنا على support@hophopsy.com
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+        `,
+      });
+      console.log(`✅ Cancellation email sent to ${recipientEmail}`);
+    } catch (error) {
+      console.error('❌ Error sending cancellation email:', error);
+      throw error;
+    }
+  }
+
   async sendCompanyNotification(
     companyEmail: string,
     companyName: string,
