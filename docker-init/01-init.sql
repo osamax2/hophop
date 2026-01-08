@@ -147,7 +147,7 @@ ALTER SEQUENCE public.booking_options_id_seq OWNED BY public.booking_options.id;
 
 CREATE TABLE public.bookings (
     id integer NOT NULL,
-    user_id integer NOT NULL,
+    user_id integer,
     trip_id integer NOT NULL,
     booking_status character varying(50) NOT NULL,
     seats_booked integer NOT NULL,
@@ -155,7 +155,13 @@ CREATE TABLE public.bookings (
     currency character varying(10) NOT NULL,
     created_at timestamp without time zone DEFAULT now() NOT NULL,
     updated_at timestamp without time zone DEFAULT now(),
-    deleted_at timestamp without time zone
+    deleted_at timestamp without time zone,
+    qr_code_data character varying(255) UNIQUE,
+    qr_verified_at timestamp without time zone,
+    qr_verified_by integer,
+    guest_name character varying(255),
+    guest_phone character varying(50),
+    guest_email character varying(255)
 );
 
 
@@ -1474,6 +1480,13 @@ CREATE INDEX idx_bookings_user_id ON public.bookings USING btree (user_id);
 
 
 --
+-- Name: idx_bookings_qr_code; Type: INDEX; Schema: public; Owner: -
+--
+
+CREATE INDEX idx_bookings_qr_code ON public.bookings USING btree (qr_code_data);
+
+
+--
 -- Name: idx_favorites_trip_id; Type: INDEX; Schema: public; Owner: -
 --
 
@@ -1694,6 +1707,14 @@ ALTER TABLE ONLY public.booking_options
 
 ALTER TABLE ONLY public.bookings
     ADD CONSTRAINT fk_bookings_trip FOREIGN KEY (trip_id) REFERENCES public.trips(id);
+
+
+--
+-- Name: bookings fk_bookings_qr_verified_by; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY public.bookings
+    ADD CONSTRAINT fk_bookings_qr_verified_by FOREIGN KEY (qr_verified_by) REFERENCES public.users(id);
 
 
 --
