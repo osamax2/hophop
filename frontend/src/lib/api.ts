@@ -661,3 +661,44 @@ export const bookingsApi = {
     return handleResponse(response);
   },
 };
+
+// Company Bookings APIs
+export const companyBookingsApi = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE}/api/company-bookings`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  accept: async (bookingId: number) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/${bookingId}/accept`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  reject: async (bookingId: number, reason?: string) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/${bookingId}/reject`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ reason }),
+    });
+    return handleResponse(response);
+  },
+
+  verifyQR: async (qrData: string) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/verify-qr`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ qrData }),
+    });
+    return handleResponse(response);
+  },
+
+  getQRImage: async (bookingId: number) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/qr-image/${bookingId}`);
+    return handleResponse(response);
+  },
+};

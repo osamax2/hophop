@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check, Scan, ListChecks } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
 import { CitySelector } from './CitySelector';
@@ -8,6 +8,8 @@ import { CompanyManagement } from './CompanyManagement';
 import RatingManagement from './RatingManagement';
 import BookingManagement from './BookingManagement';
 import InvoiceManagement from './InvoiceManagement';
+import CompanyBookings from './CompanyBookings';
+import QRScanner from './QRScanner';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -414,10 +416,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   // Determine user access level
   const isAdmin = user?.role === 'admin';
   const isAgentManager = user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id;
+  const isDriver = user?.role === 'agent' && (user?.agent_type === 'driver' || user?.agent_type === 'driver_assistant');
   
   // Default tab based on role
-  const defaultTab = isAdmin ? 'analytics' : 'schedules';
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics'>(defaultTab);
+  const defaultTab = isAdmin ? 'analytics' : isDriver ? 'qr-scanner' : isAgentManager ? 'company-bookings' : 'schedules';
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics' | 'company-bookings' | 'qr-scanner'>(defaultTab);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -2257,11 +2260,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   }
 
   // canAccessDashboard uses the isAdmin and isAgentManager defined at the top
-  const canAccessDashboard = isAdmin || isAgentManager;
+  const canAccessDashboard = isAdmin || isAgentManager || isDriver;
 
   const tabs = [
     // Analytics - Admin only
     ...(isAdmin ? [{ id: 'analytics' as const, label: t.analytics, icon: BarChart3 }] : []),
+    // Company Bookings - Agent Manager only
+    ...(isAgentManager ? [{ id: 'company-bookings' as const, label: language === 'de' ? 'Firmenbuchungen' : language === 'ar' ? 'حجوزات الشركة' : 'Company Bookings', icon: ListChecks }] : []),
+    // QR Scanner - Driver or Driver Assistant only
+    ...(isDriver ? [{ id: 'qr-scanner' as const, label: language === 'de' ? 'QR-Scanner' : language === 'ar' ? 'ماسح QR' : 'QR Scanner', icon: Scan }] : []),
     { id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar },
     // Users management tab - Admin or Agent Manager
     ...((isAdmin || isAgentManager) ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
@@ -3808,6 +3815,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Invoices Tab */}
       {activeTab === 'invoices' && (isAdmin || isAgentManager) && (
         <InvoiceManagement language={language} companyId={isAgentManager ? user?.company_id : undefined} />
+      )}
+
+      {/* Company Bookings Tab */}
+      {activeTab === 'company-bookings' && isAgentManager && (
+        <CompanyBookings />
+      )}
+
+      {/* QR Scanner Tab */}
+      {activeTab === 'qr-scanner' && isDriver && (
+        <QRScanner />
       )}
 
       {activeTab === 'photos' && (

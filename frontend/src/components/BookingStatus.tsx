@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, Loader2, MapPin, Calendar, Users, CreditCard } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Loader2, MapPin, Calendar, Users, CreditCard, QrCode } from 'lucide-react';
 import type { Language } from '../App';
+import { companyBookingsApi } from '../lib/api';
 
 interface BookingStatusProps {
   token: string;
@@ -118,6 +119,7 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
   const [booking, setBooking] = useState<BookingStatusData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const [qrCode, setQrCode] = useState<string | null>(null);
 
   const t = translations[language];
 
@@ -138,6 +140,19 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
         }
         const data = await response.json();
         setBooking(data.booking);
+
+        // Fetch QR code if booking is confirmed
+        if (data.booking?.booking_status === 'confirmed' && data.booking?.id) {
+          try {
+            const qrResponse = await companyBookingsApi.getQRImage(data.booking.id);
+            if (qrResponse.qrCode) {
+              setQrCode(qrResponse.qrCode);
+            }
+          } catch (qrError) {
+            console.error('Failed to fetch QR code:', qrError);
+            // Don't fail the whole page if QR fetch fails
+          }
+        }
       } catch (err) {
         console.error('Failed to fetch booking status:', err);
         setError(true);
@@ -248,6 +263,28 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
             <p className="text-sm text-gray-600 mt-3">{getStatusDescription(booking.booking_status)}</p>
           </div>
         </div>
+
+        {/* QR Code for Confirmed Bookings */}
+        {booking.booking_status === 'confirmed' && qrCode && (
+          <div className="bg-gradient-to-br from-blue-50 to-green-50 rounded-2xl shadow-lg p-8 mb-6 text-center border-2 border-green-300">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <QrCode className="w-8 h-8 text-green-600" />
+              <h2 className="text-2xl font-bold text-gray-900">
+                {language === 'ar' ? 'رمز الصعود' : language === 'de' ? 'Boarding-Pass' : 'Boarding Pass'}
+              </h2>
+            </div>
+            <p className="text-gray-600 mb-6">
+              {language === 'ar' 
+                ? 'أظهر هذا الرمز للسائق عند الصعود' 
+                : language === 'de' 
+                ? 'Zeigen Sie diesen Code beim Einsteigen dem Fahrer' 
+                : 'Show this code to the driver when boarding'}
+            </p>
+            <div className="bg-white p-6 rounded-xl inline-block shadow-md">
+              <img src={qrCode} alt="QR Code" className="w-64 h-64 mx-auto" />
+            </div>
+          </div>
+        )}
 
         {/* Trip Details */}
         <div className="bg-white rounded-2xl shadow-lg p-8 mb-6">

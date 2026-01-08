@@ -15,6 +15,8 @@ interface BookingEmailData {
   };
   bookingId: number;
   isGuestBooking: boolean;
+  qrCodeDataUrl?: string; // Base64 QR code image
+  statusUrl?: string; // Link to booking status page
 }
 
 export class EmailService {
@@ -78,6 +80,8 @@ export class EmailService {
       tripDetails,
       bookingId,
       isGuestBooking,
+      qrCodeDataUrl,
+      statusUrl,
     } = data;
 
     const subject = isGuestBooking
@@ -86,7 +90,7 @@ export class EmailService {
 
     const message = isGuestBooking
       ? this.getGuestBookingEmailTemplate(recipientName, tripDetails, bookingId)
-      : this.getConfirmedBookingEmailTemplate(recipientName, tripDetails, bookingId);
+      : this.getConfirmedBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
 
     try {
       await this.transporter.sendMail({
@@ -215,7 +219,9 @@ export class EmailService {
   private getConfirmedBookingEmailTemplate(
     name: string,
     trip: BookingEmailData['tripDetails'],
-    bookingId: number
+    bookingId: number,
+    qrCodeDataUrl?: string,
+    statusUrl?: string
   ): string {
     return `
 <!DOCTYPE html>
@@ -232,6 +238,10 @@ export class EmailService {
     .detail-label { font-weight: bold; color: #666; }
     .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
     .success-badge { background: #dcfce7; color: #166534; padding: 8px 16px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    .qr-section { background: linear-gradient(135deg, #dbeafe, #dcfce7); padding: 30px; border-radius: 12px; margin: 20px 0; text-align: center; border: 2px solid #16a34a; }
+    .qr-code { background: white; padding: 20px; border-radius: 8px; display: inline-block; margin: 20px 0; }
+    .qr-instruction { color: #166534; font-weight: bold; font-size: 16px; margin: 10px 0; }
+    .status-button { background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 10px; }
   </style>
 </head>
 <body>
@@ -295,6 +305,29 @@ export class EmailService {
           <span><strong>${trip.totalPrice} ${trip.currency}</strong></span>
         </div>
       </div>
+      
+      ${qrCodeDataUrl ? `
+      <div class="qr-section">
+        <h3 style="margin-top: 0; color: #166534;">
+          🎫 Boarding Pass / تذكرة الصعود
+        </h3>
+        <p class="qr-instruction">
+          📱 Deutsch: Zeigen Sie diesen QR-Code beim Einsteigen dem Fahrer<br>
+          📱 English: Show this QR code to the driver when boarding<br>
+          📱 العربية: أظهر رمز الاستجابة السريعة هذا للسائق عند الصعود
+        </p>
+        <div class="qr-code">
+          <img src="${qrCodeDataUrl}" alt="QR Code" style="width: 300px; height: 300px;" />
+        </div>
+        ${statusUrl ? `
+        <p style="margin-top: 20px;">
+          <a href="${statusUrl}" class="status-button">
+            🔍 Buchungsstatus anzeigen / View Booking Status / عرض حالة الحجز
+          </a>
+        </p>
+        ` : ''}
+      </div>
+      ` : ''}
       
       <p style="margin-top: 30px; padding: 15px; background: #dcfce7; border-radius: 8px; border-left: 4px solid #16a34a;">
         <strong>✓ Hinweis / Note / ملاحظة:</strong><br>
