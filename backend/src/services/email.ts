@@ -89,7 +89,7 @@ export class EmailService {
       : 'Buchungsbestätigung / Booking Confirmation / تأكيد الحجز';
 
     const message = isGuestBooking
-      ? this.getGuestBookingEmailTemplate(recipientName, tripDetails, bookingId)
+      ? this.getGuestBookingEmailTemplate(recipientName, tripDetails, bookingId, statusUrl)
       : this.getConfirmedBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
 
     try {
@@ -111,7 +111,8 @@ export class EmailService {
   private getGuestBookingEmailTemplate(
     name: string,
     trip: BookingEmailData['tripDetails'],
-    bookingId: number
+    bookingId: number,
+    statusUrl?: string
   ): string {
     return `
 <!DOCTYPE html>
@@ -204,6 +205,18 @@ export class EmailService {
         يجب تأكيد هذا الحجز من قبل شركة النقل. 
         يرجى انتظار التأكيد قبل الذهاب إلى نقطة المغادرة.
       </p>
+
+      ${statusUrl ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${statusUrl}" style="display: inline-block; background: linear-gradient(135deg, #16a34a, #15803d); color: white; padding: 15px 40px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px;">
+          📊 Buchungsstatus prüfen / Check Booking Status / التحقق من حالة الحجز
+        </a>
+      </div>
+      <p style="text-align: center; color: #666; font-size: 14px;">
+        Oder öffnen Sie diesen Link / Or open this link / أو افتح هذا الرابط:<br>
+        <a href="${statusUrl}" style="color: #16a34a;">${statusUrl}</a>
+      </p>
+      ` : ''}
     </div>
     
     <div class="footer">
