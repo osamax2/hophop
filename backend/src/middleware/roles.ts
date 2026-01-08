@@ -40,6 +40,10 @@ export function requireRole(allowed: string[]) {
       systemRoles.rows.forEach((row) => {
         const mapped = roleMap[row.name] || row.code?.toLowerCase() || row.name.toLowerCase();
         userRoles.push(mapped);
+        // Also add uppercase version for backward compatibility
+        if (row.code) {
+          userRoles.push(row.code.toUpperCase());
+        }
       });
       
       // Add branch staff roles
@@ -47,12 +51,15 @@ export function requireRole(allowed: string[]) {
         userRoles.push(row.code.toLowerCase());
       });
       
-      // Check if user has any of the allowed roles
+      // Check if user has any of the allowed roles (case-insensitive)
       const hasPermission = allowed.some((allowedRole) => 
-        userRoles.includes(allowedRole.toLowerCase())
+        userRoles.some(userRole => 
+          userRole.toLowerCase() === allowedRole.toLowerCase()
+        )
       );
       
       if (!hasPermission) {
+        console.debug("Permission denied for user", userId, "- Required:", allowed, "User has:", userRoles);
         return res.status(403).json({ 
           message: "Forbidden - insufficient permissions",
           required: allowed,
