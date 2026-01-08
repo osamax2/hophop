@@ -10,6 +10,8 @@ import BookingManagement from './BookingManagement';
 import InvoiceManagement from './InvoiceManagement';
 import CompanyBookings from './CompanyBookings';
 import QRScanner from './QRScanner';
+import BranchManagement from './BranchManagement';
+import BranchManagement from './BranchManagement';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -72,6 +74,8 @@ const translations = {
     ratingsManagement: 'Bewertungsverwaltung',
     bookingsManagement: 'Buchungsverwaltung',
     invoicesManagement: 'Rechnungsverwaltung',
+    branchManagement: 'Filialen-Verwaltung',
+    subscriptionManagement: 'Abonnementverwaltung',
     userManagement: 'Benutzerverwaltung',
     searchUsers: 'Benutzer suchen',
     searchUsersPlaceholder: 'Nach Name oder E-Mail suchen...',
@@ -187,6 +191,8 @@ const translations = {
     ratingsManagement: 'Ratings Management',
     bookingsManagement: 'Booking Management',
     invoicesManagement: 'Invoice Management',
+    branchManagement: 'Branch Management',
+    subscriptionManagement: 'Subscription Management',
     userManagement: 'User Management',
     searchUsers: 'Search Users',
     searchUsersPlaceholder: 'Search by name or email...',
@@ -302,6 +308,8 @@ const translations = {
     ratingsManagement: 'إدارة التقييمات',
     bookingsManagement: 'إدارة الحجوزات',
     invoicesManagement: 'إدارة الفواتير',
+    branchManagement: 'إدارة الفروع',
+    subscriptionManagement: 'إدارة الاشتراكات',
     userManagement: 'إدارة المستخدمين',
     searchUsers: 'بحث المستخدمين',
     searchUsersPlaceholder: 'البحث بالاسم أو البريد الإلكتروني...',
@@ -420,7 +428,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   
   // Default tab based on role
   const defaultTab = isAdmin ? 'analytics' : isDriver ? 'qr-scanner' : isAgentManager ? 'company-bookings' : 'schedules';
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics' | 'company-bookings' | 'qr-scanner'>(defaultTab);
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics' | 'company-bookings' | 'qr-scanner' | 'branches' | 'subscriptions'>(defaultTab);
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
@@ -2314,6 +2322,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     ...((isAdmin || isAgentManager) ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
     // Companies management tab - Admin only
     ...(isAdmin ? [{ id: 'companies' as const, label: t.companyManagement, icon: Building2 }] : []),
+    // Branches management tab - Agent Manager only
+    ...(isAgentManager ? [{ id: 'branches' as const, label: t.branchManagement, icon: Building2 }] : []),
     // Ratings management tab - Admin only
     ...(isAdmin ? [{ id: 'ratings' as const, label: t.ratingsManagement, icon: Star }] : []),
     // Bookings management tab - Admin or Agent Manager
@@ -3840,6 +3850,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Companies Tab */}
       {activeTab === 'companies' && isAdmin && (
         <CompanyManagement language={language} />
+      )}
+
+      {/* Branches Tab */}
+      {activeTab === 'branches' && isAgentManager && user?.company_id && (
+        <BranchManagement companyId={user.company_id} language={language} />
       )}
 
       {/* Ratings Tab */}

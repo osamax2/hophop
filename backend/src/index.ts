@@ -12,6 +12,8 @@ import imagesRoutes from "./routes/images";
 import notificationsRoutes from "./routes/notifications";
 import adminRoutes from "./routes/admin";
 import contactRoutes from "./routes/contact";
+import branchesRoutes from "./routes/branches";
+import subscriptionsRoutes from "./routes/subscriptions";
 // CRUD Routes
 import usersRoutes from "./routes/users";
 import bookingsCrudRoutes from "./routes/bookings-crud";
@@ -40,6 +42,8 @@ app.use("/api/images", imagesRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/companies", companiesRoutes);
 app.use("/api/contact", contactRoutes);
+app.use("/api/branches", branchesRoutes);
+app.use("/api/subscriptions", subscriptionsRoutes);
 
 // ✅ CRUD Routes
 app.use("/api/users", usersRoutes);

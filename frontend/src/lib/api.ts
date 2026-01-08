@@ -733,3 +733,127 @@ export const contactApi = {
     return handleResponse(response);
   },
 };
+
+// Branches API
+export const branchesApi = {
+  getByCompany: async (companyId: number) => {
+    const response = await fetch(`${API_BASE}/api/branches/company/${companyId}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getById: async (branchId: number) => {
+    const response = await fetch(`${API_BASE}/api/branches/${branchId}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  create: async (data: {
+    company_id: number;
+    name: string;
+    address?: string;
+    city_id?: number;
+    phone?: string;
+    email?: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/branches`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  update: async (branchId: number, data: {
+    name?: string;
+    address?: string;
+    city_id?: number;
+    phone?: string;
+    email?: string;
+    is_active?: boolean;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/branches/${branchId}`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  delete: async (branchId: number) => {
+    const response = await fetch(`${API_BASE}/api/branches/${branchId}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getStaff: async (branchId: number) => {
+    const response = await fetch(`${API_BASE}/api/branches/${branchId}/staff`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+};
+
+// Subscriptions API
+export const subscriptionsApi = {
+  getPlans: async () => {
+    const response = await fetch(`${API_BASE}/api/subscriptions/plans`);
+    return handleResponse(response);
+  },
+
+  getCompanySubscription: async (companyId: number) => {
+    const response = await fetch(`${API_BASE}/api/subscriptions/company/${companyId}`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getSubscriptionHistory: async (companyId: number) => {
+    const response = await fetch(`${API_BASE}/api/subscriptions/company/${companyId}/history`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  upgradeSubscription: async (companyId: number, subscriptionPlanId: number) => {
+    const response = await fetch(`${API_BASE}/api/subscriptions/company/${companyId}/upgrade`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ subscription_plan_id: subscriptionPlanId }),
+    });
+    return handleResponse(response);
+  },
+
+  getPaymentHistory: async (companyId: number) => {
+    const response = await fetch(`${API_BASE}/api/subscriptions/company/${companyId}/payments`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  recordPayment: async (data: {
+    company_subscription_id: number;
+    amount: number;
+    currency?: string;
+    payment_method?: string;
+    transaction_id?: string;
+    notes?: string;
+  }) => {
+    const response = await fetch(`${API_BASE}/api/subscriptions/payments`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(response);
+  },
+
+  getStaffRoles: async () => {
+    const response = await fetch(`${API_BASE}/api/subscriptions/staff-roles`);
+    return handleResponse(response);
+  },
+};
+
