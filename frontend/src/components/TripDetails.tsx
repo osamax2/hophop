@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { MapPin, Clock, DollarSign, Users, Wifi, Wind, Camera, Heart, Check, AlertCircle, Loader2, Star } from 'lucide-react';
 import type { Language } from '../App';
 import { ImageWithFallback } from './figma/ImageWithFallback';
 import { RouteMap } from './RouteMap';
 import { BookingModal } from './BookingModal';
-import { tripsApi, imagesApi } from '../lib/api';
+import { tripsApi, imagesApi, ratingsApi } from '../lib/api';
 import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 
 interface TripDetailsProps {
@@ -41,6 +41,9 @@ const translations = {
     loginToFavorite: 'Melden Sie sich an, um Favoriten zu speichern',
     noBusPhotos: 'Keine Bus-Fotos verfügbar',
     noStationPhotos: 'Keine Haltestellen-Fotos verfügbar',
+    companyReviews: 'Bewertungen der Gesellschaft',
+    averageRating: 'Durchschnittsbewertung',
+    noReviewsYet: 'Noch keine Bewertungen',
   },
   en: {
     tripDetails: 'Trip Details',
@@ -67,6 +70,9 @@ const translations = {
     loginToFavorite: 'Sign in to save favorites',
     noBusPhotos: 'No bus photos available',
     noStationPhotos: 'No station photos available',
+    companyReviews: 'Company Reviews',
+    averageRating: 'Average Rating',
+    noReviewsYet: 'No reviews yet',
   },
   ar: {
     tripDetails: 'تفاصيل الرحلة',
@@ -93,6 +99,9 @@ const translations = {
     loginToFavorite: 'سجل الدخول لحفظ المفضلة',
     noBusPhotos: 'لا توجد صور للباص',
     noStationPhotos: 'لا توجد صور للمحطات',
+    companyReviews: 'تقييمات الشركة',
+    averageRating: 'متوسط التقييم',
+    noReviewsYet: 'لا توجد تقييمات بعد',
   },
 };
 
@@ -102,6 +111,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
   const [tripImages, setTripImages] = useState<any[]>([]);
   const [busImages, setBusImages] = useState<any[]>([]);
   const [stationImages, setStationImages] = useState<any[]>([]);
+  const [companyReviews, setCompanyReviews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showBookingModal, setShowBookingModal] = useState(false);
@@ -137,16 +147,19 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
         
         setTrip(formattedTrip);
 
-        // Fetch images for this trip
+        // Fetch images and reviews for this trip
         try {
-          const [tripImgs, busImgs, stationImgs] = await Promise.all([
+          const [tripImgs, busImgs, stationImgs, reviews] = await Promise.all([
             imagesApi.getByEntity('trip', data.id || 0),
             imagesApi.getByEntity('bus', data.company_id || 0),
             imagesApi.getByEntity('station', data.departure_station_id || 0),
+            ratingsApi.getByCompany(data.company_id || 0).catch(() => []),
           ]);
+          console.log('Company reviews fetched:', reviews.length, 'reviews for company_id:', data.company_id);
           setTripImages(tripImgs);
           setBusImages(busImgs);
           setStationImages(stationImgs);
+          setCompanyReviews(reviews);
         } catch (imgErr) {
           console.error('Error fetching images:', imgErr);
           // Images are optional, so we continue
@@ -472,6 +485,118 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Company Reviews Section */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 lg:p-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">{t.companyReviews}</h2>
+            {companyReviews.length > 0 ? (
+              <div className="space-y-6">
+                {/* Average Rating */}
+                <div className="flex items-center gap-4 pb-6 border-b border-gray-200">
+                  <div className="text-center">
+                    <div className="text-4xl font-bold text-gray-900">
+                      {(companyReviews.reduce((acc, r) => acc + ((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3), 0) / companyReviews.length).toFixed(1)}
+                    </div>
+                    <div className="flex items-center justify-center gap-1 mt-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-5 h-5 ${
+                            star <= Math.round(companyReviews.reduce((acc, r) => acc + ((r.punctuality_rating + r.friendliness_rating + r.cleanliness_rating) / 3), 0) / companyReviews.length)
+                              ? 'fill-yellow-400 text-yellow-400'
+                              : 'text-gray-300'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      {companyReviews.length} {language === 'de' ? 'Bewertungen' : language === 'en' ? 'reviews' : 'تقييمات'}
+                    </div>
+                  </div>
+                  <div className="flex-1 space-y-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-24">{language === 'de' ? 'Pünktlichkeit' : language === 'en' ? 'Punctuality' : 'الالتزام بالمواعيد'}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-600 rounded-full"
+                          style={{ width: `${(companyReviews.reduce((acc, r) => acc + r.punctuality_rating, 0) / companyReviews.length / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 w-8">
+                        {(companyReviews.reduce((acc, r) => acc + r.punctuality_rating, 0) / companyReviews.length).toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-24">{language === 'de' ? 'Freundlichkeit' : language === 'en' ? 'Friendliness' : 'اللطف'}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-600 rounded-full"
+                          style={{ width: `${(companyReviews.reduce((acc, r) => acc + r.friendliness_rating, 0) / companyReviews.length / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 w-8">
+                        {(companyReviews.reduce((acc, r) => acc + r.friendliness_rating, 0) / companyReviews.length).toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm text-gray-600 w-24">{language === 'de' ? 'Sauberkeit' : language === 'en' ? 'Cleanliness' : 'النظافة'}</span>
+                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-green-600 rounded-full"
+                          style={{ width: `${(companyReviews.reduce((acc, r) => acc + r.cleanliness_rating, 0) / companyReviews.length / 5) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-900 w-8">
+                        {(companyReviews.reduce((acc, r) => acc + r.cleanliness_rating, 0) / companyReviews.length).toFixed(1)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reviews List */}
+                <div className="space-y-4">
+                  {companyReviews.slice(0, 5).map((review, index) => (
+                    <div key={index} className="border-b border-gray-200 pb-4 last:border-0">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                          <span className="text-green-700 font-medium text-sm">
+                            {review.user_name ? review.user_name.charAt(0).toUpperCase() : 'U'}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-medium text-gray-900">{review.user_name || 'Anonymous'}</span>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`w-4 h-4 ${
+                                    star <= Math.round((review.punctuality_rating + review.friendliness_rating + review.cleanliness_rating) / 3)
+                                      ? 'fill-yellow-400 text-yellow-400'
+                                      : 'text-gray-300'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <p className="text-gray-700 text-sm">{review.comment}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            {new Date(review.created_at).toLocaleDateString(language === 'de' ? 'de-DE' : language === 'en' ? 'en-US' : 'ar-SA')}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                {t.noReviewsYet}
+              </div>
+            )}
           </div>
         </div>
       ) : (

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -89,10 +89,18 @@ const getCityCoordinates = (cityName: string): [number, number] | null => {
 export function RouteMap({ fromCity, toCity, stops, departureStation, arrivalStation }: RouteMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    if (!mapRef.current) {
-      console.warn('Map ref not available');
+    // Wait for DOM to be ready
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!isReady || !mapRef.current) {
       return;
     }
 
@@ -117,6 +125,7 @@ export function RouteMap({ fromCity, toCity, stops, departureStation, arrivalSta
     // Initialize map
     if (mapInstanceRef.current) {
       mapInstanceRef.current.remove();
+      mapInstanceRef.current = null;
     }
 
     const map = L.map(mapRef.current).setView(fromCoords, 8);
@@ -233,7 +242,7 @@ export function RouteMap({ fromCity, toCity, stops, departureStation, arrivalSta
         mapInstanceRef.current = null;
       }
     };
-  }, [fromCity, toCity, stops, departureStation, arrivalStation]);
+  }, [isReady, fromCity, toCity, stops, departureStation, arrivalStation]);
 
   return (
     <div 

@@ -225,6 +225,11 @@ export const ratingsApi = {
     return handleResponse(response);
   },
 
+  getByCompany: async (companyId: number) => {
+    const response = await fetch(`${API_BASE}/api/ratings?company_id=${companyId}`);
+    return handleResponse(response);
+  },
+
   getCompanyAverage: async (companyId: number) => {
     const response = await fetch(`${API_BASE}/api/ratings/company/${companyId}`);
     return handleResponse(response);

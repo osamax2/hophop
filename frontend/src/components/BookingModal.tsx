@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Users, DollarSign, CreditCard, AlertCircle, Check, Loader2, Clock } from 'lucide-react';
 import type { Language } from '../App';
 import { bookingsApi } from '../lib/api';
@@ -230,6 +231,18 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
     }
   }, [isOpen]);
 
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const minutes = Math.floor(timeRemaining / 60);
@@ -333,10 +346,29 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
       onClose();
     }
   };
-      
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+
+  const modalContent = (
+    <div 
+      className="fixed inset-0 z-[999999] flex items-center justify-center p-4"
+      style={{ 
+        direction: language === 'ar' ? 'rtl' : 'ltr',
+        backgroundColor: 'rgba(0, 0, 0, 0.75)'
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget && !isProcessing) {
+          handleClose();
+        }
+      }}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl w-full"
+        style={{
+          maxWidth: '48rem',
+          maxHeight: '90vh',
+          overflowY: 'auto'
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="sticky top-0 bg-white border-b-2 border-gray-200 p-6 rounded-t-2xl shadow-sm">
           <div className="flex items-center justify-between mb-2">
@@ -644,4 +676,7 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
       </div>
     </div>
   );
+
+  const modalRoot = document.getElementById('modal-root');
+  return createPortal(modalContent, modalRoot || document.body);
 }
