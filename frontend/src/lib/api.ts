@@ -591,7 +591,7 @@ export const adminApi = {
 
   deleteUser: async (userId: number) => {
     const headers = getAuthHeaders();
-    const response = await fetch(`${API_BASE}/api/users/${userId}`, {
+    const response = await fetch(`${API_BASE}/api/admin/users/${userId}`, {
       method: "DELETE",
       headers: headers,
     });
