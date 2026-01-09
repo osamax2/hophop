@@ -571,12 +571,17 @@ export function SearchResults({
         </div>
 
         {/* Debug info */}
-        {console.log('Render check:', {
-          isRoundTrip: searchParams.isRoundTrip,
-          returnTripsLength: returnTrips.length,
-          filteredReturnTripsLength: filteredReturnTrips.length,
-          shouldShow: searchParams.isRoundTrip
-        })}
+        {(() => {
+          const debugInfo = {
+            'searchParams.isRoundTrip': searchParams.isRoundTrip,
+            'returnTrips.length': returnTrips.length,
+            'filteredReturnTrips.length': filteredReturnTrips.length,
+            'searchParams.returnDate': searchParams.returnDate,
+            'Will show return section': !!searchParams.isRoundTrip
+          };
+          console.log('=== RENDER CHECK ===', debugInfo);
+          return null;
+        })()}
 
         {searchParams.isRoundTrip && (
           <div className="mt-8">
