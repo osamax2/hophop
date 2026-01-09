@@ -20,7 +20,14 @@ export function requireAuth(
   }
 
   try {
-    const secret = process.env.JWT_SECRET || "dev_secret_change_me";
+    const secret = process.env.JWT_SECRET;
+    
+    // Fail if JWT_SECRET is not set (security best practice)
+    if (!secret) {
+      console.error("🚨 CRITICAL: JWT_SECRET not set in environment!");
+      return res.status(500).json({ message: "Server configuration error" });
+    }
+
     const payload = jwt.verify(token, secret) as { id: number };
 
     req.user = { id: payload.id };

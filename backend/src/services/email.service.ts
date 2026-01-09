@@ -2,24 +2,29 @@ import nodemailer from "nodemailer";
 
 // Email configuration for hophopsy.com
 const transporter = nodemailer.createTransport({
-  host: "mail.hophopsy.com",
-  port: 587,
+  host: process.env.SMTP_HOST || "mail.hophopsy.com",
+  port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false, // STARTTLS
   auth: {
-    user: "noreply@hophopsy.com",
-    pass: "NoReply2025!",
+    user: process.env.SMTP_USER || "noreply@hophopsy.com",
+    pass: process.env.SMTP_PASSWORD || "",
   },
   tls: {
     rejectUnauthorized: false, // Allow self-signed certificates
   },
 });
 
+// Verify SMTP configuration on startup
+if (!process.env.SMTP_PASSWORD) {
+  console.error("⚠️  WARNING: SMTP_PASSWORD not set in environment variables!");
+}
+
 // Verify connection on startup
 transporter.verify((error, success) => {
   if (error) {
     console.error("Email service error:", error);
   } else {
-    console.log("Email service ready");
+    console.log("✅ Email service ready");
   }
 });
 
