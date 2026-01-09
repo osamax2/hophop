@@ -1,30 +1,35 @@
 import nodemailer from "nodemailer";
 
 // Email configuration for hophopsy.com
+// Use SMTP_PASS (from docker-compose) or SMTP_PASSWORD as fallback
+const smtpPassword = process.env.SMTP_PASS || process.env.SMTP_PASSWORD || "";
+
 const transporter = nodemailer.createTransport({
   host: process.env.SMTP_HOST || "mail.hophopsy.com",
   port: parseInt(process.env.SMTP_PORT || "587"),
   secure: false, // STARTTLS
   auth: {
     user: process.env.SMTP_USER || "noreply@hophopsy.com",
-    pass: process.env.SMTP_PASSWORD || "",
+    pass: smtpPassword,
   },
   tls: {
     rejectUnauthorized: false, // Allow self-signed certificates
   },
 });
 
-// Verify SMTP configuration on startup
-if (!process.env.SMTP_PASSWORD) {
-  console.error("⚠️  WARNING: SMTP_PASSWORD not set in environment variables!");
+// Log SMTP configuration status
+if (!smtpPassword) {
+  console.error("⚠️  WARNING: SMTP password not set (neither SMTP_PASS nor SMTP_PASSWORD)!");
+} else {
+  console.log(`📧 Email service configured: ${process.env.SMTP_USER || 'noreply@hophopsy.com'}@${process.env.SMTP_HOST || 'mail.hophopsy.com'}:${process.env.SMTP_PORT || '587'}`);
 }
 
 // Verify connection on startup
 transporter.verify((error, success) => {
   if (error) {
-    console.error("Email service error:", error);
+    console.error("❌ Email service connection error:", error.message);
   } else {
-    console.log("✅ Email service ready");
+    console.log("✅ SMTP connection verified successfully");
   }
 });
 
