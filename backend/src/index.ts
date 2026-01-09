@@ -3,6 +3,7 @@ import cors from "cors";
 import { pool } from "./db";
 import authRoutes from "./routes/auth";
 import { requireAuth, AuthedRequest } from "./middleware/auth";
+import { apiLimiter } from "./middleware/rateLimiter";
 import bookingsRoutes from "./routes/bookings";
 import bookingStatusRoutes from "./routes/booking-status";
 import companyBookingsRoutes from "./routes/company-bookings";
@@ -20,14 +21,26 @@ import bookingsCrudRoutes from "./routes/bookings-crud";
 import tripsCrudRoutes from "./routes/trips-crud";
 import citiesRoutes from "./routes/cities";
 import companiesRoutes from "./routes/companies";
+import helmet from "helmet";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// ====== Security Middlewares ======
+// Helmet helps secure Express apps by setting various HTTP headers
+app.use(helmet({
+  contentSecurityPolicy: false, // Allow for easier development, customize in production
+  crossOriginEmbedderPolicy: false,
+}));
 
 // ====== Middlewares ======
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// Apply general rate limiting to all API routes
+app.use("/api/", apiLimiter);
+
 // Serve uploaded images
 app.use("/uploads", express.static("uploads"));
 

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { User, Mail, Phone, Lock, Calendar, Globe, Building2, CheckCircle } from 'lucide-react';
 import type { Language, User as UserType } from '../App';
 import { CompanyRegister } from './CompanyRegister';
+import { sanitizeInput, sanitizeEmail, sanitizePhone } from '../lib/sanitize';
 
 interface LoginRegisterProps {
   onLogin: (user: UserType) => void;
@@ -185,23 +186,34 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
     e.preventDefault();
     setErrors({});
 
+    // Sanitize all inputs before processing
+    const sanitizedData = {
+      name: sanitizeInput(formData.name),
+      email: sanitizeEmail(formData.email),
+      phone: sanitizePhone(formData.phone),
+      password: formData.password, // Don't sanitize password - handle as-is
+      birthDate: formData.birthDate,
+      gender: sanitizeInput(formData.gender),
+      language: formData.language,
+    };
+
     // Validation for registration
     if (!isLogin) {
       const newErrors: { [key: string]: string } = {};
 
       // Email validation
-      if (!validateEmail(formData.email)) {
+      if (!validateEmail(sanitizedData.email)) {
         newErrors.email = t.invalidEmail;
       }
 
       // Password validation
-      const passwordErrors = validatePassword(formData.password);
+      const passwordErrors = validatePassword(sanitizedData.password);
       if (passwordErrors.length > 0) {
         newErrors.password = passwordErrors.join('. ');
       }
 
       // Age validation
-      if (formData.birthDate && !validateAge(formData.birthDate)) {
+      if (sanitizedData.birthDate && !validateAge(sanitizedData.birthDate)) {
         newErrors.birthDate = t.ageRestriction;
       }
 
@@ -211,7 +223,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
       }
     } else {
       // Email validation for login
-      if (!validateEmail(formData.email)) {
+      if (!validateEmail(sanitizedData.email)) {
         setErrors({ email: t.invalidEmail });
         return;
       }
@@ -223,17 +235,17 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
         : `${API_BASE}/api/auth/register`;
 
 
-      // ملاحظة: عدّل أسماء الحقول إذا باك-إندك مختلف (مثلاً full_name بدل name)
+      // Use sanitized data in payload
       const payload: any = isLogin
-        ? { email: formData.email, password: formData.password }
+        ? { email: sanitizedData.email, password: sanitizedData.password }
         : {
-            name: formData.name,
-            email: formData.email,
-            phone: formData.phone,
-            password: formData.password,
-            language: formData.language,
-            birthDate: formData.birthDate || null,
-            gender: formData.gender || null,
+            name: sanitizedData.name,
+            email: sanitizedData.email,
+            phone: sanitizedData.phone,
+            password: sanitizedData.password,
+            language: sanitizedData.language,
+            birthDate: sanitizedData.birthDate || null,
+            gender: sanitizedData.gender || null,
           };
 
       const res = await fetch(url, {

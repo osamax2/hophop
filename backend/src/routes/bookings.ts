@@ -4,6 +4,7 @@ import { requireAuth, optionalAuth, AuthedRequest } from "../middleware/auth";
 import { emailService } from "../services/email";
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import { bookingLimiter, guestBookingLimiter } from "../middleware/rateLimiter";
 
 const router = Router();
 
@@ -11,8 +12,9 @@ const router = Router();
  * POST /api/bookings
  * body: { trip_id, quantity, guest_name?, guest_email?, guest_phone? }
  * Supports both authenticated users and guest bookings
+ * Protected by rate limiting to prevent abuse
  */
-router.post("/", optionalAuth, async (req: AuthedRequest, res) => {
+router.post("/", bookingLimiter, optionalAuth, async (req: AuthedRequest, res) => {
   const userId = req.user?.id; // Optional for guest bookings
 
   const {

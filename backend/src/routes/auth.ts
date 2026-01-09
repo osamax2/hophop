@@ -5,6 +5,8 @@ import crypto from "crypto";
 import { pool } from "../db";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { sendVerificationEmail, sendWelcomeEmail } from "../services/email.service";
+import { registerLimiter, loginLimiter, emailVerificationLimiter } from "../middleware/rateLimiter";
+import { sanitizeString, sanitizeEmail, sanitizePhone } from "../utils/sanitize";
 
 const router = Router();
 
@@ -16,8 +18,9 @@ function generateVerificationToken(): string {
 /**
  * POST /api/auth/register
  * Creates a new user account with email verification
+ * Protected by rate limiting to prevent mass account creation
  */
-router.post("/register", async (req, res) => {
+router.post("/register", registerLimiter, async (req, res) => {
   const {
     email,
     password,
@@ -35,10 +38,24 @@ router.post("/register", async (req, res) => {
   }
 
   try {
+    // Sanitize and validate input
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) {
+      return res.status(400).json({
+        message: "Invalid email format",
+      });
+    }
+
+    const sanitizedFirstName = first_name ? sanitizeString(first_name) : null;
+    const sanitizedLastName = last_name ? sanitizeString(last_name) : null;
+    const sanitizedPhone = phone ? sanitizePhone(phone) : null;
+    const sanitizedGender = gender ? sanitizeString(gender) : null;
+    const sanitizedAddress = address ? sanitizeString(address) : null;
+
     // check if user already exists
     const existingUser = await pool.query(
       "SELECT id FROM users WHERE email = $1",
-      [email]
+      [sanitizedEmail]
     );
 
     if (existingUser.rows.length > 0) {
@@ -47,7 +64,7 @@ router.post("/register", async (req, res) => {
       });
     }
 
-    // hash password
+    // hash password (don't sanitize password - hash it as-is)
     const password_hash = await bcrypt.hash(password, 10);
     
     // generate verification token
@@ -65,13 +82,13 @@ router.post("/register", async (req, res) => {
       RETURNING id
       `,
       [
-        email,
+        sanitizedEmail,
         password_hash,
-        first_name || null,
-        last_name || null,
-        phone || null,
-        gender || null,
-        address || null,
+        sanitizedFirstName,
+        sanitizedLastName,
+        sanitizedPhone,
+        sanitizedGender,
+        sanitizedAddress,
         verificationToken,
         tokenExpires,
       ]
@@ -185,8 +202,9 @@ router.get("/verify-email", async (req, res) => {
 
 /**
  * POST /api/auth/resend-verification
- * Resend verification email
+ * Protected by rate limiting to prevent email spam
  */
+router.post("/resend-verification", emailVerificationLimiter
 router.post("/resend-verification", async (req, res) => {
   const { email } = req.body;
 
@@ -258,8 +276,9 @@ router.post("/resend-verification", async (req, res) => {
 
 /**
  * POST /api/auth/login
+ * Protected by rate limiting to prevent brute force attacks
  */
-router.post("/login", async (req, res) => {
+router.post("/login", loginLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   console.log("Login attempt for email:", email);
@@ -272,6 +291,14 @@ router.post("/login", async (req, res) => {
   }
 
   try {
+    // Sanitize and validate email
+    const sanitizedEmail = sanitizeEmail(email);
+    if (!sanitizedEmail) {
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
     // First check if user exists (with or without is_active check)
     const userCheck = await pool.query(
       `

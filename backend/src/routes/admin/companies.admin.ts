@@ -2,8 +2,15 @@ import { Router } from "express";
 import { pool } from "../../db";
 import { requireAuth, AuthedRequest } from "../../middleware/auth";
 import { requireRole } from "../../middleware/roles";
+import { sendVerificationEmail, sendWelcomeEmail } from "../../services/email.service";
+import crypto from "crypto";
 
 const router = Router();
+
+// Helper function to generate verification token
+function generateVerificationToken(): string {
+  return crypto.randomBytes(32).toString("hex");
+}
 
 // GET /api/admin/companies - Get all companies (including soft deleted if query param showDeleted=true)
 router.get("/", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest, res) => {
@@ -143,16 +150,28 @@ router.post("/", requireAuth, requireRole(["ADMIN"]), async (req: AuthedRequest,
       
       const passwordHash = await bcrypt.hash(password, 10);
       
-      // Create user
+      // Generate verification token
+      const verificationToken = generateVerificationToken();
+      const tokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+      
+      // Create user (inactive until email verified)
       const userResult = await client.query(
         `INSERT INTO users 
-          (email, phone, password_hash, first_name, last_name, company_id, is_active, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, true, NOW())
+          (email, phone, password_hash, first_name, last_name, company_id, is_active, status, 
+           email_verified, verification_token, verification_token_expires, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, false, 'inactive', false, $7, $8, NOW())
          RETURNING id`,
-        [user_email, user_phone, passwordHash, first_name, last_name, company.id]
+        [user_email, user_phone, passwordHash, first_name, last_name, company.id, verificationToken, tokenExpires]
       );
       
       const userId = userResult.rows[0].id;
+      
+      // Send verification email
+      await sendVerificationEmail({
+        to: user_email,
+        firstName: first_name,
+        verificationToken,
+      });
       
       // Assign 'Agent' role
       const agentRole = await client.query(
