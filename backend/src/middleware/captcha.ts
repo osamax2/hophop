@@ -53,7 +53,7 @@ async function verifyRecaptchaEnterprise(
         valid: false,
         score: 0,
         action: '',
-        invalidReason: response.tokenProperties?.invalidReason || 'UNKNOWN'
+        invalidReason: String(response.tokenProperties?.invalidReason || 'UNKNOWN')
       };
     }
 
@@ -70,13 +70,13 @@ async function verifyRecaptchaEnterprise(
 
     // Get the risk score and reasons
     const score = response.riskAnalysis?.score || 0;
-    const reasons = response.riskAnalysis?.reasons || [];
+    const reasons = (response.riskAnalysis?.reasons || []).map(reason => String(reason));
 
     return {
       valid: true,
       score: score,
       action: action,
-      reasons: reasons as string[]
+      reasons: reasons
     };
   } catch (error) {
     console.error('❌ reCAPTCHA Enterprise verification error:', error);
