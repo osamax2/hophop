@@ -518,7 +518,26 @@ export function SearchResults({
                       />
                     </button>
                   )}
-                  {!shouldShowSelect && (
+                  {shouldShowSelect ? (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails(trip.id);
+                        }}
+                        className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors whitespace-nowrap text-sm"
+                      >
+                        {t.viewDetails}
+                      </button>
+                      {isSelected && (
+                        <div className="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-sm font-medium flex items-center">
+                          ✓ {language === 'de' && 'Ausgewählt'}
+                          {language === 'en' && 'Selected'}
+                          {language === 'ar' && 'محدد'}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -528,11 +547,6 @@ export function SearchResults({
                     >
                       {t.viewDetails}
                     </button>
-                  )}
-                  {isSelected && shouldShowSelect && (
-                    <div className="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-sm font-medium">
-                      ✓
-                    </div>
                   )}
                 </div>
               </div>
@@ -561,16 +575,28 @@ export function SearchResults({
           isRoundTrip: searchParams.isRoundTrip,
           returnTripsLength: returnTrips.length,
           filteredReturnTripsLength: filteredReturnTrips.length,
-          shouldShow: searchParams.isRoundTrip && returnTrips.length > 0
+          shouldShow: searchParams.isRoundTrip
         })}
 
-        {searchParams.isRoundTrip && returnTrips.length > 0 && (
+        {searchParams.isRoundTrip && (
           <div className="mt-8">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">{t.returnTrip}</h2>
-            <p className="text-sm text-gray-600 mb-4">{t.selectReturn}</p>
-            <div className="space-y-4">
-              {filteredReturnTrips.map((trip) => renderTripCard(trip, true))}
-            </div>
+            {returnTrips.length > 0 ? (
+              <>
+                <p className="text-sm text-gray-600 mb-4">{t.selectReturn}</p>
+                <div className="space-y-4">
+                  {filteredReturnTrips.map((trip) => renderTripCard(trip, true))}
+                </div>
+              </>
+            ) : (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+                <p className="text-gray-700">
+                  {language === 'de' && 'Keine Rückfahrten für das ausgewählte Datum verfügbar'}
+                  {language === 'en' && 'No return trips available for the selected date'}
+                  {language === 'ar' && 'لا توجد رحلات عودة متاحة للتاريخ المحدد'}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
