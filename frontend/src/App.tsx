@@ -494,6 +494,20 @@ export default function App() {
         )}
       </main>
 
+      {/* Privacy Policy Modal - Global */}
+      <PrivacyPolicy 
+        isOpen={showPrivacyPolicy}
+        onClose={() => setShowPrivacyPolicy(false)}
+        language={language}
+      />
+      
+      {/* Terms of Service Modal - Global */}
+      <TermsOfService 
+        isOpen={showTermsOfService}
+        onClose={() => setShowTermsOfService(false)}
+        language={language}
+      />
+
       {/* No Trips Modal */}
       {showNoTripsModal && (
         <div 
@@ -674,20 +688,6 @@ function VerifyEmailWrapper({
           )}
         </div>
       </div>
-      
-      {/* Privacy Policy Modal */}
-      <PrivacyPolicy 
-        isOpen={showPrivacyPolicy}
-        onClose={() => setShowPrivacyPolicy(false)}
-        language={language}
-      />
-      
-      {/* Terms of Service Modal */}
-      <TermsOfService 
-        isOpen={showTermsOfService}
-        onClose={() => setShowTermsOfService(false)}
-        language={language}
-      />
     </div>
   );
 }
