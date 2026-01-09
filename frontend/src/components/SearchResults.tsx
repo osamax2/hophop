@@ -253,8 +253,6 @@ export function SearchResults({
         // لو حاب، ممكن نضبط الرينج حسب الأسعار الفعلية
         if (data.length > 0) {
           console.log('Trips found, setting hasNoTrips to false');
-          const maxPrice = Math.max(...data.map((t) => t.price));
-          setPriceRange([0, maxPrice]);
           setHasNoTrips(false);
           setLoading(false);
         } else {
@@ -290,6 +288,16 @@ export function SearchResults({
     fetchTrips();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.from, searchParams.to, searchParams.date, searchParams.returnDate, searchParams.isRoundTrip, language]);
+
+  // Update price range based on all loaded trips (outbound + return)
+  useEffect(() => {
+    const allTrips = [...trips, ...returnTrips];
+    if (allTrips.length > 0) {
+      const maxPrice = Math.max(...allTrips.map((t) => t.price));
+      console.log('Setting priceRange based on all trips. Max price:', maxPrice);
+      setPriceRange([0, maxPrice]);
+    }
+  }, [trips, returnTrips]);
 
   // هذا useEffect لم يعد ضرورياً لأننا نستدعي callback مباشرة في fetchTrips
 
