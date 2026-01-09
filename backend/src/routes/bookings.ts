@@ -431,18 +431,10 @@ router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(400).json({ message: "Cannot cancel past trips" });
     }
 
-    // Update booking status to cancelled
-    await client.query(
-      "UPDATE bookings SET booking_status = 'cancelled' WHERE id = $1",
-      [bookingId]
-    );
-
-    // Return seats to trip availability
-    await client.query(
-      "UPDATE trips SET seats_available = seats_available + $1 WHERE id = $2",
-      [booking.seats_booked, booking.trip_id]
-    );
-
+    // Note: We do NOT change the status or return seats
+    // The company must manually approve the cancellation
+    // We only send notification emails
+    
     await client.query("COMMIT");
 
     // Send cancellation emails
@@ -457,11 +449,16 @@ router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
 
     // Email to user
     if (userEmail) {
-      const userSubject = 'Booking Cancellation Confirmation';
+      const userSubject = 'Cancellation Request Received / طلب إلغاء تم استلامه';
       const userBody = `
-        <h2>Booking Cancelled</h2>
+        <h2>Cancellation Request Received</h2>
         <p>Dear ${userName},</p>
-        <p>Your booking has been successfully cancelled.</p>
+        <p>We have received your cancellation request for the following booking.</p>
+        <p style="color: #856404; background-color: #fff3cd; padding: 12px; border-radius: 6px;">
+          <strong>⏳ Pending Company Approval</strong><br>
+          Your cancellation request is pending approval from ${booking.company_name}. 
+          You will be notified once the company processes your request.
+        </p>
         <h3>Booking Details:</h3>
         <ul>
           <li><strong>Booking ID:</strong> #${booking.id}</li>
@@ -484,11 +481,14 @@ router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
 
     // Email to company
     if (booking.company_email) {
-      const companySubject = 'Booking Cancellation Notification';
+      const companySubject = 'Cancellation Request - Action Required / طلب إلغاء - مطلوب إجراء';
       const companyBody = `
-        <h2>Booking Cancellation Notice</h2>
+        <h2>⚠️ Cancellation Request - Action Required</h2>
         <p>Dear ${booking.company_name},</p>
-        <p>A customer has cancelled their booking.</p>
+        <p style="color: #721c24; background-color: #f8d7da; padding: 12px; border-radius: 6px;">
+          <strong>A customer has requested to cancel their booking.</strong><br>
+          Please review this request and take appropriate action in the admin panel.
+        </p>
         <h3>Booking Details:</h3>
         <ul>
           <li><strong>Booking ID:</strong> #${booking.id}</li>
@@ -496,10 +496,16 @@ router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
           <li><strong>Customer Email:</strong> ${userEmail}</li>
           <li><strong>Route:</strong> ${booking.from_city} → ${booking.to_city}</li>
           <li><strong>Departure:</strong> ${departureDate} at ${departureTime}</li>
-          <li><strong>Seats Cancelled:</strong> ${booking.seats_booked}</li>
+          <li><strong>Seats:</strong> ${booking.seats_booked}</li>
           <li><strong>Amount:</strong> ${booking.total_price} ${booking.currency}</li>
         </ul>
-        <p>The seats have been returned to available inventory.</p>
+        <p><strong>Next Steps:</strong></p>
+        <ol>
+          <li>Review the cancellation request</li>
+          <li>Contact the customer if needed</li>
+          <li>Approve or reject the cancellation in the admin panel</li>
+        </ol>
+        <p>The booking status remains unchanged until you take action.</p>
         <p>Best regards,<br>HopHop Syria System</p>
       `;
 
@@ -511,9 +517,9 @@ router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
     }
 
     res.json({ 
-      message: "Booking cancelled successfully",
+      message: "Cancellation request sent successfully. Awaiting company approval.",
       booking_id: bookingId,
-      status: 'cancelled'
+      status: booking.booking_status // Keep original status
     });
 
   } catch (error) {
