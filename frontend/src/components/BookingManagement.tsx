@@ -92,6 +92,7 @@ const translations = {
     confirmed: 'Confirmed',
     completed: 'Completed',
     cancelled: 'Cancelled',
+    cancellation_requested: 'Cancellation Requested',
     company: 'Company',
     allCompanies: 'All Companies',
     fromDate: 'From Date',
@@ -143,6 +144,7 @@ const translations = {
     confirmed: 'مؤكد',
     completed: 'مكتمل',
     cancelled: 'ملغي',
+    cancellation_requested: 'انتظار الإلغاء',
     company: 'الشركة',
     allCompanies: 'جميع الشركات',
     fromDate: 'من تاريخ',
@@ -381,6 +383,8 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
         return 'bg-blue-100 text-blue-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
+      case 'cancellation_requested':
+        return 'bg-orange-100 text-orange-800';
       case 'cancelled':
         return 'bg-red-100 text-red-800';
       default:
@@ -426,6 +430,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
               <option value="pending">{t.pending}</option>
               <option value="confirmed">{t.confirmed}</option>
               <option value="completed">{t.completed}</option>
+              <option value="cancellation_requested">{t.cancellation_requested}</option>
               <option value="cancelled">{t.cancelled}</option>
             </select>
           </div>
@@ -686,6 +691,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                   <option value="pending">{t.pending}</option>
                   <option value="confirmed">{t.confirmed}</option>
                   <option value="completed">{t.completed}</option>
+                  <option value="cancellation_requested">{t.cancellation_requested}</option>
                   <option value="cancelled">{t.cancelled}</option>
                 </select>
               </div>

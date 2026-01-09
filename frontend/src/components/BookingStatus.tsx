@@ -42,10 +42,12 @@ const translations = {
     confirmed: 'Bestätigt',
     pending: 'Ausstehend',
     cancelled: 'Storniert',
+    cancellation_requested: 'Stornierung angefordert',
     completed: 'Abgeschlossen',
     pendingDesc: 'Ihre Buchung wartet auf die Bestätigung durch das Transportunternehmen.',
     confirmedDesc: 'Ihre Buchung wurde bestätigt! Bitte seien Sie 15 Minuten vor Abfahrt am Abfahrtsort.',
     cancelledDesc: 'Diese Buchung wurde storniert.',
+    cancellationRequestedDesc: 'Eine Stornierungsanfrage wurde gesendet und wartet auf Genehmigung des Unternehmens.',
     tripDetails: 'Reisedetails',
     from: 'Von',
     to: 'Nach',
@@ -69,10 +71,12 @@ const translations = {
     confirmed: 'Confirmed',
     pending: 'Pending',
     cancelled: 'Cancelled',
+    cancellation_requested: 'Cancellation Requested',
     completed: 'Completed',
     pendingDesc: 'Your booking is waiting for confirmation from the transport company.',
     confirmedDesc: 'Your booking has been confirmed! Please be at the departure location 15 minutes before departure.',
     cancelledDesc: 'This booking has been cancelled.',
+    cancellationRequestedDesc: 'A cancellation request has been sent and is awaiting company approval.',
     tripDetails: 'Trip Details',
     from: 'From',
     to: 'To',
@@ -96,10 +100,12 @@ const translations = {
     confirmed: 'مؤكد',
     pending: 'قيد الانتظار',
     cancelled: 'ملغى',
+    cancellation_requested: 'انتظار الإلغاء',
     completed: 'مكتمل',
     pendingDesc: 'حجزك في انتظار تأكيد شركة النقل.',
     confirmedDesc: 'تم تأكيد حجزك! يرجى التواجد في موقع المغادرة قبل 15 دقيقة من الموعد.',
     cancelledDesc: 'تم إلغاء هذا الحجز.',
+    cancellationRequestedDesc: 'تم إرسال طلب الإلغاء وينتظر موافقة الشركة.',
     tripDetails: 'تفاصيل الرحلة',
     from: 'من',
     to: 'إلى',
@@ -171,6 +177,8 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
         return <CheckCircle className="w-12 h-12 text-green-600" />;
       case 'pending':
         return <Clock className="w-12 h-12 text-yellow-600" />;
+      case 'cancellation_requested':
+        return <Clock className="w-12 h-12 text-orange-600" />;
       case 'cancelled':
         return <XCircle className="w-12 h-12 text-red-600" />;
       default:
@@ -184,6 +192,8 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
         return t.confirmed;
       case 'pending':
         return t.pending;
+      case 'cancellation_requested':
+        return t.cancellation_requested;
       case 'cancelled':
         return t.cancelled;
       case 'completed':
@@ -200,6 +210,8 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
         return t.confirmedDesc;
       case 'pending':
         return t.pendingDesc;
+      case 'cancellation_requested':
+        return t.cancellationRequestedDesc;
       case 'cancelled':
         return t.cancelledDesc;
       default:
