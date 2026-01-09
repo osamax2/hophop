@@ -275,7 +275,7 @@ export function PrivacyPolicyPage({ language, onBack }: PrivacyPolicyPageProps) 
         </button>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-t-2xl">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-black p-8 rounded-t-2xl">
           <h1 className="text-4xl font-bold mb-2">{t.title}</h1>
           <p className="text-blue-100">
             {t.lastUpdated}: {currentDate}

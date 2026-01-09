@@ -368,7 +368,7 @@ export function TermsOfServicePage({ language, onBack }: TermsOfServicePageProps
         </button>
 
         {/* Header */}
-        <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-8 rounded-t-2xl">
+        <div className="bg-gradient-to-r from-green-600 to-green-700 text-black p-8 rounded-t-2xl">
           <h1 className="text-4xl font-bold mb-2">{t.title}</h1>
           <p className="text-green-100">
             {t.lastUpdated}: {currentDate}
