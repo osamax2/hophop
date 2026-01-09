@@ -39,6 +39,11 @@ const translations = {
     loading: 'Laden...',
     error: 'Fehler beim Laden der Buchungen',
     viewDetails: 'Details anzeigen',
+    cancelTrip: 'Reise stornieren',
+    cancelConfirm: 'Möchten Sie diese Buchung wirklich stornieren?',
+    cancelling: 'Wird storniert...',
+    cancelSuccess: 'Buchung erfolgreich storniert',
+    cancelError: 'Fehler beim Stornieren',
   },
   en: {
     title: 'My Bookings',
@@ -67,6 +72,11 @@ const translations = {
     loading: 'Loading...',
     error: 'Error loading bookings',
     viewDetails: 'View Details',
+    cancelTrip: 'Cancel Trip',
+    cancelConfirm: 'Are you sure you want to cancel this booking?',
+    cancelling: 'Cancelling...',
+    cancelSuccess: 'Booking cancelled successfully',
+    cancelError: 'Error cancelling booking',
   },
   ar: {
     title: 'حجوزاتي',
@@ -95,6 +105,11 @@ const translations = {
     loading: 'جار التحميل...',
     error: 'خطأ في تحميل الحجوزات',
     viewDetails: 'عرض التفاصيل',
+    cancelTrip: 'إلغاء الرحلة',
+    cancelConfirm: 'هل أنت متأكد من إلغاء هذا الحجز؟',
+    cancelling: 'جار الإلغاء...',
+    cancelSuccess: 'تم إلغاء الحجز بنجاح',
+    cancelError: 'خطأ في إلغاء الحجز',
   },
 };
 
@@ -118,6 +133,7 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
   const t = translations[language];
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -154,6 +170,61 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
 
     fetchBookings();
   }, [isLoggedIn]);
+
+  const handleCancelBooking = async (bookingId: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation to booking status
+    
+    if (!window.confirm(t.cancelConfirm)) {
+      return;
+    }
+
+    try {
+      setCancellingId(bookingId);
+      const API_BASE = import.meta.env.VITE_API_BASE || '';
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`${API_BASE}/api/bookings/${bookingId}/cancel`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to cancel booking');
+      }
+
+      // Update local state
+      setBookings(prevBookings =>
+        prevBookings.map(booking =>
+          booking.id === bookingId
+            ? { ...booking, booking_status: 'cancelled' }
+            : booking
+        )
+      );
+
+      alert(t.cancelSuccess);
+    } catch (err: any) {
+      console.error('Cancel booking error:', err);
+      alert(t.cancelError + ': ' + (err.message || 'Unknown error'));
+    } finally {
+      setCancellingId(null);
+    }
+  };
+
+  const canCancelBooking = (booking: Booking) => {
+    // Can only cancel pending or confirmed bookings
+    if (!['pending', 'confirmed'].includes(booking.booking_status.toLowerCase())) {
+      return false;
+    }
+    
+    // Check if trip is in the future
+    const tripDate = new Date(booking.departure_time);
+    const now = new Date();
+    return tripDate > now;
+  };
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
@@ -318,9 +389,30 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
                   <div className="text-2xl font-bold text-green-600 mb-1">
                     {formatCurrency(booking.total_price, language)}
                   </div>
-                  <div className="text-xs text-gray-600">
+                  <div className="text-xs text-gray-600 mb-3">
                     {t.bookedOn} {formatDate(booking.created_at)}
                   </div>
+                  
+                  {/* Cancel Button */}
+                  {canCancelBooking(booking) && (
+                    <button
+                      onClick={(e) => handleCancelBooking(booking.id, e)}
+                      disabled={cancellingId === booking.id}
+                      className="mt-2 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center"
+                    >
+                      {cancellingId === booking.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          {t.cancelling}
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-4 h-4" />
+                          {t.cancelTrip}
+                        </>
+                      )}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>

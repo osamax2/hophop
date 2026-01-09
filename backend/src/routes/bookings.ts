@@ -349,5 +349,181 @@ router.get("/my", requireAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+/**
+ * POST /api/bookings/:id/cancel
+ * Cancel a booking and send notification emails
+ */
+router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
+  const userId = req.user?.id;
+  const bookingId = parseInt(req.params.id);
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  if (!bookingId || isNaN(bookingId)) {
+    return res.status(400).json({ message: "Invalid booking ID" });
+  }
+
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    // Get booking details with user and company information
+    const bookingResult = await client.query(
+      `
+      SELECT 
+        b.id,
+        b.user_id,
+        b.trip_id,
+        b.booking_status,
+        b.seats_booked,
+        b.total_price,
+        b.currency,
+        b.guest_name,
+        b.guest_email,
+        t.departure_time,
+        t.arrival_time,
+        fc.name as from_city,
+        tc.name as to_city,
+        comp.name as company_name,
+        comp.email as company_email,
+        u.email as user_email,
+        u.first_name as user_first_name,
+        u.last_name as user_last_name
+      FROM bookings b
+      JOIN trips t ON t.id = b.trip_id
+      LEFT JOIN routes r ON r.id = t.route_id
+      LEFT JOIN cities fc ON fc.id = r.from_city_id
+      LEFT JOIN cities tc ON tc.id = r.to_city_id
+      LEFT JOIN transport_companies comp ON comp.id = t.company_id
+      LEFT JOIN users u ON u.id = b.user_id
+      WHERE b.id = $1
+      `,
+      [bookingId]
+    );
+
+    if (bookingResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Booking not found" });
+    }
+
+    const booking = bookingResult.rows[0];
+
+    // Check if user owns this booking
+    if (booking.user_id !== userId) {
+      await client.query("ROLLBACK");
+      return res.status(403).json({ message: "Not authorized to cancel this booking" });
+    }
+
+    // Check if booking can be cancelled
+    if (!['pending', 'confirmed'].includes(booking.booking_status.toLowerCase())) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Booking cannot be cancelled" });
+    }
+
+    // Check if trip is in the future
+    const tripDate = new Date(booking.departure_time);
+    const now = new Date();
+    if (tripDate <= now) {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ message: "Cannot cancel past trips" });
+    }
+
+    // Update booking status to cancelled
+    await client.query(
+      "UPDATE bookings SET booking_status = 'cancelled' WHERE id = $1",
+      [bookingId]
+    );
+
+    // Return seats to trip availability
+    await client.query(
+      "UPDATE trips SET seats_available = seats_available + $1 WHERE id = $2",
+      [booking.seats_booked, booking.trip_id]
+    );
+
+    await client.query("COMMIT");
+
+    // Send cancellation emails
+    const userName = booking.user_first_name && booking.user_last_name
+      ? `${booking.user_first_name} ${booking.user_last_name}`
+      : booking.guest_name || 'Customer';
+    
+    const userEmail = booking.user_email || booking.guest_email;
+    
+    const departureDate = new Date(booking.departure_time).toLocaleDateString();
+    const departureTime = new Date(booking.departure_time).toLocaleTimeString();
+
+    // Email to user
+    if (userEmail) {
+      const userSubject = 'Booking Cancellation Confirmation';
+      const userBody = `
+        <h2>Booking Cancelled</h2>
+        <p>Dear ${userName},</p>
+        <p>Your booking has been successfully cancelled.</p>
+        <h3>Booking Details:</h3>
+        <ul>
+          <li><strong>Booking ID:</strong> #${booking.id}</li>
+          <li><strong>Route:</strong> ${booking.from_city} → ${booking.to_city}</li>
+          <li><strong>Company:</strong> ${booking.company_name}</li>
+          <li><strong>Departure:</strong> ${departureDate} at ${departureTime}</li>
+          <li><strong>Seats:</strong> ${booking.seats_booked}</li>
+          <li><strong>Amount:</strong> ${booking.total_price} ${booking.currency}</li>
+        </ul>
+        <p>If you have any questions, please contact us.</p>
+        <p>Best regards,<br>HopHop Syria Team</p>
+      `;
+
+      try {
+        await emailService.sendEmail(userEmail, userSubject, userBody);
+      } catch (emailError) {
+        console.error('Failed to send cancellation email to user:', emailError);
+      }
+    }
+
+    // Email to company
+    if (booking.company_email) {
+      const companySubject = 'Booking Cancellation Notification';
+      const companyBody = `
+        <h2>Booking Cancellation Notice</h2>
+        <p>Dear ${booking.company_name},</p>
+        <p>A customer has cancelled their booking.</p>
+        <h3>Booking Details:</h3>
+        <ul>
+          <li><strong>Booking ID:</strong> #${booking.id}</li>
+          <li><strong>Customer:</strong> ${userName}</li>
+          <li><strong>Customer Email:</strong> ${userEmail}</li>
+          <li><strong>Route:</strong> ${booking.from_city} → ${booking.to_city}</li>
+          <li><strong>Departure:</strong> ${departureDate} at ${departureTime}</li>
+          <li><strong>Seats Cancelled:</strong> ${booking.seats_booked}</li>
+          <li><strong>Amount:</strong> ${booking.total_price} ${booking.currency}</li>
+        </ul>
+        <p>The seats have been returned to available inventory.</p>
+        <p>Best regards,<br>HopHop Syria System</p>
+      `;
+
+      try {
+        await emailService.sendEmail(booking.company_email, companySubject, companyBody);
+      } catch (emailError) {
+        console.error('Failed to send cancellation email to company:', emailError);
+      }
+    }
+
+    res.json({ 
+      message: "Booking cancelled successfully",
+      booking_id: bookingId,
+      status: 'cancelled'
+    });
+
+  } catch (error) {
+    await client.query("ROLLBACK");
+    console.error("Cancel booking error:", error);
+    res.status(500).json({ message: "Failed to cancel booking", error: String(error) });
+  } finally {
+    client.release();
+  }
+});
+
 
 export default router;
