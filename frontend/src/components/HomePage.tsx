@@ -19,6 +19,8 @@ const translations = {
     from: 'Startort',
     to: 'Zielort',
     date: 'Datum',
+    returnDate: 'Rückfahrt Datum',
+    roundTrip: 'Hin- und Rückfahrt',
     search: 'Suche starten',
     fromPlaceholder: 'Wähle Startstadt',
     toPlaceholder: 'Wähle Zielstadt',
@@ -70,6 +72,8 @@ const translations = {
     from: 'From',
     to: 'To',
     date: 'Date',
+    returnDate: 'Return Date',
+    roundTrip: 'Round Trip',
     search: 'Start Search',
     fromPlaceholder: 'Select departure city',
     toPlaceholder: 'Select destination city',
@@ -121,6 +125,8 @@ const translations = {
     from: 'من',
     to: 'إلى',
     date: 'التاريخ',
+    returnDate: 'تاريخ العودة',
+    roundTrip: 'ذهاب وعودة',
     search: 'ابدأ البحث',
     fromPlaceholder: 'اختر مدينة المغادرة',
     toPlaceholder: 'اختر مدينة الوصول',
@@ -180,6 +186,8 @@ export function HomePage({ onSearch, language, onContactClick, searchParams }: H
   const [to, setTo] = useState(searchParams?.to || '');
   const [date, setDate] = useState(searchParams?.date || new Date().toISOString().split('T')[0]);
   const [busType, setBusType] = useState(searchParams?.type || '');
+  const [isRoundTrip, setIsRoundTrip] = useState(searchParams?.isRoundTrip || false);
+  const [returnDate, setReturnDate] = useState(searchParams?.returnDate || '');
   const [searchError, setSearchError] = useState('');
   
   // Update fields when searchParams change
@@ -189,6 +197,8 @@ export function HomePage({ onSearch, language, onContactClick, searchParams }: H
       setTo(searchParams.to || '');
       setDate(searchParams.date || new Date().toISOString().split('T')[0]);
       setBusType(searchParams.type || '');
+      setIsRoundTrip(searchParams.isRoundTrip || false);
+      setReturnDate(searchParams.returnDate || '');
     }
   }, [searchParams]);
 
@@ -213,7 +223,21 @@ export function HomePage({ onSearch, language, onContactClick, searchParams }: H
       return;
     }
     
-    onSearch({ from, to, date, time: '08:00', type: busType });
+    // Check if return date is provided when round trip is enabled
+    if (isRoundTrip && !returnDate) {
+      setSearchError(t.searchValidationError);
+      return;
+    }
+    
+    onSearch({ 
+      from, 
+      to, 
+      date, 
+      time: '08:00', 
+      type: busType,
+      isRoundTrip,
+      returnDate: isRoundTrip ? returnDate : undefined
+    });
   };
 
   return (
@@ -291,19 +315,61 @@ export function HomePage({ onSearch, language, onContactClick, searchParams }: H
               </div>
             </div>
 
-            {/* Date */}
-            <div>
-              <label className="block text-gray-700 mb-3 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-green-600" />
-                <span>{t.date}</span>
-              </label>
-              <input
-                type="date"
-                value={date}
-                onChange={(e) => setDate(e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
-              />
+            {/* Date and Round Trip */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Departure Date */}
+              <div>
+                <label className="block text-gray-700 mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-green-600" />
+                  <span>{t.date}</span>
+                </label>
+                <input
+                  type="date"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 bg-white"
+                />
+              </div>
+
+              {/* Return Date (only show when round trip is enabled) */}
+              <div>
+                <label className="block text-gray-700 mb-3 flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-green-600" />
+                  <span>{t.returnDate}</span>
+                </label>
+                <input
+                  type="date"
+                  value={returnDate}
+                  onChange={(e) => setReturnDate(e.target.value)}
+                  min={date || new Date().toISOString().split('T')[0]}
+                  disabled={!isRoundTrip}
+                  className={`w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                    isRoundTrip ? 'bg-white' : 'bg-gray-100 cursor-not-allowed'
+                  }`}
+                />
+              </div>
+            </div>
+
+            {/* Round Trip Toggle */}
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsRoundTrip(!isRoundTrip);
+                  if (isRoundTrip) {
+                    setReturnDate('');
+                  }
+                }}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${
+                  isRoundTrip
+                    ? 'bg-green-600 text-white shadow-md'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                <ArrowLeftRight className="w-5 h-5" />
+                <span>{t.roundTrip}</span>
+              </button>
             </div>
           </div>
 

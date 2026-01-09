@@ -36,6 +36,8 @@ export interface SearchParams {
   date: string;
   time: string;
   type?: string;
+  returnDate?: string;
+  isRoundTrip?: boolean;
 }
 
 export default function App() {
