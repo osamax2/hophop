@@ -233,6 +233,8 @@ export default function App() {
 
   const handleSearch = (params: SearchParams) => {
     console.log('handleSearch called with params:', params);
+    console.log('isRoundTrip type:', typeof params.isRoundTrip, 'value:', params.isRoundTrip);
+    console.log('returnDate:', params.returnDate);
     setSearchParams(params);
     setCurrentPage('search-results');
     setShowNoTripsModal(false);
@@ -348,6 +350,9 @@ export default function App() {
         {currentPage === 'search-results' && searchParams && (
           <>
             {console.log('Rendering SearchResults component')}
+            {console.log('searchParams being passed:', searchParams)}
+            {console.log('searchParams.isRoundTrip:', searchParams.isRoundTrip, 'type:', typeof searchParams.isRoundTrip)}
+            {console.log('searchParams.returnDate:', searchParams.returnDate)}
             <SearchResults
               searchParams={searchParams}
               onViewDetails={handleViewDetails}
