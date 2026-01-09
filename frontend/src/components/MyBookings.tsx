@@ -398,17 +398,18 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
                     <button
                       onClick={(e) => handleCancelBooking(booking.id, e)}
                       disabled={cancellingId === booking.id}
-                      className="mt-2 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center"
+                      className="w-full mt-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 justify-center"
+                      style={{ backgroundColor: '#dc2626', color: '#ffffff' }}
                     >
                       {cancellingId === booking.id ? (
                         <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          {t.cancelling}
+                          <Loader2 className="w-4 h-4 animate-spin" style={{ color: '#ffffff' }} />
+                          <span>{t.cancelling}</span>
                         </>
                       ) : (
                         <>
-                          <XCircle className="w-4 h-4" />
-                          {t.cancelTrip}
+                          <XCircle className="w-4 h-4" style={{ color: '#ffffff' }} />
+                          <span>{t.cancelTrip}</span>
                         </>
                       )}
                     </button>
