@@ -174,8 +174,8 @@ router.post("/", optionalAuth, async (req: AuthedRequest, res) => {
     // 6) Generate encrypted status token for booking tracking
     const statusToken = crypto.randomBytes(32).toString('hex');
 
-    // 7) إنشاء booking mit Status-Token
-    const bookingStatus = isGuestBooking ? 'pending' : 'confirmed';
+    // 7) إنشاء booking mit Status-Token - All bookings start as 'pending'
+    const bookingStatus = 'pending';
     const bookingRes = await client.query(
       `
       INSERT INTO bookings (
