@@ -44,6 +44,10 @@ const translations = {
     companyReviews: 'Bewertungen der Gesellschaft',
     averageRating: 'Durchschnittsbewertung',
     noReviewsYet: 'Noch keine Bewertungen',
+    equipmentDetails: 'Ausstattungsdetails',
+    cancellationPolicy: 'Stornierungsbedingungen',
+    additionalInfo: 'Zusätzliche Informationen',
+    noInfo: 'Keine Informationen verfügbar',
   },
   en: {
     tripDetails: 'Trip Details',
@@ -73,6 +77,10 @@ const translations = {
     companyReviews: 'Company Reviews',
     averageRating: 'Average Rating',
     noReviewsYet: 'No reviews yet',
+    equipmentDetails: 'Equipment Details',
+    cancellationPolicy: 'Cancellation Policy',
+    additionalInfo: 'Additional Information',
+    noInfo: 'No information available',
   },
   ar: {
     tripDetails: 'تفاصيل الرحلة',
@@ -102,6 +110,10 @@ const translations = {
     companyReviews: 'تقييمات الشركة',
     averageRating: 'متوسط التقييم',
     noReviewsYet: 'لا توجد تقييمات بعد',
+    equipmentDetails: 'تفاصيل المعدات',
+    cancellationPolicy: 'سياسة الإلغاء',
+    additionalInfo: 'معلومات إضافية',
+    noInfo: 'لا توجد معلومات متاحة',
   },
 };
 
@@ -140,6 +152,8 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
           stops: data.stops || [],
           available: data.status === 'scheduled' && data.seats_available > 0,
           equipment: data.equipment,
+          cancellationPolicy: data.cancellation_policy,
+          extraInfo: data.extra_info,
           amenities: data.equipment ? (data.equipment.includes('wifi') ? ['wifi'] : []).concat(
             data.equipment.includes('ac') ? ['ac'] : []
           ) : [],
@@ -393,6 +407,24 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                   <span className="text-sm text-gray-600">{t.duration}</span>
                   <span className="text-sm text-gray-900">{trip.duration}</span>
                 </div>
+                {trip.equipment && (
+                  <div className="py-3 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-700 block mb-2">{t.equipmentDetails}</span>
+                    <span className="text-sm text-gray-900 whitespace-pre-wrap">{trip.equipment}</span>
+                  </div>
+                )}
+                {trip.cancellationPolicy && (
+                  <div className="py-3 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-700 block mb-2">{t.cancellationPolicy}</span>
+                    <span className="text-sm text-gray-900 whitespace-pre-wrap">{trip.cancellationPolicy}</span>
+                  </div>
+                )}
+                {trip.extraInfo && (
+                  <div className="py-3 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-700 block mb-2">{t.additionalInfo}</span>
+                    <span className="text-sm text-gray-900 whitespace-pre-wrap">{trip.extraInfo}</span>
+                  </div>
+                )}
               </div>
 
               {/* Availability */}
