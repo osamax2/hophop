@@ -96,6 +96,29 @@ router.post("/register", registerLimiter, async (req, res) => {
 
     const userId = result.rows[0].id;
 
+    // Link any existing guest bookings to this new user account
+    try {
+      const linkResult = await pool.query(
+        `
+        UPDATE bookings 
+        SET user_id = $1, 
+            guest_email = NULL,
+            updated_at = NOW()
+        WHERE guest_email = $2 
+          AND user_id IS NULL
+        RETURNING id
+        `,
+        [userId, sanitizedEmail]
+      );
+      
+      if (linkResult.rows.length > 0) {
+        console.log(`Linked ${linkResult.rows.length} guest booking(s) to new user ${userId} (${sanitizedEmail})`);
+      }
+    } catch (linkError) {
+      console.error("Error linking guest bookings to new user:", linkError);
+      // Don't fail registration if linking fails - just log it
+    }
+
     // Send verification email
     const emailSent = await sendVerificationEmail({
       to: email,
