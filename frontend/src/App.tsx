@@ -11,6 +11,8 @@ import { Reviews } from './components/Reviews';
 import { ContactForm } from './components/ContactForm';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { TermsOfService } from './components/TermsOfService';
+import { PrivacyPolicyPage } from './components/PrivacyPolicyPage';
+import { TermsOfServicePage } from './components/TermsOfServicePage';
 import VerifyEmail from './components/VerifyEmail';
 import { BookingStatus } from './components/BookingStatus';
 import SubscriptionPlans from './components/SubscriptionPlans';
@@ -84,6 +86,10 @@ export default function App() {
       setCurrentPage('admin');
     } else if (path === '/subscriptions') {
       setCurrentPage('subscriptions');
+    } else if (path === '/privacy-policy') {
+      setCurrentPage('privacy-policy');
+    } else if (path === '/terms-of-service') {
+      setCurrentPage('terms-of-service');
     } else if (path === '/search') {
       const from = urlParams.get('from') || '';
       const to = urlParams.get('to') || '';
@@ -127,6 +133,12 @@ export default function App() {
         break;
       case 'subscriptions':
         url = '/subscriptions';
+        break;
+      case 'privacy-policy':
+        url = '/privacy-policy';
+        break;
+      case 'terms-of-service':
+        url = '/terms-of-service';
         break;
       case 'verify-email':
         if (verifyToken) {
@@ -172,6 +184,10 @@ export default function App() {
         setCurrentPage('admin');
       } else if (path === '/subscriptions') {
         setCurrentPage('subscriptions');
+      } else if (path === '/privacy-policy') {
+        setCurrentPage('privacy-policy');
+      } else if (path === '/terms-of-service') {
+        setCurrentPage('terms-of-service');
       } else if (path === '/search') {
         const from = urlParams.get('from') || '';
         const to = urlParams.get('to') || '';
@@ -359,8 +375,8 @@ export default function App() {
             onSearch={handleSearch} 
             language={language}
             onContactClick={() => setCurrentPage('contact')}
-            onPrivacyClick={() => setShowPrivacyPolicy(true)}
-            onTermsClick={() => setShowTermsOfService(true)}
+            onPrivacyClick={() => setCurrentPage('privacy-policy')}
+            onTermsClick={() => setCurrentPage('terms-of-service')}
             searchParams={searchParams}
           />
         )}
@@ -490,6 +506,20 @@ export default function App() {
             user={user}
             onNavigateToLogin={() => setCurrentPage('login')}
             onNavigateToBookingStatus={handleNavigateToBookingStatus}
+          />
+        )}
+        
+        {currentPage === 'privacy-policy' && (
+          <PrivacyPolicyPage
+            language={language}
+            onBack={() => setCurrentPage('home')}
+          />
+        )}
+        
+        {currentPage === 'terms-of-service' && (
+          <TermsOfServicePage
+            language={language}
+            onBack={() => setCurrentPage('home')}
           />
         )}
       </main>

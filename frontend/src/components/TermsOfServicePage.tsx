@@ -1,16 +1,16 @@
-import { X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import type { Language } from '../App';
 
-interface TermsOfServiceProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface TermsOfServicePageProps {
   language: Language;
+  onBack: () => void;
 }
 
 const translations = {
   de: {
     title: 'Nutzungsbedingungen',
     lastUpdated: 'Zuletzt aktualisiert',
+    back: 'Zurück',
     sections: {
       intro: {
         title: 'Einleitung',
@@ -117,12 +117,12 @@ const translations = {
         phone: 'Telefon: +963 11 123 4567',
         address: 'Adresse: Damaskus, Syrien'
       }
-    },
-    close: 'Schließen'
+    }
   },
   en: {
     title: 'Terms of Service',
     lastUpdated: 'Last Updated',
+    back: 'Back',
     sections: {
       intro: {
         title: 'Introduction',
@@ -229,12 +229,12 @@ const translations = {
         phone: 'Phone: +963 11 123 4567',
         address: 'Address: Damascus, Syria'
       }
-    },
-    close: 'Close'
+    }
   },
   ar: {
     title: 'شروط الاستخدام',
     lastUpdated: 'آخر تحديث',
+    back: 'رجوع',
     sections: {
       intro: {
         title: 'مقدمة',
@@ -341,14 +341,11 @@ const translations = {
         phone: 'الهاتف: ٤٥٦٧ ١٢٣ ١١ ٩٦٣+',
         address: 'العنوان: دمشق، سوريا'
       }
-    },
-    close: 'إغلاق'
+    }
   }
 };
 
-export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProps) {
-  if (!isOpen) return null;
-
+export function TermsOfServicePage({ language, onBack }: TermsOfServicePageProps) {
   const t = translations[language];
   const currentDate = new Date().toLocaleDateString(
     language === 'ar' ? 'ar-SY' : language === 'de' ? 'de-DE' : 'en-US',
@@ -357,47 +354,44 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
 
   return (
     <div 
-      className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="min-h-screen bg-gray-50"
       style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
-      onClick={onClose}
     >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className={`flex items-center gap-2 text-green-600 hover:text-green-700 mb-6 transition-colors ${language === 'ar' ? 'flex-row-reverse' : ''}`}
+        >
+          <ArrowLeft className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+          <span className="font-medium">{t.back}</span>
+        </button>
+
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold">{t.title}</h2>
-            <p className="text-green-100 text-sm mt-1">
-              {t.lastUpdated}: {currentDate}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-8 rounded-t-2xl">
+          <h1 className="text-4xl font-bold mb-2">{t.title}</h1>
+          <p className="text-green-100">
+            {t.lastUpdated}: {currentDate}
+          </p>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto p-6 space-y-8">
+        <div className="bg-white p-8 rounded-b-2xl shadow-lg space-y-8">
           {/* Introduction */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.intro.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.intro.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.intro.content}</p>
           </section>
 
           {/* Acceptance */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.acceptance.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.acceptance.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.acceptance.content}</p>
           </section>
 
           {/* Services */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.services.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.services.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.services.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.services.items.map((item, index) => (
@@ -408,7 +402,7 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
 
           {/* User Responsibilities */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.userResponsibilities.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.userResponsibilities.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.userResponsibilities.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.userResponsibilities.items.map((item, index) => (
@@ -419,7 +413,7 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
 
           {/* Bookings */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.bookings.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.bookings.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.bookings.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.bookings.items.map((item, index) => (
@@ -430,7 +424,7 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
 
           {/* Cancellations */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.cancellations.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.cancellations.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.cancellations.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.cancellations.items.map((item, index) => (
@@ -441,7 +435,7 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
 
           {/* Liability */}
           <section className="bg-yellow-50 p-6 rounded-xl">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.liability.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.liability.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.liability.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4 mb-4">
               {t.sections.liability.items.map((item, index) => (
@@ -453,19 +447,19 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
 
           {/* Intellectual Property */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.intellectualProperty.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.intellectualProperty.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.intellectualProperty.content}</p>
           </section>
 
           {/* User Data */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.userData.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.userData.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.userData.content}</p>
           </section>
 
           {/* Prohibited Uses */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.prohibitedUses.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.prohibitedUses.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.prohibitedUses.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.prohibitedUses.items.map((item, index) => (
@@ -476,25 +470,25 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
 
           {/* Termination */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.termination.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.termination.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.termination.content}</p>
           </section>
 
           {/* Governing Law */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.governingLaw.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.governingLaw.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.governingLaw.content}</p>
           </section>
 
           {/* Changes */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.changes.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.changes.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.changes.content}</p>
           </section>
 
           {/* Contact */}
           <section className="bg-green-50 p-6 rounded-xl">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.contact.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.contact.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.contact.content}</p>
             <div className="space-y-2 text-gray-700">
               <p>{t.sections.contact.email}</p>
@@ -502,16 +496,6 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
               <p>{t.sections.contact.address}</p>
             </div>
           </section>
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-100 p-4 border-t">
-          <button
-            onClick={onClose}
-            className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-          >
-            {t.close}
-          </button>
         </div>
       </div>
     </div>

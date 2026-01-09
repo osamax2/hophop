@@ -1,16 +1,16 @@
-import { X } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import type { Language } from '../App';
 
-interface PrivacyPolicyProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface PrivacyPolicyPageProps {
   language: Language;
+  onBack: () => void;
 }
 
 const translations = {
   de: {
     title: 'Datenschutzerklärung',
     lastUpdated: 'Zuletzt aktualisiert',
+    back: 'Zurück',
     sections: {
       intro: {
         title: 'Einleitung',
@@ -86,12 +86,12 @@ const translations = {
         phone: 'Telefon: +963 11 123 4567',
         address: 'Adresse: Damaskus, Syrien'
       }
-    },
-    close: 'Schließen'
+    }
   },
   en: {
     title: 'Privacy Policy',
     lastUpdated: 'Last Updated',
+    back: 'Back',
     sections: {
       intro: {
         title: 'Introduction',
@@ -167,12 +167,12 @@ const translations = {
         phone: 'Phone: +963 11 123 4567',
         address: 'Address: Damascus, Syria'
       }
-    },
-    close: 'Close'
+    }
   },
   ar: {
     title: 'سياسة الخصوصية',
     lastUpdated: 'آخر تحديث',
+    back: 'رجوع',
     sections: {
       intro: {
         title: 'مقدمة',
@@ -248,14 +248,11 @@ const translations = {
         phone: 'الهاتف: ٤٥٦٧ ١٢٣ ١١ ٩٦٣+',
         address: 'العنوان: دمشق، سوريا'
       }
-    },
-    close: 'إغلاق'
+    }
   }
 };
 
-export function PrivacyPolicy({ isOpen, onClose, language }: PrivacyPolicyProps) {
-  if (!isOpen) return null;
-
+export function PrivacyPolicyPage({ language, onBack }: PrivacyPolicyPageProps) {
   const t = translations[language];
   const currentDate = new Date().toLocaleDateString(
     language === 'ar' ? 'ar-SY' : language === 'de' ? 'de-DE' : 'en-US',
@@ -264,41 +261,38 @@ export function PrivacyPolicy({ isOpen, onClose, language }: PrivacyPolicyProps)
 
   return (
     <div 
-      className="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black bg-opacity-50"
+      className="min-h-screen bg-gray-50"
       style={{ direction: language === 'ar' ? 'rtl' : 'ltr' }}
-      onClick={onClose}
     >
-      <div 
-        className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Back Button */}
+        <button
+          onClick={onBack}
+          className={`flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 transition-colors ${language === 'ar' ? 'flex-row-reverse' : ''}`}
+        >
+          <ArrowLeft className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
+          <span className="font-medium">{t.back}</span>
+        </button>
+
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 text-black p-6 flex items-center justify-between">
-          <div>
-            <h2 className="text-3xl font-bold">{t.title}</h2>
-            <p className="text-blue-100 text-sm mt-1">
-              {t.lastUpdated}: {currentDate}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="text-white hover:bg-white hover:bg-opacity-20 rounded-full p-2 transition-all"
-          >
-            <X className="w-6 h-6" />
-          </button>
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-8 rounded-t-2xl">
+          <h1 className="text-4xl font-bold mb-2">{t.title}</h1>
+          <p className="text-blue-100">
+            {t.lastUpdated}: {currentDate}
+          </p>
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto p-6 space-y-8">
+        <div className="bg-white p-8 rounded-b-2xl shadow-lg space-y-8">
           {/* Introduction */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.intro.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.intro.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.intro.content}</p>
           </section>
 
           {/* Data Collection */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataCollection.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataCollection.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.dataCollection.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.dataCollection.items.map((item, index) => (
@@ -309,7 +303,7 @@ export function PrivacyPolicy({ isOpen, onClose, language }: PrivacyPolicyProps)
 
           {/* Data Use */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataUse.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataUse.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.dataUse.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.dataUse.items.map((item, index) => (
@@ -320,7 +314,7 @@ export function PrivacyPolicy({ isOpen, onClose, language }: PrivacyPolicyProps)
 
           {/* Data Sharing */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataSharing.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataSharing.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.dataSharing.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.dataSharing.items.map((item, index) => (
@@ -331,19 +325,19 @@ export function PrivacyPolicy({ isOpen, onClose, language }: PrivacyPolicyProps)
 
           {/* Data Security */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataSecurity.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataSecurity.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.dataSecurity.content}</p>
           </section>
 
           {/* Data Retention */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataRetention.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.dataRetention.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.dataRetention.content}</p>
           </section>
 
           {/* Your Rights */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.yourRights.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.yourRights.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.yourRights.content}</p>
             <ul className="list-disc list-inside space-y-2 text-gray-700 mr-4">
               {t.sections.yourRights.items.map((item, index) => (
@@ -354,19 +348,19 @@ export function PrivacyPolicy({ isOpen, onClose, language }: PrivacyPolicyProps)
 
           {/* Cookies */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.cookies.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.cookies.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.cookies.content}</p>
           </section>
 
           {/* Changes */}
           <section>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.changes.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.changes.title}</h2>
             <p className="text-gray-700 leading-relaxed">{t.sections.changes.content}</p>
           </section>
 
           {/* Contact */}
           <section className="bg-blue-50 p-6 rounded-xl">
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.contact.title}</h3>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">{t.sections.contact.title}</h2>
             <p className="text-gray-700 leading-relaxed mb-3">{t.sections.contact.content}</p>
             <div className="space-y-2 text-gray-700">
               <p>{t.sections.contact.email}</p>
@@ -374,16 +368,6 @@ export function PrivacyPolicy({ isOpen, onClose, language }: PrivacyPolicyProps)
               <p>{t.sections.contact.address}</p>
             </div>
           </section>
-        </div>
-
-        {/* Footer */}
-        <div className="sticky bottom-0 bg-gray-100 p-4 border-t">
-          <button
-            onClick={onClose}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
-          >
-            {t.close}
-          </button>
         </div>
       </div>
     </div>
