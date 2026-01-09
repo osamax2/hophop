@@ -217,16 +217,13 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
   const canCancelBooking = (booking: Booking) => {
     // Can only cancel pending or confirmed bookings
     if (!['pending', 'confirmed'].includes(booking.booking_status.toLowerCase())) {
-      console.log(`❌ Booking ${booking.id}: Status ${booking.booking_status} not cancellable`);
       return false;
     }
     
     // Check if trip is in the future
     const tripDate = new Date(booking.departure_time);
     const now = new Date();
-    const isFuture = tripDate > now;
-    console.log(`🔍 Booking ${booking.id}: Status=${booking.booking_status}, Departure=${booking.departure_time}, Now=${now.toISOString()}, IsFuture=${isFuture}`);
-    return isFuture;
+    return tripDate > now;
   };
 
   const getStatusIcon = (status: string) => {
@@ -340,7 +337,7 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
                   </div>
                 </div>
 
-                <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getStatusColor(booking.booking_status)}`}>
+                <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getStatusColor(booking.booking_status)}`} style={{ paddingTop: '50px' }}>
                   {t[booking.booking_status.toLowerCase() as keyof typeof t] || booking.booking_status}
                 </div>
 
