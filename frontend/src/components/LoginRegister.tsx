@@ -40,6 +40,9 @@ const translations = {
     passwordSpecial: 'Das Passwort muss mindestens ein Sonderzeichen enthalten',
     invalidEmail: 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
     ageRestriction: 'Sie müssen mindestens 18 Jahre alt sein, um ein Konto zu erstellen',
+    acceptTerms: 'Ich akzeptiere die',
+    termsOfService: 'Nutzungsbedingungen',
+    mustAcceptTerms: 'Sie müssen die Nutzungsbedingungen akzeptieren',
   },
   en: {
     login: 'Login',
@@ -69,6 +72,9 @@ const translations = {
     passwordSpecial: 'Password must contain at least one special character',
     invalidEmail: 'Please enter a valid email address',
     ageRestriction: 'You must be at least 18 years old to create an account',
+    acceptTerms: 'I accept the',
+    termsOfService: 'Terms of Service',
+    mustAcceptTerms: 'You must accept the Terms of Service',
   },
   ar: {
     login: 'تسجيل الدخول',
@@ -98,6 +104,9 @@ const translations = {
     passwordSpecial: 'يجب أن تحتوي كلمة المرور على رمز خاص واحد على الأقل',
     invalidEmail: 'يرجى إدخال بريد إلكتروني صحيح',
     ageRestriction: 'يجب أن يكون عمرك 18 عامًا على الأقل لإنشاء حساب',
+    acceptTerms: 'أوافق على',
+    termsOfService: 'شروط الاستخدام',
+    mustAcceptTerms: 'يجب عليك قبول شروط الاستخدام',
   },
 };
 
@@ -115,6 +124,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
     birthDate: '',
     gender: '',
     language: language,
+    acceptedTerms: false,
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const API_BASE = import.meta.env.VITE_API_BASE || "";
@@ -215,6 +225,11 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
       // Age validation
       if (sanitizedData.birthDate && !validateAge(sanitizedData.birthDate)) {
         newErrors.birthDate = t.ageRestriction;
+      }
+
+      // Terms of Service validation
+      if (!formData.acceptedTerms) {
+        newErrors.acceptedTerms = t.mustAcceptTerms;
       }
 
       if (Object.keys(newErrors).length > 0) {
@@ -790,6 +805,47 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
                 </div>
               )}
             </div>
+
+            {/* Terms of Service Checkbox - Only for Registration */}
+            {!isLogin && (
+              <div className="space-y-2">
+                <label className={`flex items-start gap-3 cursor-pointer ${
+                  language === 'ar' ? 'flex-row-reverse text-right' : ''
+                }`}>
+                  <input
+                    type="checkbox"
+                    checked={formData.acceptedTerms}
+                    onChange={(e) => {
+                      setFormData({ ...formData, acceptedTerms: e.target.checked });
+                      if (e.target.checked && errors.acceptedTerms) {
+                        const newErrors = { ...errors };
+                        delete newErrors.acceptedTerms;
+                        setErrors(newErrors);
+                      }
+                    }}
+                    className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                  />
+                  <span className="text-sm text-gray-700 flex-1">
+                    {t.acceptTerms}{' '}
+                    <a
+                      href="/terms-of-service"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-green-600 hover:text-green-700 underline"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        window.open('/terms-of-service', '_blank');
+                      }}
+                    >
+                      {t.termsOfService}
+                    </a>
+                  </span>
+                </label>
+                {errors.acceptedTerms && (
+                  <p className="text-sm text-red-600">{errors.acceptedTerms}</p>
+                )}
+              </div>
+            )}
 
             {/* Submit Button */}
             <button

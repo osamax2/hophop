@@ -45,6 +45,9 @@ const translations = {
     crNumberTooShort: 'CR-Nummer muss mindestens 5 Zeichen lang sein',
     registrationFailed: 'Registrierung fehlgeschlagen',
     optional: 'Optional',
+    acceptTerms: 'Ich akzeptiere die',
+    termsOfService: 'Nutzungsbedingungen',
+    mustAcceptTerms: 'Sie müssen die Nutzungsbedingungen akzeptieren',
   },
   en: {
     registerAsCompany: 'Register as Company',
@@ -83,6 +86,9 @@ const translations = {
     crNumberTooShort: 'CR number must be at least 5 characters',
     registrationFailed: 'Registration failed',
     optional: 'Optional',
+    acceptTerms: 'I accept the',
+    termsOfService: 'Terms of Service',
+    mustAcceptTerms: 'You must accept the Terms of Service',
   },
   ar: {
     registerAsCompany: 'التسجيل كشركة',
@@ -121,6 +127,9 @@ const translations = {
     crNumberTooShort: 'رقم السجل التجاري يجب أن يكون 5 أحرف على الأقل',
     registrationFailed: 'فشل التسجيل',
     optional: 'اختياري',
+    acceptTerms: 'أوافق على',
+    termsOfService: 'شروط الاستخدام',
+    mustAcceptTerms: 'يجب عليك قبول شروط الاستخدام',
   },
 };
 
@@ -141,6 +150,7 @@ export function CompanyRegister({ language, onBack }: CompanyRegisterProps) {
     user_phone: '',
     password: '',
     confirm_password: '',
+    acceptedTerms: false,
   });
   const [errors, setErrors] = useState<any>({});
 
@@ -181,6 +191,11 @@ export function CompanyRegister({ language, onBack }: CompanyRegisterProps) {
     // CR number validation
     if (formData.cr_number && formData.cr_number.length < 5) {
       newErrors.cr_number = t.crNumberTooShort;
+    }
+
+    // Terms of Service validation
+    if (!formData.acceptedTerms) {
+      newErrors.acceptedTerms = t.mustAcceptTerms;
     }
 
     setErrors(newErrors);
@@ -467,6 +482,45 @@ export function CompanyRegister({ language, onBack }: CompanyRegisterProps) {
                 )}
               </div>
             </div>
+          </div>
+
+          {/* Terms of Service Checkbox */}
+          <div className="border-t border-gray-200 pt-6">
+            <label className={`flex items-start gap-3 cursor-pointer ${
+              language === 'ar' ? 'flex-row-reverse text-right' : ''
+            }`}>
+              <input
+                type="checkbox"
+                checked={formData.acceptedTerms}
+                onChange={(e) => {
+                  setFormData({ ...formData, acceptedTerms: e.target.checked });
+                  if (e.target.checked && errors.acceptedTerms) {
+                    const newErrors = { ...errors };
+                    delete newErrors.acceptedTerms;
+                    setErrors(newErrors);
+                  }
+                }}
+                className="mt-1 w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+              />
+              <span className="text-sm text-gray-700 flex-1">
+                {t.acceptTerms}{' '}
+                <a
+                  href="/terms-of-service"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-green-600 hover:text-green-700 underline"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.open('/terms-of-service', '_blank');
+                  }}
+                >
+                  {t.termsOfService}
+                </a>
+              </span>
+            </label>
+            {errors.acceptedTerms && (
+              <p className="text-sm text-red-600 mt-2">{errors.acceptedTerms}</p>
+            )}
           </div>
 
           {/* Submit Button */}
