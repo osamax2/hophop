@@ -101,52 +101,7 @@ async function verifyRecaptchaEnterprise(
     throw error;
   }
 }
-  try {
-    // Build assessment request body
-    const requestBody = JSON.stringify({
-      event: {
-        token: token,
-        siteKey: RECAPTCHA_SITE_KEY,
-        ...(userIp && { userIpAddress: userIp })
-      }
-    });
 
-    // Use REST API endpoint
-    const apiUrl = RECAPTCHA_API_KEY 
-      ? `/v1/projects/${RECAPTCHA_PROJECT_ID}/assessments?key=${RECAPTCHA_API_KEY}`
-      : `/v1/projects/${RECAPTCHA_PROJECT_ID}/assessments`;
-
-    return new Promise((resolve, reject) => {
-      const options = {
-        hostname: 'recaptchaenterprise.googleapis.com',
-        port: 443,
-        path: apiUrl,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(requestBody)
-        }
-      };
-
-      const req = https.request(options, (res) => {
-        let data = '';
-
-        res.on('data', (chunk) => {
-          data += chunk;
-        });
-
-        res.on('end', () => {
-          try {
-            const response = JSON.parse(data);
-
-            // Handle API errors
-            if (response.error) {
-              console.error('❌ reCAPTCHA Enterprise API error:', response.error);
-              resolve({
-                valid: false,
-                score: 0,
-                action: '',
-                invalidReason: response.error.message || 'API_ERROR'
 /**
  * Express middleware: Verify reCAPTCHA Enterprise for guest bookings only
  * Authenticated users bypass this check
