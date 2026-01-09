@@ -17,6 +17,7 @@ import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
 interface SearchResultsProps {
   searchParams: SearchParams;
   onViewDetails: (tripId: string) => void;
+  onBookRoundTrip?: (outboundTripId: string, returnTripId: string) => void;
   language: Language;
   favorites: string[];
   onToggleFavorite: (tripId: string) => void;
@@ -136,6 +137,7 @@ type Trip = {
 export function SearchResults({
   searchParams,
   onViewDetails,
+  onBookRoundTrip,
   language,
   favorites,
   onToggleFavorite,
@@ -616,7 +618,11 @@ export function SearchResults({
           <div className="sticky bottom-4 bg-white rounded-2xl shadow-lg border-2 border-green-500 p-4">
             <button
               onClick={() => {
-                onViewDetails(selectedOutboundTrip);
+                if (onBookRoundTrip) {
+                  onBookRoundTrip(selectedOutboundTrip, selectedReturnTrip);
+                } else {
+                  onViewDetails(selectedOutboundTrip);
+                }
               }}
               className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl transition-all shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-lg font-semibold"
             >

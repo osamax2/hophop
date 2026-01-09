@@ -12,6 +12,7 @@ import { ContactForm } from './components/ContactForm';
 import VerifyEmail from './components/VerifyEmail';
 import { BookingStatus } from './components/BookingStatus';
 import SubscriptionPlans from './components/SubscriptionPlans';
+import { RoundTripBooking } from './components/RoundTripBooking';
 import { favoritesApi } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
@@ -46,6 +47,7 @@ export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [searchParams, setSearchParams] = useState<SearchParams | null>(null);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
+  const [roundTripIds, setRoundTripIds] = useState<{ outbound: string; return: string } | null>(null);
   const [favorites, setFavorites] = useState<string[]>([]);
   const [verifyToken, setVerifyToken] = useState<string | null>(null);
   const [bookingStatusToken, setBookingStatusToken] = useState<string | null>(null);
@@ -255,6 +257,17 @@ export default function App() {
   const handleViewDetails = (tripId: string) => {
     setSelectedTripId(tripId);
     setCurrentPage('trip-details');
+  }
+
+  const handleBookRoundTrip = (outboundTripId: string, returnTripId: string) => {
+    setRoundTripIds({ outbound: outboundTripId, return: returnTripId });
+    setCurrentPage('round-trip-booking');
+  }
+
+  const handleRoundTripBookingComplete = (tokens: { outbound: string; return: string }) => {
+    console.log('Round trip booked successfully:', tokens);
+    alert('Both trips booked successfully!');
+    setCurrentPage('home');
   };
 
   // Load favorites when user logs in
@@ -356,6 +369,7 @@ export default function App() {
             <SearchResults
               searchParams={searchParams}
               onViewDetails={handleViewDetails}
+              onBookRoundTrip={handleBookRoundTrip}
               language={language}
               favorites={favorites}
               onToggleFavorite={toggleFavorite}
@@ -443,6 +457,17 @@ export default function App() {
               window.history.replaceState({}, '', '/');
               setCurrentPage('login');
             }}
+          />
+        )}
+
+        {currentPage === 'round-trip-booking' && roundTripIds && (
+          <RoundTripBooking
+            outboundTripId={roundTripIds.outbound}
+            returnTripId={roundTripIds.return}
+            language={language}
+            isLoggedIn={!!user}
+            onNavigateToLogin={() => setCurrentPage('login')}
+            onBookingComplete={handleRoundTripBookingComplete}
           />
         )}
       </main>
