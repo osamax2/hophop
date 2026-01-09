@@ -44,6 +44,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
     const error: any = new Error(errorMessage);
     error.status = response.status;
     error.details = errorDetails;
+    // Pass errorCode if it exists
+    if (errorDetails?.errorCode) {
+      error.errorCode = errorDetails.errorCode;
+    }
     throw error;
   }
   return response.json();

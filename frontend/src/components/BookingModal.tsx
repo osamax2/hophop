@@ -75,6 +75,8 @@ const translations = {
     thankYou: 'Vielen Dank für Ihre Buchung!',
     thankYouMessage: 'Ihre Buchung wurde erfolgreich erstellt. Sie können den Status Ihrer Buchung jederzeit über den unten stehenden Link überprüfen.',
     viewStatus: 'Weiter',
+    emailRegistered: 'Diese E-Mail ist bereits registriert',
+    emailRegisteredMessage: 'Diese E-Mail-Adresse ist bereits mit einem Konto verknüpft. Bitte melden Sie sich an, um zu buchen.',
   },
   en: {
     bookTrip: 'Book Trip',
@@ -125,6 +127,8 @@ const translations = {
     passengerNames: 'Passenger Names',
     passengerName: 'Passenger',
     mainPassenger: 'Main Passenger (You)',
+    emailRegistered: 'Email Already Registered',
+    emailRegisteredMessage: 'This email address is already associated with an account. Please login to book.',
   },
   ar: {
     bookTrip: 'حجز رحلة',
@@ -173,6 +177,8 @@ const translations = {
     thankYou: 'شكراً لحجزك معنا!',
     thankYouMessage: 'تم إنشاء حجزك بنجاح. يمكنك التحقق من حالة حجزك في أي وقت باستخدام الرابط أدناه.',
     viewStatus: 'متابعة',
+    emailRegistered: 'البريد الإلكتروني مسجل مسبقاً',
+    emailRegisteredMessage: 'عنوان البريد الإلكتروني هذا مرتبط بحساب موجود. الرجاء تسجيل الدخول للحجز.',
   },
 };
 
@@ -370,7 +376,12 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
 
       setBookingSuccess(true);
     } catch (err: any) {
-      setError(err.message || t.bookingError);
+      // Check if it's the email registered error
+      if (err.errorCode === 'EMAIL_REGISTERED' || err.message?.includes('already registered')) {
+        setError(t.emailRegisteredMessage);
+      } else {
+        setError(err.message || t.bookingError);
+      }
     } finally {
       setIsProcessing(false);
     }

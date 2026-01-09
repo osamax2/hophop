@@ -56,6 +56,19 @@ router.post("/", bookingLimiter, verifyCaptchaEnterpriseForGuests, optionalAuth,
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(guest_email)) {
       return res.status(400).json({ message: "Invalid email format" });
     }
+    
+    // Check if email is already registered - prevent guests from using registered emails
+    const emailCheckRes = await pool.query(
+      'SELECT id FROM users WHERE email = $1',
+      [guest_email.toLowerCase()]
+    );
+    
+    if (emailCheckRes.rows.length > 0) {
+      return res.status(403).json({ 
+        message: "This email is already registered. Please login to book.",
+        errorCode: "EMAIL_REGISTERED"
+      });
+    }
   }
 
   const client = await pool.connect();
