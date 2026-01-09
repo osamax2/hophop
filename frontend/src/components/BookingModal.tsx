@@ -301,6 +301,22 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
     setError(null);
 
     try {
+      let captchaToken: string | null = null;
+
+      // Get reCAPTCHA token for guest bookings
+      if (!isLoggedIn && typeof window !== 'undefined' && (window as any).grecaptcha) {
+        try {
+          captchaToken = await (window as any).grecaptcha.execute('6LfVxKMqAAAAADMq7vJq3o8xZ0U3K6MdP7wQGJ5R', {
+            action: 'guest_booking'
+          });
+        } catch (captchaError) {
+          console.error('reCAPTCHA error:', captchaError);
+          setError('Captcha verification failed. Please reload the page and try again.');
+          setIsProcessing(false);
+          return;
+        }
+      }
+
       const bookingData: any = {
         trip_id: parseInt(trip.id),
         quantity,
@@ -314,6 +330,11 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
         bookingData.guest_name = guestName;
         bookingData.guest_email = guestEmail;
         bookingData.guest_phone = guestPhone;
+        
+        // Add captcha token for guest bookings
+        if (captchaToken) {
+          bookingData.captcha_token = captchaToken;
+        }
       }
 
       const response = await bookingsApi.createBooking(bookingData);
