@@ -268,7 +268,7 @@ export function PrivacyPolicyPage({ language, onBack }: PrivacyPolicyPageProps) 
         {/* Back Button */}
         <button
           onClick={onBack}
-          className={`flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6 transition-colors ${language === 'ar' ? 'flex-row-reverse' : ''}`}
+          className={`flex items-center gap-2 text-green-600 hover:text-green-700 mb-6 transition-colors ${language === 'ar' ? 'flex-row-reverse' : ''}`}
         >
           <ArrowLeft className={`w-5 h-5 ${language === 'ar' ? 'rotate-180' : ''}`} />
           <span className="font-medium">{t.back}</span>
