@@ -5,17 +5,17 @@ import { emailService } from "../services/email";
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { bookingLimiter, guestBookingLimiter } from "../middleware/rateLimiter";
-import { verifyCaptchaForGuests } from "../middleware/captcha";
+// import { verifyCaptchaForGuests } from "../middleware/captcha"; // Temporarily disabled
 
 const router = Router();
 
 /**
  * POST /api/bookings
- * body: { trip_id, quantity, guest_name?, guest_email?, guest_phone?, captcha_token? }
+ * body: { trip_id, quantity, guest_name?, guest_email?, guest_phone? }
  * Supports both authenticated users and guest bookings
- * Protected by rate limiting and captcha verification (for guests) to prevent abuse
+ * Protected by rate limiting (captcha temporarily disabled)
  */
-router.post("/", bookingLimiter, verifyCaptchaForGuests, optionalAuth, async (req: AuthedRequest, res) => {
+router.post("/", bookingLimiter, optionalAuth, async (req: AuthedRequest, res) => {
   const userId = req.user?.id; // Optional for guest bookings
 
   const {
