@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { pool } from "../db";
-import { requireAuth, AuthedRequest } from "../middleware/auth";
+import { requireAuth, optionalAuth, AuthedRequest } from "../middleware/auth";
 import { emailService } from "../services/email";
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
@@ -12,7 +12,7 @@ const router = Router();
  * body: { trip_id, quantity, guest_name?, guest_email?, guest_phone? }
  * Supports both authenticated users and guest bookings
  */
-router.post("/", async (req: AuthedRequest, res) => {
+router.post("/", optionalAuth, async (req: AuthedRequest, res) => {
   const userId = req.user?.id; // Optional for guest bookings
 
   const {

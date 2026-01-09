@@ -29,3 +29,35 @@ export function requireAuth(
     return res.status(401).json({ message: "Invalid token" });
   }
 }
+
+/**
+ * Optional auth middleware - attaches user if token is present, but doesn't require it
+ */
+export function optionalAuth(
+  req: AuthedRequest,
+  res: Response,
+  next: NextFunction
+) {
+  const header = req.headers.authorization;
+  const token = header?.startsWith("Bearer ")
+    ? header.slice(7)
+    : null;
+
+  if (!token) {
+    // No token, continue without user
+    next();
+    return;
+  }
+
+  try {
+    const secret = process.env.JWT_SECRET || "dev_secret_change_me";
+    const payload = jwt.verify(token, secret) as { id: number };
+    req.user = { id: payload.id };
+  } catch (err) {
+    // Invalid token, but continue without user (optional auth)
+    console.warn("Invalid token in optional auth:", err);
+  }
+  
+  next();
+}
+
