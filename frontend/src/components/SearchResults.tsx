@@ -572,14 +572,13 @@ export function SearchResults({
 
         {/* Debug info */}
         {(() => {
-          const debugInfo = {
-            'searchParams.isRoundTrip': searchParams.isRoundTrip,
-            'returnTrips.length': returnTrips.length,
-            'filteredReturnTrips.length': filteredReturnTrips.length,
-            'searchParams.returnDate': searchParams.returnDate,
-            'Will show return section': !!searchParams.isRoundTrip
-          };
-          console.log('=== RENDER CHECK ===', debugInfo);
+          console.log('=== RENDER CHECK ===');
+          console.log('  searchParams.isRoundTrip:', searchParams.isRoundTrip, 'type:', typeof searchParams.isRoundTrip);
+          console.log('  returnTrips.length:', returnTrips.length);
+          console.log('  filteredReturnTrips.length:', filteredReturnTrips.length);
+          console.log('  searchParams.returnDate:', searchParams.returnDate);
+          console.log('  Condition result (!!searchParams.isRoundTrip):', !!searchParams.isRoundTrip);
+          console.log('  Will render return section:', !!searchParams.isRoundTrip);
           return null;
         })()}
 
