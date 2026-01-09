@@ -53,6 +53,7 @@ const translations = {
     bookingError: 'Buchungsfehler',
     close: 'Schließen',
     processing: 'Wird bearbeitet...',
+    verifyingSecurity: 'Sicherheitsprüfung läuft...',
     selectSeats: 'Bitte wählen Sie die Anzahl der Plätze',
     notEnoughSeats: 'Nicht genügend verfügbare Plätze',
     loginRequired: 'Anmeldung erforderlich',
@@ -102,6 +103,7 @@ const translations = {
     bookingError: 'Booking Error',
     close: 'Close',
     processing: 'Processing...',
+    verifyingSecurity: 'Verifying security...',
     selectSeats: 'Please select number of seats',
     notEnoughSeats: 'Not enough seats available',
     loginRequired: 'Login Required',
@@ -150,8 +152,7 @@ const translations = {
     bookingSuccessMessage: 'تم إنشاء حجزك بنجاح. سوف تتلقى رسالة تأكيد بالبريد الإلكتروني.',
     bookingError: 'خطأ في الحجز',
     close: 'إغلاق',
-    processing: 'جاري المعالجة...',
-    selectSeats: 'الرجاء اختيار عدد المقاعد',
+    processing: 'جاري المعالجة...',    verifyingSecurity: 'جارٍ التحقق من الأمان...',    selectSeats: 'الرجاء اختيار عدد المقاعد',
     notEnoughSeats: 'لا توجد مقاعد كافية متاحة',
     loginRequired: 'تسجيل الدخول مطلوب',
     pleaseLogin: 'الرجاء تسجيل الدخول لإجراء الحجز',
@@ -304,16 +305,38 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
       let captchaToken: string | null = null;
 
       // Get reCAPTCHA token for guest bookings
-      if (!isLoggedIn && typeof window !== 'undefined' && (window as any).grecaptcha) {
-        try {
-          captchaToken = await (window as any).grecaptcha.execute('6LfVxKMqAAAAADMq7vJq3o8xZ0U3K6MdP7wQGJ5R', {
-            action: 'guest_booking'
+      if (!isLoggedIn) {
+        // Check if reCAPTCHA is loaded
+        if (typeof window === 'undefined' || !(window as any).grecaptcha) {
+          console.warn('⚠️ reCAPTCHA not loaded yet, waiting...');
+          // Wait for reCAPTCHA to load
+          await new Promise((resolve) => {
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+              if ((window as any).grecaptcha || attempts > 20) {
+                clearInterval(checkInterval);
+                resolve(null);
+              }
+              attempts++;
+            }, 100);
           });
-        } catch (captchaError) {
-          console.error('reCAPTCHA error:', captchaError);
-          setError('Captcha verification failed. Please reload the page and try again.');
-          setIsProcessing(false);
-          return;
+        }
+
+        if ((window as any).grecaptcha && (window as any).grecaptcha.execute) {
+          try {
+            console.log('🔒 Generating reCAPTCHA token...');
+            captchaToken = await (window as any).grecaptcha.execute('6LfVxKMqAAAAADMq7vJq3o8xZ0U3K6MdP7wQGJ5R', {
+              action: 'guest_booking'
+            });
+            console.log('✅ reCAPTCHA token generated');
+          } catch (captchaError) {
+            console.error('❌ reCAPTCHA error:', captchaError);
+            setError(t.verifyingSecurity + ' - ' + (captchaError as Error).message);
+            setIsProcessing(false);
+            return;
+          }
+        } else {
+          console.warn('⚠️ reCAPTCHA not available, proceeding without captcha');
         }
       }
 
