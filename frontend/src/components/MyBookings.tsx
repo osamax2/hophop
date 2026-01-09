@@ -266,7 +266,7 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
                   </div>
                 </div>
 
-                <div className={`px-3 py-1 pt-[50px] rounded-full border text-sm font-medium ${getStatusColor(booking.booking_status)}`}>
+                <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getStatusColor(booking.booking_status)}`} style={{ paddingTop: '50px' }}>
                   {t[booking.booking_status.toLowerCase() as keyof typeof t] || booking.booking_status}
                 </div>
 
