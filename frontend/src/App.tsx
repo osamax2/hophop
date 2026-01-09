@@ -9,6 +9,8 @@ import { AdminDashboard } from './components/AdminDashboard';
 import { LoginRegister } from './components/LoginRegister';
 import { Reviews } from './components/Reviews';
 import { ContactForm } from './components/ContactForm';
+import { PrivacyPolicy } from './components/PrivacyPolicy';
+import { TermsOfService } from './components/TermsOfService';
 import VerifyEmail from './components/VerifyEmail';
 import { BookingStatus } from './components/BookingStatus';
 import SubscriptionPlans from './components/SubscriptionPlans';
@@ -53,6 +55,8 @@ export default function App() {
   const [verifyToken, setVerifyToken] = useState<string | null>(null);
   const [bookingStatusToken, setBookingStatusToken] = useState<string | null>(null);
   const [showNoTripsModal, setShowNoTripsModal] = useState(false);
+  const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
+  const [showTermsOfService, setShowTermsOfService] = useState(false);
 
   const isRTL = language === 'ar';
 
@@ -355,6 +359,8 @@ export default function App() {
             onSearch={handleSearch} 
             language={language}
             onContactClick={() => setCurrentPage('contact')}
+            onPrivacyClick={() => setShowPrivacyPolicy(true)}
+            onTermsClick={() => setShowTermsOfService(true)}
             searchParams={searchParams}
           />
         )}
@@ -668,6 +674,20 @@ function VerifyEmailWrapper({
           )}
         </div>
       </div>
+      
+      {/* Privacy Policy Modal */}
+      <PrivacyPolicy 
+        isOpen={showPrivacyPolicy}
+        onClose={() => setShowPrivacyPolicy(false)}
+        language={language}
+      />
+      
+      {/* Terms of Service Modal */}
+      <TermsOfService 
+        isOpen={showTermsOfService}
+        onClose={() => setShowTermsOfService(false)}
+        language={language}
+      />
     </div>
   );
 }

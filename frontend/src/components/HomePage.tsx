@@ -8,6 +8,8 @@ interface HomePageProps {
   onSearch: (params: SearchParams) => void;
   language: Language;
   onContactClick?: () => void;
+  onPrivacyClick?: () => void;
+  onTermsClick?: () => void;
   searchParams?: SearchParams | null;
 }
 
@@ -180,7 +182,7 @@ const popularRoutes = [
   { from: 'دمشق', to: 'حمص', duration: '2h 30m' },
 ];
 
-export function HomePage({ onSearch, language, onContactClick, searchParams }: HomePageProps) {
+export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, onTermsClick, searchParams }: HomePageProps) {
   const t = translations[language];
   const [from, setFrom] = useState(searchParams?.from || '');
   const [to, setTo] = useState(searchParams?.to || '');
@@ -550,26 +552,26 @@ export function HomePage({ onSearch, language, onContactClick, searchParams }: H
               </h3>
               <ul className="space-y-3">
                 <li>
-                  <a 
-                    href="#" 
+                  <button 
+                    onClick={onPrivacyClick}
                     className="group inline-flex items-center gap-2 text-gray-400 hover:text-green-400 transition-all duration-200 text-sm"
                   >
                     <span className={`w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${language === 'ar' ? 'order-2' : ''}`}></span>
                     <span className={`relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 group-hover:after:w-full`}>
                       {t.footerPrivacy}
                     </span>
-                  </a>
+                  </button>
                 </li>
                 <li>
-                  <a 
-                    href="#" 
+                  <button 
+                    onClick={onTermsClick}
                     className="group inline-flex items-center gap-2 text-gray-400 hover:text-green-400 transition-all duration-200 text-sm"
                   >
                     <span className={`w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${language === 'ar' ? 'order-2' : ''}`}></span>
                     <span className={`relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 group-hover:after:w-full`}>
                       {t.footerTerms}
                     </span>
-                  </a>
+                  </button>
                 </li>
               </ul>
             </div>
@@ -582,18 +584,18 @@ export function HomePage({ onSearch, language, onContactClick, searchParams }: H
                 {t.footerCopyright}
               </p>
               <div className={`flex gap-4 sm:gap-6 text-xs ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <a 
-                  href="#" 
+                <button 
+                  onClick={onPrivacyClick}
                   className={`text-gray-500 hover:text-green-400 transition-colors duration-200 relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 hover:after:w-full`}
                 >
                   {t.footerPrivacy}
-                </a>
-                <a 
-                  href="#" 
+                </button>
+                <button 
+                  onClick={onTermsClick}
                   className={`text-gray-500 hover:text-green-400 transition-colors duration-200 relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 hover:after:w-full`}
                 >
                   {t.footerTerms}
-                </a>
+                </button>
               </div>
             </div>
           </div>
