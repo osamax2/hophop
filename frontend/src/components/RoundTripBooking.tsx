@@ -35,6 +35,10 @@ const translations = {
     bookingError: 'Buchungsfehler',
     loading: 'Laden...',
     tripUnavailable: 'Eine oder beide Fahrten sind nicht mehr verfügbar',
+    passengerNames: 'Namen der Passagiere',
+    passengerName: 'Passagier',
+    mainPassenger: 'Hauptpassagier (Sie)',
+    requiredField: 'Dieses Feld ist erforderlich',
   },
   en: {
     title: 'Book Round Trip',
@@ -56,6 +60,10 @@ const translations = {
     bookingError: 'Booking error',
     loading: 'Loading...',
     tripUnavailable: 'One or both trips are no longer available',
+    passengerNames: 'Passenger Names',
+    passengerName: 'Passenger',
+    mainPassenger: 'Main Passenger (You)',
+    requiredField: 'This field is required',
   },
   ar: {
     title: 'حجز رحلة ذهاب وعودة',
@@ -77,6 +85,10 @@ const translations = {
     bookingError: 'خطأ في الحجز',
     loading: 'جار التحميل...',
     tripUnavailable: 'إحدى الرحلتين أو كلتاهما غير متاحة',
+    passengerNames: 'أسماء الركاب',
+    passengerName: 'راكب',
+    mainPassenger: 'الراكب الرئيسي (أنت)',
+    requiredField: 'هذا الحقل مطلوب',
   },
 };
 
@@ -96,6 +108,7 @@ export function RoundTripBooking({
   const [booking, setBooking] = useState(false);
   
   const [seats, setSeats] = useState(1);
+  const [passengerNames, setPassengerNames] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -152,6 +165,16 @@ export function RoundTripBooking({
       return;
     }
 
+    // Validate passenger names if quantity > 1
+    if (seats > 1) {
+      for (let i = 0; i < seats; i++) {
+        if (!passengerNames[i]?.trim()) {
+          alert(`${t.requiredField}: ${t.passengerName} ${i + 1}`);
+          return;
+        }
+      }
+    }
+
     try {
       setBooking(true);
       
@@ -160,10 +183,12 @@ export function RoundTripBooking({
         bookingsApi.createBooking({
           trip_id: parseInt(outboundTripId),
           quantity: seats,
+          passenger_names: seats > 1 ? passengerNames : undefined,
         }),
         bookingsApi.createBooking({
           trip_id: parseInt(returnTripId),
           quantity: seats,
+          passenger_names: seats > 1 ? passengerNames : undefined,
         }),
       ]);
 
@@ -284,11 +309,46 @@ export function RoundTripBooking({
                   min="1"
                   max={maxSeats}
                   value={seats}
-                  onChange={(e) => setSeats(Math.min(maxSeats, Math.max(1, parseInt(e.target.value) || 1)))}
+                  onChange={(e) => {
+                    const newSeats = Math.min(maxSeats, Math.max(1, parseInt(e.target.value) || 1));
+                    setSeats(newSeats);
+                    // Initialize passenger names array
+                    if (newSeats > 1) {
+                      setPassengerNames(new Array(newSeats).fill(''));
+                    } else {
+                      setPassengerNames([]);
+                    }
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             </div>
+
+            {/* Passenger Names (if seats > 1) */}
+            {seats > 1 && (
+              <div className="space-y-4 border-t border-gray-200 pt-4">
+                <h3 className="text-sm font-medium text-gray-900">{t.passengerNames}</h3>
+                {Array.from({ length: seats }).map((_, index) => (
+                  <div key={index} className="space-y-1">
+                    <label className="block text-xs text-gray-600">
+                      {index === 0 ? t.mainPassenger : `${t.passengerName} ${index + 1}`} *
+                    </label>
+                    <input
+                      type="text"
+                      value={passengerNames[index] || ''}
+                      onChange={(e) => {
+                        const newNames = [...passengerNames];
+                        newNames[index] = e.target.value;
+                        setPassengerNames(newNames);
+                      }}
+                      disabled={booking}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent disabled:bg-gray-100 text-sm"
+                      placeholder={language === 'de' ? 'Max Mustermann' : language === 'en' ? 'John Doe' : 'محمد أحمد'}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div className="border-t border-gray-200 pt-4 mb-6">
               <div className="flex justify-between items-center mb-2">
