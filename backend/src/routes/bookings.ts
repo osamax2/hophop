@@ -431,9 +431,12 @@ router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
       return res.status(400).json({ message: "Cannot cancel past trips" });
     }
 
-    // Note: We do NOT change the status or return seats
+    // Note: Update booking status to indicate cancellation request
     // The company must manually approve the cancellation
-    // We only send notification emails
+    await client.query(
+      "UPDATE bookings SET booking_status = 'cancellation_requested' WHERE id = $1",
+      [bookingId]
+    );
     
     await client.query("COMMIT");
 
@@ -519,7 +522,7 @@ router.post("/:id/cancel", requireAuth, async (req: AuthedRequest, res) => {
     res.json({ 
       message: "Cancellation request sent successfully. Awaiting company approval.",
       booking_id: bookingId,
-      status: booking.booking_status // Keep original status
+      status: 'cancellation_requested' // Return new status
     });
 
   } catch (error) {

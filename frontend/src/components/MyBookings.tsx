@@ -34,6 +34,7 @@ const translations = {
     pending: 'Ausstehend',
     confirmed: 'Bestätigt',
     cancelled: 'Storniert',
+    cancellation_requested: 'Stornierung angefordert',
     completed: 'Abgeschlossen',
     refunded: 'Erstattet',
     loading: 'Laden...',
@@ -67,6 +68,7 @@ const translations = {
     pending: 'Pending',
     confirmed: 'Confirmed',
     cancelled: 'Cancelled',
+    cancellation_requested: 'Cancellation Requested',
     completed: 'Completed',
     refunded: 'Refunded',
     loading: 'Loading...',
@@ -100,6 +102,7 @@ const translations = {
     pending: 'قيد الانتظار',
     confirmed: 'مؤكد',
     cancelled: 'ملغى',
+    cancellation_requested: 'انتظار الإلغاء',
     completed: 'مكتمل',
     refunded: 'مسترد',
     loading: 'جار التحميل...',
@@ -193,19 +196,25 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || 'Failed to cancel booking');
+        throw new Error(error.message || 'Failed to send cancellation request');
       }
 
-      // Update local state
-      setBookings(prevBookings =>
-        prevBookings.map(booking =>
-          booking.id === bookingId
-            ? { ...booking, booking_status: 'cancelled' }
-            : booking
-        )
-      );
-
+      // Don't update the status locally - it remains pending/confirmed
+      // Just refresh the bookings list
+      const data = await response.json();
+      
       alert(t.cancelSuccess);
+      
+      // Optionally refresh bookings to show updated data
+      const refreshResponse = await fetch(`${API_BASE}/api/bookings/my`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (refreshResponse.ok) {
+        const refreshedBookings = await refreshResponse.json();
+        setBookings(refreshedBookings);
+      }
     } catch (err: any) {
       console.error('Cancel booking error:', err);
       alert(t.cancelError + ': ' + (err.message || 'Unknown error'));
