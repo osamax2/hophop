@@ -202,10 +202,10 @@ router.get("/verify-email", async (req, res) => {
 
 /**
  * POST /api/auth/resend-verification
+ * Resend verification email
  * Protected by rate limiting to prevent email spam
  */
-router.post("/resend-verification", emailVerificationLimiter
-router.post("/resend-verification", async (req, res) => {
+router.post("/resend-verification", emailVerificationLimiter, async (req, res) => {
   const { email } = req.body;
 
   if (!email) {
