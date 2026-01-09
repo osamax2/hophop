@@ -341,17 +341,21 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
               className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
             >
               <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                {/* Status Badge */}
-                <div className="flex items-center gap-3">
-                  {getStatusIcon(booking.booking_status)}
-                  <div>
-                    <div className="text-sm text-gray-600">{t.bookingNumber}</div>
-                    <div className="font-semibold text-gray-900">#{booking.id}</div>
+                {/* Booking ID and Status */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+                  {/* Booking Number */}
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(booking.booking_status)}
+                    <div>
+                      <div className="text-sm text-gray-600">{t.bookingNumber}</div>
+                      <div className="font-semibold text-gray-900">#{booking.id}</div>
+                    </div>
                   </div>
-                </div>
 
-                <div className={`px-3 py-1 rounded-full border text-sm font-medium ${getStatusColor(booking.booking_status)}`} style={{ paddingTop: '50px' }}>
-                  {t[booking.booking_status.toLowerCase() as keyof typeof t] || booking.booking_status}
+                  {/* Status Badge */}
+                  <div className={`px-3 py-1 rounded-full border text-sm font-medium self-center ${getStatusColor(booking.booking_status)}`}>
+                    {t[booking.booking_status.toLowerCase() as keyof typeof t] || booking.booking_status}
+                  </div>
                 </div>
 
                 {/* Trip Details */}
