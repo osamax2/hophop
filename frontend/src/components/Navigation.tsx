@@ -177,7 +177,7 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
           ) : (
             <button
               onClick={() => setCurrentPage('login')}
-              className={`flex items-center ${isRTL ? 'flex-row-reverse gap-2' : 'gap-2'} px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors`}
+              className={`flex items-center ${isRTL ? 'flex-row-reverse gap-2' : 'gap-2'} px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors ${isRTL ? 'text-sm md:text-base' : ''}`}
             >
               <User className="w-4 h-4" />
               {t.login}

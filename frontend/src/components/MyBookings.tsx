@@ -235,7 +235,7 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-[50px]">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">{t.title}</h1>
 
       {bookings.length === 0 ? (
