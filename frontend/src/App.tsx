@@ -13,6 +13,7 @@ import VerifyEmail from './components/VerifyEmail';
 import { BookingStatus } from './components/BookingStatus';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { RoundTripBooking } from './components/RoundTripBooking';
+import { MyBookings } from './components/MyBookings';
 import { favoritesApi } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
@@ -468,6 +469,15 @@ export default function App() {
             isLoggedIn={!!user}
             onNavigateToLogin={() => setCurrentPage('login')}
             onBookingComplete={handleRoundTripBookingComplete}
+          />
+        )}
+
+        {currentPage === 'bookings' && (
+          <MyBookings
+            language={language}
+            isLoggedIn={!!user}
+            user={user}
+            onNavigateToLogin={() => setCurrentPage('login')}
           />
         )}
       </main>

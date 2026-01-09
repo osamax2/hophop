@@ -1,4 +1,4 @@
-import { Menu, X, Globe, User, LogOut, Home, Search, Calendar, Star, BarChart3, CreditCard } from 'lucide-react';
+import { Menu, X, Globe, User, LogOut, Home, Search, Calendar, Star, BarChart3, CreditCard, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import type { Language, User as UserType } from '../App';
 import logo from 'figma:asset/4dddb73877b28322b7848adc27f0f948198765ae.png';
@@ -20,6 +20,7 @@ const translations = {
     companies: 'Busgesellschaften',
     reviews: 'Bewertungen',
     favorites: 'Favoriten',
+    bookings: 'Meine Buchungen',
     profile: 'Profil',
     login: 'Anmelden',
     admin: 'Admin-Bereich',
@@ -33,6 +34,7 @@ const translations = {
     companies: 'Bus Companies',
     reviews: 'Reviews',
     favorites: 'Favorites',
+    bookings: 'My Bookings',
     profile: 'Profile',
     login: 'Login',
     admin: 'Admin',
@@ -46,6 +48,7 @@ const translations = {
     companies: 'شركات الباصات',
     reviews: 'التقييمات',
     favorites: 'المفضلة',
+    bookings: 'حجوزاتي',
     profile: 'الملف الشخصي',
     login: 'تسجيل الدخول',
     admin: 'لوحة الإدارة',
@@ -67,6 +70,7 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   const menuItems = [
     { id: 'reviews', label: t.reviews, icon: Star },
     { id: 'favorites', label: t.favorites, icon: Star },
+    { id: 'bookings', label: t.bookings, icon: Ticket },
     { id: 'home', label: t.home, icon: Home },
   ];
 
