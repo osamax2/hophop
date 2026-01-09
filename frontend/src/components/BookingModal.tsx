@@ -304,16 +304,16 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
     try {
       let captchaToken: string | null = null;
 
-      // Get reCAPTCHA token for guest bookings
+      // Get reCAPTCHA Enterprise token for guest bookings
       if (!isLoggedIn) {
-        // Check if reCAPTCHA is loaded
-        if (typeof window === 'undefined' || !(window as any).grecaptcha) {
-          console.warn('⚠️ reCAPTCHA not loaded yet, waiting...');
-          // Wait for reCAPTCHA to load
+        // Check if reCAPTCHA Enterprise is loaded
+        if (typeof window === 'undefined' || !(window as any).grecaptcha || !(window as any).grecaptcha.enterprise) {
+          console.warn('⚠️ reCAPTCHA Enterprise not loaded yet, waiting...');
+          // Wait for reCAPTCHA Enterprise to load
           await new Promise((resolve) => {
             let attempts = 0;
             const checkInterval = setInterval(() => {
-              if ((window as any).grecaptcha || attempts > 20) {
+              if (((window as any).grecaptcha && (window as any).grecaptcha.enterprise) || attempts > 20) {
                 clearInterval(checkInterval);
                 resolve(null);
               }
@@ -322,21 +322,22 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
           });
         }
 
-        if ((window as any).grecaptcha && (window as any).grecaptcha.execute) {
+        if ((window as any).grecaptcha && (window as any).grecaptcha.enterprise && (window as any).grecaptcha.enterprise.execute) {
           try {
-            console.log('🔒 Generating reCAPTCHA token...');
-            captchaToken = await (window as any).grecaptcha.execute('6LfVxKMqAAAAADMq7vJq3o8xZ0U3K6MdP7wQGJ5R', {
+            console.log('🔒 Generating reCAPTCHA Enterprise token...');
+            await (window as any).grecaptcha.enterprise.ready();
+            captchaToken = await (window as any).grecaptcha.enterprise.execute('6LddUUUsAAAAAJNWhYX6kHD--_5MNwdTxeTGvrkJ', {
               action: 'guest_booking'
             });
-            console.log('✅ reCAPTCHA token generated');
+            console.log('✅ reCAPTCHA Enterprise token generated');
           } catch (captchaError) {
-            console.error('❌ reCAPTCHA error:', captchaError);
+            console.error('❌ reCAPTCHA Enterprise error:', captchaError);
             setError(t.verifyingSecurity + ' - ' + (captchaError as Error).message);
             setIsProcessing(false);
             return;
           }
         } else {
-          console.warn('⚠️ reCAPTCHA not available, proceeding without captcha');
+          console.warn('⚠️ reCAPTCHA Enterprise not available, proceeding without captcha');
         }
       }
 
