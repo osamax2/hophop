@@ -302,5 +302,52 @@ router.post("/", optionalAuth, async (req: AuthedRequest, res) => {
   }
 });
 
+/**
+ * GET /api/bookings/my
+ * Get all bookings for the authenticated user
+ */
+router.get("/my", requireAuth, async (req: AuthedRequest, res) => {
+  const userId = req.user?.id;
+
+  if (!userId) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  try {
+    const result = await pool.query(
+      `
+      SELECT 
+        b.id,
+        b.booking_status,
+        b.seats_booked,
+        b.total_price,
+        b.currency,
+        b.created_at,
+        b.trip_id,
+        b.status_token,
+        t.departure_time,
+        t.arrival_time,
+        fc.name as from_city,
+        tc.name as to_city,
+        comp.name as company_name
+      FROM bookings b
+      JOIN trips t ON t.id = b.trip_id
+      LEFT JOIN routes r ON r.id = t.route_id
+      LEFT JOIN cities fc ON fc.id = r.from_city_id
+      LEFT JOIN cities tc ON tc.id = r.to_city_id
+      LEFT JOIN transport_companies comp ON comp.id = t.company_id
+      WHERE b.user_id = $1
+      ORDER BY b.created_at DESC
+      `,
+      [userId]
+    );
+
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching user bookings:", error);
+    res.status(500).json({ message: "Error fetching bookings", error: String(error) });
+  }
+});
+
 
 export default router;
