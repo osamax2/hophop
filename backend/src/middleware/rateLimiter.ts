@@ -40,7 +40,7 @@ export const guestBookingLimiter = rateLimit({
  */
 export const loginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // limit each IP to 5 login attempts per windowMs
+  max: 10, // limit each IP to 10 login attempts per windowMs
   message: {
     message: 'Too many login attempts. Please try again in 15 minutes.',
     code: 'LOGIN_RATE_LIMIT_EXCEEDED'
@@ -48,6 +48,7 @@ export const loginLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   skipSuccessfulRequests: true, // Don't count successful logins
+  skipFailedRequests: true, // Don't count failed logins (only block on repeated failures)
 });
 
 /**
