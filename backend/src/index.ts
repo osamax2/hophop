@@ -4,6 +4,7 @@ import { pool } from "./db";
 import authRoutes from "./routes/auth";
 import { requireAuth, AuthedRequest } from "./middleware/auth";
 import { apiLimiter } from "./middleware/rateLimiter";
+import { logger, requestLogger } from "./utils/logger";
 import bookingsRoutes from "./routes/bookings";
 import bookingStatusRoutes from "./routes/booking-status";
 import companyBookingsRoutes from "./routes/company-bookings";
@@ -15,6 +16,7 @@ import adminRoutes from "./routes/admin";
 import contactRoutes from "./routes/contact";
 import branchesRoutes from "./routes/branches";
 import subscriptionsRoutes from "./routes/subscriptions";
+import twofaRoutes from "./routes/twofa";
 // CRUD Routes
 import usersRoutes from "./routes/users";
 import bookingsCrudRoutes from "./routes/bookings-crud";
@@ -28,9 +30,28 @@ const PORT = process.env.PORT || 4000;
 
 // ====== Security Middlewares ======
 // Helmet helps secure Express apps by setting various HTTP headers
+const isProduction = process.env.NODE_ENV === 'production';
+
 app.use(helmet({
-  contentSecurityPolicy: false, // Allow for easier development, customize in production
+  contentSecurityPolicy: isProduction ? {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://hophopsy.com"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      imgSrc: ["'self'", "data:", "https:", "blob:"],
+      connectSrc: ["'self'", "https://hophopsy.com"],
+      frameSrc: ["'none'"],
+      objectSrc: ["'none'"],
+      upgradeInsecureRequests: [],
+    },
+  } : false, // Disable CSP in development for easier debugging
   crossOriginEmbedderPolicy: false,
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
 }));
 
 // ====== Middlewares ======
@@ -62,6 +83,9 @@ app.use(cors({
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Request logging middleware
+app.use(requestLogger);
+
 // Apply general rate limiting to all API routes
 app.use("/api/", apiLimiter);
 
@@ -81,6 +105,7 @@ app.use("/api/companies", companiesRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/branches", branchesRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
+app.use("/api/twofa", twofaRoutes);
 
 // ✅ CRUD Routes
 app.use("/api/users", usersRoutes);

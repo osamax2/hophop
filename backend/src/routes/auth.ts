@@ -339,6 +339,60 @@ router.post("/login", loginLimiter, async (req, res) => {
       });
     }
 
+    // Check if 2FA is enabled
+    const twofaResult = await pool.query(
+      `SELECT twofa_enabled FROM users WHERE id = $1`,
+      [user.id]
+    );
+
+    const twofaEnabled = twofaResult.rows[0]?.twofa_enabled || false;
+
+    // If 2FA is enabled, require token verification
+    if (twofaEnabled) {
+      const { twofa_token } = req.body;
+
+      if (!twofa_token) {
+        // Return special response to indicate 2FA is required
+        return res.status(200).json({
+          requireTwofa: true,
+          userId: user.id,
+          message: "2FA token required",
+        });
+      }
+
+      // Verify 2FA token
+      const speakeasy = require("speakeasy");
+      const secretResult = await pool.query(
+        `SELECT twofa_secret FROM users WHERE id = $1`,
+        [user.id]
+      );
+
+      const secret = secretResult.rows[0]?.twofa_secret;
+
+      if (!secret) {
+        console.error("2FA enabled but no secret found for user:", user.id);
+        return res.status(500).json({
+          message: "2FA configuration error",
+        });
+      }
+
+      const verified = speakeasy.totp.verify({
+        secret,
+        encoding: "base32",
+        token: twofa_token,
+        window: 2,
+      });
+
+      if (!verified) {
+        console.log("Invalid 2FA token for user:", user.id);
+        return res.status(401).json({
+          message: "Invalid 2FA token",
+        });
+      }
+
+      console.log("2FA verification successful for user:", user.id);
+    }
+
     const token = jwt.sign(
       { id: user.id },
       process.env.JWT_SECRET || "dev_secret_change_me",
