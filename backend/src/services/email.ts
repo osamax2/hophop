@@ -68,6 +68,31 @@ export class EmailService {
     }
   }
 
+  /**
+   * Send a generic email
+   */
+  async sendEmail(to: string, subject: string, htmlBody: string): Promise<void> {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('⚠️  Email service not configured, skipping email');
+      return;
+    }
+
+    try {
+      const mailOptions = {
+        from: `${process.env.SMTP_FROM_NAME || 'HopHop Syria'} <${process.env.SMTP_FROM || 'noreply@hophopsy.com'}>`,
+        to,
+        subject,
+        html: htmlBody,
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Email sent to ${to}: ${subject}`);
+    } catch (error) {
+      console.error(`❌ Failed to send email to ${to}:`, error);
+      throw error;
+    }
+  }
+
   async sendBookingConfirmation(data: BookingEmailData): Promise<void> {
     if (!this.isConfigured || !this.transporter) {
       console.warn('📧 Email not sent - SMTP not configured');
@@ -86,13 +111,13 @@ export class EmailService {
 
     const subject = isGuestBooking
       ? 'Buchungsanfrage erhalten / Booking Request Received / تم استلام طلب الحجز'
-      : 'Buchungsbestätigung / Booking Confirmation / تأكيد الحجز';
+      : 'Buchungsanfrage erhalten / Booking Request Received / تم استلام طلب الحجز';
 
     const message = isGuestBooking
       ? this.getGuestBookingEmailTemplate(recipientName, tripDetails, bookingId, statusUrl)
-      : this.getConfirmedBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
+      : this.getPendingBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
 
-    console.log(`📧 Sending ${isGuestBooking ? 'GUEST' : 'CONFIRMED'} booking email to ${recipientEmail} (Booking #${bookingId})`);
+    console.log(`📧 Sending ${isGuestBooking ? 'GUEST' : 'USER'} booking email to ${recipientEmail} (Booking #${bookingId})`);
     console.log(`   isGuestBooking: ${isGuestBooking}, hasQRCode: ${!!qrCodeDataUrl}`);
 
     try {
@@ -246,6 +271,142 @@ export class EmailService {
     <div class="footer">
       <p>HopHop Transport - Ihr zuverlässiger Reisepartner / Your reliable travel partner / شريكك الموثوق في السفر</p>
       <p>Bei Fragen kontaktieren Sie uns bitte / For questions please contact us / للاستفسارات يرجى الاتصال بنا</p>
+    </div>
+  </div>
+</body>
+</html>
+    `;
+  }
+
+  private getPendingBookingEmailTemplate(
+    name: string,
+    trip: BookingEmailData['tripDetails'],
+    bookingId: number,
+    qrCodeDataUrl?: string,
+    statusUrl?: string
+  ): string {
+    return `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #16a34a, #15803d); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+    .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+    .trip-details { background: white; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #16a34a; }
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+    .detail-label { font-weight: bold; color: #666; }
+    .footer { text-align: center; padding: 20px; color: #999; font-size: 12px; }
+    .status-badge { background: #fef3c7; color: #92400e; padding: 8px 16px; border-radius: 20px; display: inline-block; font-weight: bold; }
+    .qr-section { background: linear-gradient(135deg, #fef3c7, #fef08a); padding: 30px; border-radius: 12px; margin: 20px 0; text-align: center; border: 2px solid #f59e0b; }
+    .qr-code { background: white; padding: 20px; border-radius: 8px; display: inline-block; margin: 20px 0; }
+    .status-button { background: #16a34a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🚍 HopHop Transport</h1>
+      <p>Buchungsanfrage erhalten / Booking Request Received / تم استلام طلب الحجز</p>
+    </div>
+    
+    <div class="content">
+      <p><strong>Hallo ${name} / Hello ${name} / مرحباً ${name}</strong></p>
+      
+      <p>
+        <strong>Deutsch:</strong> Vielen Dank für Ihre Buchungsanfrage! Ihre Buchung wartet auf die Bestätigung durch das Transportunternehmen. 
+        Sie erhalten eine weitere E-Mail, sobald die Buchung bestätigt wurde.
+      </p>
+      
+      <p>
+        <strong>English:</strong> Thank you for your booking request! Your booking is waiting for confirmation from the transport company. 
+        You will receive another email once the booking is confirmed.
+      </p>
+      
+      <p>
+        <strong>العربية:</strong> شكراً لطلب الحجز الخاص بك! حجزك في انتظار تأكيد شركة النقل. 
+        سوف تتلقى بريداً إلكترونياً آخر بمجرد تأكيد الحجز.
+      </p>
+
+      <div style="text-align: center; margin: 20px 0;">
+        <span class="status-badge">⏳ Ausstehend / Pending / قيد الانتظار</span>
+      </div>
+      
+      <div class="trip-details">
+        <h3 style="margin-top: 0;">📋 Buchungsdetails / Booking Details / تفاصيل الحجز</h3>
+        <div class="detail-row">
+          <span class="detail-label">Buchungs-ID / Booking ID / رقم الحجز:</span>
+          <span>#${bookingId}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Von / From / من:</span>
+          <span>${trip.from}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Nach / To / إلى:</span>
+          <span>${trip.to}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Abfahrt / Departure / المغادرة:</span>
+          <span>${trip.departureTime}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Ankunft / Arrival / الوصول:</span>
+          <span>${trip.arrivalTime}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Unternehmen / Company / الشركة:</span>
+          <span>${trip.company}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Plätze / Seats / المقاعد:</span>
+          <span>${trip.seats}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Gesamtpreis / Total / الإجمالي:</span>
+          <span><strong>${trip.totalPrice} ${trip.currency}</strong></span>
+        </div>
+      </div>
+
+      ${qrCodeDataUrl ? `
+      <div class="qr-section">
+        <h3 style="margin-top: 0;">📱 Buchungsstatus / Booking Status / حالة الحجز</h3>
+        <p>
+          <strong>Deutsch:</strong> Scannen Sie diesen QR-Code, um den Status Ihrer Buchung zu überprüfen.<br>
+          <strong>English:</strong> Scan this QR code to check your booking status.<br>
+          <strong>العربية:</strong> امسح رمز الاستجابة السريعة هذا للتحقق من حالة حجزك.
+        </p>
+        <div class="qr-code">
+          <img src="${qrCodeDataUrl}" alt="QR Code" style="width: 200px; height: 200px;" />
+        </div>
+        ${statusUrl ? `<a href="${statusUrl}" class="status-button">Status online prüfen / Check Status Online / التحقق من الحالة عبر الإنترنت</a>` : ''}
+      </div>
+      ` : statusUrl ? `
+      <div style="text-align: center; margin: 30px 0;">
+        <a href="${statusUrl}" class="status-button">Buchungsstatus anzeigen / View Booking Status / عرض حالة الحجز</a>
+      </div>
+      ` : ''}
+      
+      <p style="margin-top: 30px; padding: 15px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+        <strong>⚠️ Wichtig / Important / مهم:</strong><br>
+        Diese Buchung muss noch vom Transportunternehmen bestätigt werden. 
+        Sie erhalten eine separate Bestätigungs-E-Mail, sobald die Buchung genehmigt wurde.<br><br>
+        This booking still needs to be confirmed by the transport company. 
+        You will receive a separate confirmation email once the booking is approved.<br><br>
+        لا تزال هذه الحجز بحاجة إلى تأكيد من شركة النقل. 
+        سوف تتلقى رسالة تأكيد منفصلة بمجرد الموافقة على الحجز.
+      </p>
+      
+      <p style="text-align: center; margin-top: 30px;">
+        <strong>Gute Reise! / Have a great trip! / رحلة سعيدة!</strong>
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p>© 2026 HopHop Transport Syria | www.hophopsy.com</p>
+      <p>Bei Fragen kontaktieren Sie uns bitte / For questions please contact us / للأسئلة يرجى الاتصال بنا</p>
     </div>
   </div>
 </body>
