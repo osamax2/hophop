@@ -325,7 +325,7 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
         if ((window as any).grecaptcha && (window as any).grecaptcha.enterprise && (window as any).grecaptcha.enterprise.execute) {
           try {
             console.log('🔒 Generating reCAPTCHA Enterprise token...');
-            await (window as any).grecaptcha.enterprise.ready();
+            // Execute directly without ready() wrapper
             captchaToken = await (window as any).grecaptcha.enterprise.execute('6LddUUUsAAAAAJNWhYX6kHD--_5MNwdTxeTGvrkJ', {
               action: 'guest_booking'
             });

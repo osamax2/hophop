@@ -1,14 +1,12 @@
-import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
 import type { Request, Response, NextFunction } from 'express';
 import { AuthedRequest } from './auth';
+import https from 'https';
 
 // Environment variables
 const RECAPTCHA_PROJECT_ID = process.env.RECAPTCHA_PROJECT_ID || 'hophopsy';
 const RECAPTCHA_SITE_KEY = process.env.RECAPTCHA_SITE_KEY || '6LddUUUsAAAAAJNWhYX6kHD--_5MNwdTxeTGvrkJ';
+const RECAPTCHA_API_KEY = process.env.RECAPTCHA_API_KEY || ''; // Optional: Google Cloud API Key
 const RECAPTCHA_MIN_SCORE = parseFloat(process.env.RECAPTCHA_MIN_SCORE || '0.5');
-
-// Create reCAPTCHA Enterprise client (reusable)
-const client = new RecaptchaEnterpriseServiceClient();
 
 interface RecaptchaAssessmentResult {
   valid: boolean;
@@ -19,7 +17,7 @@ interface RecaptchaAssessmentResult {
 }
 
 /**
- * Verify reCAPTCHA Enterprise token with Google's API
+ * Verify reCAPTCHA Enterprise token using REST API
  * @param token - The reCAPTCHA Enterprise token from the client
  * @param expectedAction - Expected action name (e.g., 'guest_booking')
  * @param userIp - Optional client IP address for additional context
@@ -31,53 +29,101 @@ async function verifyRecaptchaEnterprise(
   userIp?: string
 ): Promise<RecaptchaAssessmentResult> {
   try {
-    const projectPath = client.projectPath(RECAPTCHA_PROJECT_ID);
+    // Build assessment request body
+    const requestBody = JSON.stringify({
+      event: {
+        token: token,
+        siteKey: RECAPTCHA_SITE_KEY,
+        ...(userIp && { userIpAddress: userIp })
+      }
+    });
 
-    // Build the assessment request
-    const request = {
-      assessment: {
-        event: {
-          token: token,
-          siteKey: RECAPTCHA_SITE_KEY,
-          ...(userIp && { userIpAddress: userIp })
-        },
-      },
-      parent: projectPath,
-    };
+    // Use REST API endpoint
+    const apiUrl = RECAPTCHA_API_KEY 
+      ? `/v1/projects/${RECAPTCHA_PROJECT_ID}/assessments?key=${RECAPTCHA_API_KEY}`
+      : `/v1/projects/${RECAPTCHA_PROJECT_ID}/assessments`;
 
-    const [response] = await client.createAssessment(request);
-
-    // Check if the token is valid
-    if (!response.tokenProperties?.valid) {
-      return {
-        valid: false,
-        score: 0,
-        action: '',
-        invalidReason: String(response.tokenProperties?.invalidReason || 'UNKNOWN')
+    return new Promise((resolve, reject) => {
+      const options = {
+        hostname: 'recaptchaenterprise.googleapis.com',
+        port: 443,
+        path: apiUrl,
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(requestBody)
+        }
       };
-    }
 
-    // Check if the expected action was executed
-    const action = response.tokenProperties.action || '';
-    if (action !== expectedAction) {
-      return {
-        valid: false,
-        score: 0,
-        action: action,
-        invalidReason: `ACTION_MISMATCH: expected '${expectedAction}', got '${action}'`
-      };
-    }
+      const req = https.request(options, (res) => {
+        let data = '';
 
-    // Get the risk score and reasons
-    const score = response.riskAnalysis?.score || 0;
-    const reasons = (response.riskAnalysis?.reasons || []).map(reason => String(reason));
+        res.on('data', (chunk) => {
+          data += chunk;
+        });
 
-    return {
-      valid: true,
-      score: score,
-      action: action,
-      reasons: reasons
-    };
+        res.on('end', () => {
+          try {
+            const response = JSON.parse(data);
+
+            // Handle API errors
+            if (response.error) {
+              console.error('❌ reCAPTCHA Enterprise API error:', response.error);
+              resolve({
+                valid: false,
+                score: 0,
+                action: '',
+                invalidReason: response.error.message || 'API_ERROR'
+              });
+              return;
+            }
+
+            // Check if the token is valid
+            if (!response.tokenProperties?.valid) {
+              resolve({
+                valid: false,
+                score: 0,
+                action: '',
+                invalidReason: String(response.tokenProperties?.invalidReason || 'UNKNOWN')
+              });
+              return;
+            }
+
+            // Check if the expected action was executed
+            const action = response.tokenProperties.action || '';
+            if (action !== expectedAction) {
+              resolve({
+                valid: false,
+                score: 0,
+                action: action,
+                invalidReason: `ACTION_MISMATCH: expected '${expectedAction}', got '${action}'`
+              });
+              return;
+            }
+
+            // Get the risk score and reasons
+            const score = response.riskAnalysis?.score || 0;
+            const reasons = (response.riskAnalysis?.reasons || []).map((r: any) => String(r));
+
+            resolve({
+              valid: true,
+              score: score,
+              action: action,
+              reasons: reasons
+            });
+          } catch (error) {
+            reject(new Error('Failed to parse reCAPTCHA response'));
+          }
+        });
+      });
+
+      req.on('error', (error) => {
+        reject(error);
+      });
+
+      req.write(requestBody);
+      req.end();
+    });
   } catch (error) {
     console.error('❌ reCAPTCHA Enterprise verification error:', error);
     throw error;
