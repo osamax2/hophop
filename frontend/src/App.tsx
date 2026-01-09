@@ -271,6 +271,11 @@ export default function App() {
     setCurrentPage('home');
   };
 
+  const handleNavigateToBookingStatus = (token: string) => {
+    setBookingStatusToken(token);
+    setCurrentPage('booking-status');
+  };
+
   // Load favorites when user logs in
   useEffect(() => {
     const loadFavorites = async () => {
@@ -478,6 +483,7 @@ export default function App() {
             isLoggedIn={!!user}
             user={user}
             onNavigateToLogin={() => setCurrentPage('login')}
+            onNavigateToBookingStatus={handleNavigateToBookingStatus}
           />
         )}
       </main>

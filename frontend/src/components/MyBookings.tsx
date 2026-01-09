@@ -8,6 +8,7 @@ interface MyBookingsProps {
   isLoggedIn: boolean;
   user: User | null;
   onNavigateToLogin: () => void;
+  onNavigateToBookingStatus: (token: string) => void;
 }
 
 const translations = {
@@ -113,7 +114,7 @@ interface Booking {
   status_token?: string;
 }
 
-export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin }: MyBookingsProps) {
+export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNavigateToBookingStatus }: MyBookingsProps) {
   const t = translations[language];
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -248,7 +249,12 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin }: My
           {bookings.map((booking) => (
             <div
               key={booking.id}
-              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              onClick={() => {
+                if (booking.status_token) {
+                  onNavigateToBookingStatus(booking.status_token);
+                }
+              }}
+              className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow cursor-pointer"
             >
               <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                 {/* Status Badge */}
