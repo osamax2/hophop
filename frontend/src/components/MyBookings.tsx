@@ -241,6 +241,8 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
         return <CheckCircle className="w-5 h-5 text-green-600" />;
       case 'cancelled':
         return <XCircle className="w-5 h-5 text-red-600" />;
+      case 'cancellation_requested':
+        return <AlertCircle className="w-5 h-5 text-orange-600" />;
       case 'pending':
         return <AlertCircle className="w-5 h-5 text-yellow-600" />;
       case 'completed':
@@ -256,6 +258,8 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
         return 'bg-green-100 text-green-800 border-green-200';
       case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-200';
+      case 'cancellation_requested':
+        return 'bg-orange-100 text-orange-800 border-orange-200';
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
       case 'completed':
