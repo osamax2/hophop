@@ -220,21 +220,33 @@ export function SearchResults({
 
         // Fetch return trips if round trip
         if (searchParams.isRoundTrip && searchParams.returnDate) {
+          console.log('Fetching return trips - Round trip detected', {
+            isRoundTrip: searchParams.isRoundTrip,
+            returnDate: searchParams.returnDate,
+            swappedFrom: searchParams.to,
+            swappedTo: searchParams.from
+          });
           const returnParams = new URLSearchParams({
             from: searchParams.to || '', // Swap from and to
             to: searchParams.from || '',
             date: searchParams.returnDate,
           });
           const returnUrl = `${API_BASE}/api/trips?${returnParams.toString()}`;
+          console.log('Return trips URL:', returnUrl);
           const returnRes = await fetch(returnUrl);
           if (returnRes.ok) {
             const returnData: Trip[] = await returnRes.json();
-            console.log('Return trips data received:', returnData.length, 'trips');
+            console.log('Return trips data received:', returnData.length, 'trips', returnData);
             setReturnTrips(returnData);
           } else {
+            console.error('Failed to fetch return trips:', returnRes.status, returnRes.statusText);
             setReturnTrips([]);
           }
         } else {
+          console.log('Not fetching return trips:', {
+            isRoundTrip: searchParams.isRoundTrip,
+            returnDate: searchParams.returnDate
+          });
           setReturnTrips([]);
         }
 
@@ -543,6 +555,14 @@ export function SearchResults({
             {filteredTrips.map((trip) => renderTripCard(trip, false))}
           </div>
         </div>
+
+        {/* Debug info */}
+        {console.log('Render check:', {
+          isRoundTrip: searchParams.isRoundTrip,
+          returnTripsLength: returnTrips.length,
+          filteredReturnTripsLength: filteredReturnTrips.length,
+          shouldShow: searchParams.isRoundTrip && returnTrips.length > 0
+        })}
 
         {searchParams.isRoundTrip && returnTrips.length > 0 && (
           <div className="mt-8">
