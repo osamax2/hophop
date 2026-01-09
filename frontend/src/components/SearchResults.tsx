@@ -27,6 +27,11 @@ interface SearchResultsProps {
 const translations = {
   de: {
     results: 'Suchergebnisse',
+    roundTrip: 'Hin- und Rückfahrt',
+    outboundTrip: 'Hinreise',
+    returnTrip: 'Rückreise',
+    selectOutbound: 'Wählen Sie Ihre Hinreise',
+    selectReturn: 'Wählen Sie Ihre Rückreise',
     filters: 'Filter',
     sortBy: 'Sortieren nach',
     earliest: 'Früheste',
@@ -52,6 +57,11 @@ const translations = {
   },
   en: {
     results: 'Search Results',
+    roundTrip: 'Round Trip',
+    outboundTrip: 'Outbound Journey',
+    returnTrip: 'Return Journey',
+    selectOutbound: 'Select your outbound trip',
+    selectReturn: 'Select your return trip',
     filters: 'Filters',
     sortBy: 'Sort by',
     earliest: 'Earliest',
@@ -77,6 +87,11 @@ const translations = {
   },
   ar: {
     results: 'نتائج البحث',
+    roundTrip: 'ذهاب وعودة',
+    outboundTrip: 'رحلة الذهاب',
+    returnTrip: 'رحلة العودة',
+    selectOutbound: 'اختر رحلة الذهاب',
+    selectReturn: 'اختر رحلة العودة',
     filters: 'الفلاتر',
     sortBy: 'ترتيب حسب',
     earliest: 'الأبكر',
@@ -148,6 +163,9 @@ export function SearchResults({
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [returnTrips, setReturnTrips] = useState<Trip[]>([]);
+  const [selectedOutboundTrip, setSelectedOutboundTrip] = useState<string | null>(null);
+  const [selectedReturnTrip, setSelectedReturnTrip] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasNoTrips, setHasNoTrips] = useState(false);
@@ -200,6 +218,26 @@ export function SearchResults({
         console.log('Trips data received:', data.length, 'trips');
         setTrips(data);
 
+        // Fetch return trips if round trip
+        if (searchParams.isRoundTrip && searchParams.returnDate) {
+          const returnParams = new URLSearchParams({
+            from: searchParams.to || '', // Swap from and to
+            to: searchParams.from || '',
+            date: searchParams.returnDate,
+          });
+          const returnUrl = `${API_BASE}/api/trips?${returnParams.toString()}`;
+          const returnRes = await fetch(returnUrl);
+          if (returnRes.ok) {
+            const returnData: Trip[] = await returnRes.json();
+            console.log('Return trips data received:', returnData.length, 'trips');
+            setReturnTrips(returnData);
+          } else {
+            setReturnTrips([]);
+          }
+        } else {
+          setReturnTrips([]);
+        }
+
         // لو حاب، ممكن نضبط الرينج حسب الأسعار الفعلية
         if (data.length > 0) {
           console.log('Trips found, setting hasNoTrips to false');
@@ -239,7 +277,7 @@ export function SearchResults({
 
     fetchTrips();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams.from, searchParams.to, searchParams.date, language]);
+  }, [searchParams.from, searchParams.to, searchParams.date, searchParams.returnDate, searchParams.isRoundTrip, language]);
 
   // هذا useEffect لم يعد ضرورياً لأننا نستدعي callback مباشرة في fetchTrips
 
@@ -290,7 +328,35 @@ export function SearchResults({
     }
   });
 
-  const companies = Array.from(new Set(trips.map((t) => t.company)));
+  // Filter and sort return trips
+  let filteredReturnTrips = returnTrips.filter((trip) => {
+    if (trip.price < priceRange[0] || trip.price > priceRange[1]) return false;
+    if (selectedTimeSlots.length > 0) {
+      const hour = parseInt(trip.departureTime.split(':')[0]);
+      const slot =
+        hour >= 6 && hour < 12
+          ? 'morning'
+          : hour >= 12 && hour < 18
+          ? 'afternoon'
+          : hour >= 18
+          ? 'evening'
+          : 'night';
+      if (!selectedTimeSlots.includes(slot)) return false;
+    }
+    if (selectedCompanies.length > 0 && !selectedCompanies.includes(trip.company))
+      return false;
+    return true;
+  });
+
+  filteredReturnTrips = [...filteredReturnTrips].sort((a, b) => {
+    if (sortBy === 'earliest') {
+      return a.departureTime.localeCompare(b.departureTime);
+    } else {
+      return a.price - b.price;
+    }
+  });
+
+  const companies = Array.from(new Set([...trips.map((t) => t.company), ...returnTrips.map((t) => t.company)]));
   const timeSlots = ['morning', 'afternoon', 'evening', 'night'] as const;
 
   const toggleTimeSlot = (slot: string) => {
@@ -325,119 +391,183 @@ export function SearchResults({
     console.log('Returning null - no trips found. hasNoTrips:', hasNoTrips, 'trips.length:', trips.length, 'loading:', loading, 'error:', error);
     return null;
   } else {
-    content = (
-      <div className="space-y-4">
-        {filteredTrips.map((trip) => (
-          <div
-            key={trip.id}
-            className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow"
-          >
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              {/* Trip Image */}
-              {trip.image_url && (
-                <div className="md:w-32 md:h-32 w-full h-48 flex-shrink-0">
-                  <img
-                    src={trip.image_url}
-                    alt={`${trip.company} bus`}
-                    className="w-full h-full object-cover rounded-lg"
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                    }}
-                  />
+    // Render function for trip cards
+    const renderTripCard = (trip: Trip, isReturn: boolean = false) => {
+      const isSelected = isReturn 
+        ? selectedReturnTrip === trip.id 
+        : selectedOutboundTrip === trip.id;
+      const shouldShowSelect = searchParams.isRoundTrip;
+      
+      return (
+        <div
+          key={trip.id}
+          className={`bg-white rounded-2xl shadow-sm border-2 p-6 hover:shadow-md transition-all ${
+            shouldShowSelect ? 'cursor-pointer' : ''
+          } ${isSelected ? 'border-green-500 ring-2 ring-green-200' : 'border-gray-200'}`}
+          onClick={() => {
+            if (shouldShowSelect) {
+              if (isReturn) {
+                setSelectedReturnTrip(trip.id);
+              } else {
+                setSelectedOutboundTrip(trip.id);
+              }
+            }
+          }}
+        >
+          <div className="flex flex-col md:flex-row md:items-center gap-6">
+            {trip.image_url && (
+              <div className="md:w-32 md:h-32 w-full h-48 flex-shrink-0">
+                <img
+                  src={trip.image_url}
+                  alt={`${trip.company} bus`}
+                  className="w-full h-full object-cover rounded-lg"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
+            
+            <div className="flex items-center gap-6 flex-1">
+              <div className="text-center">
+                <div className="text-2xl text-gray-900 mb-1">{trip.departureTime}</div>
+                <div className="text-sm text-gray-600">{trip.from}</div>
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="h-0.5 flex-1 bg-gray-300" />
+                  <Clock className="w-4 h-4 text-gray-400" />
+                  <div className="h-0.5 flex-1 bg-gray-300" />
                 </div>
-              )}
-              
-              {/* Time Info */}
-              <div className="flex items-center gap-6 flex-1">
-                <div className="text-center">
-                  <div className="text-2xl text-gray-900 mb-1">{trip.departureTime}</div>
-                  <div className="text-sm text-gray-600">{trip.from}</div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="h-0.5 flex-1 bg-gray-300" />
-                    <Clock className="w-4 h-4 text-gray-400" />
-                    <div className="h-0.5 flex-1 bg-gray-300" />
+                <div className="text-center text-sm text-gray-600">{trip.duration}</div>
+                {trip.stops > 0 && (
+                  <div className="text-center text-xs text-gray-500 mt-1">
+                    {trip.stops} {t.stops}
                   </div>
-                  <div className="text-center text-sm text-gray-600">{trip.duration}</div>
-                  {trip.stops > 0 && (
-                    <div className="text-center text-xs text-gray-500 mt-1">
-                      {trip.stops} {t.stops}
+                )}
+              </div>
+              <div className="text-center">
+                <div className="text-2xl text-gray-900 mb-1">{trip.arrivalTime}</div>
+                <div className="text-sm text-gray-600">{trip.to}</div>
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
+              <div className="flex-1">
+                <div className="text-sm text-gray-900 mb-2">{trip.company}</div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {trip.amenities.includes('wifi') && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs">
+                      <Wifi className="w-3 h-3" />
+                      WiFi
+                    </div>
+                  )}
+                  {trip.amenities.includes('ac') && (
+                    <div className="flex items-center gap-1 px-2 py-1 bg-cyan-50 text-cyan-700 rounded-lg text-xs">
+                      <Wind className="w-3 h-3" />
+                      AC
+                    </div>
+                  )}
+                  {trip.type === 'vip' && (
+                    <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs">
+                      VIP
                     </div>
                   )}
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl text-gray-900 mb-1">{trip.arrivalTime}</div>
-                  <div className="text-sm text-gray-600">{trip.to}</div>
+                <div className="flex items-center gap-1 text-sm text-gray-600 mt-2">
+                  <Users className="w-4 h-4" />
+                  {language === 'ar' ? toArabicNumerals(trip.seatsAvailable) : trip.seatsAvailable} {t.seats}
                 </div>
               </div>
 
-              {/* Trip Details */}
-              <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-                {/* Company & Amenities */}
-                <div className="flex-1">
-                  <div className="text-sm text-gray-900 mb-2">{trip.company}</div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {trip.amenities.includes('wifi') && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg text-xs">
-                        <Wifi className="w-3 h-3" />
-                        WiFi
-                      </div>
-                    )}
-                    {trip.amenities.includes('ac') && (
-                      <div className="flex items-center gap-1 px-2 py-1 bg-cyan-50 text-cyan-700 rounded-lg text-xs">
-                        <Wind className="w-3 h-3" />
-                        AC
-                      </div>
-                    )}
-                    {trip.type === 'vip' && (
-                      <div className="px-2 py-1 bg-purple-50 text-purple-700 rounded-lg text-xs">
-                        VIP
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-1 text-sm text-gray-600 mt-2">
-                    <Users className="w-4 h-4" />
-                    {language === 'ar' ? toArabicNumerals(trip.seatsAvailable) : trip.seatsAvailable} {t.seats}
+              <div className="flex md:flex-col items-center md:items-end gap-3">
+                <div className="text-right flex-1 md:flex-none">
+                  <div className="text-2xl text-green-600">
+                    {formatCurrency(trip.price, language)}
                   </div>
                 </div>
-
-                {/* Price & Actions */}
-                <div className="flex md:flex-col items-center md:items-end gap-3">
-                  <div className="text-right flex-1 md:flex-none">
-                    <div className="text-2xl text-green-600">
-                      {formatCurrency(trip.price, language)}
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {isLoggedIn && (
-                      <button
-                        onClick={() => onToggleFavorite(trip.id)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          favorites.includes(trip.id)
-                            ? 'bg-red-50 text-red-600'
-                            : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
-                        }`}
-                      >
-                        <Heart
-                          className={`w-5 h-5 ${
-                            favorites.includes(trip.id) ? 'fill-current' : ''
-                          }`}
-                        />
-                      </button>
-                    )}
+                <div className="flex gap-2">
+                  {isLoggedIn && (
                     <button
-                      onClick={() => onViewDetails(trip.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleFavorite(trip.id);
+                      }}
+                      className={`p-2 rounded-lg transition-colors ${
+                        favorites.includes(trip.id)
+                          ? 'bg-red-50 text-red-600'
+                          : 'bg-gray-50 text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      <Heart
+                        className={`w-5 h-5 ${
+                          favorites.includes(trip.id) ? 'fill-current' : ''
+                        }`}
+                      />
+                    </button>
+                  )}
+                  {!shouldShowSelect && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onViewDetails(trip.id);
+                      }}
                       className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors whitespace-nowrap"
                     >
                       {t.viewDetails}
                     </button>
-                  </div>
+                  )}
+                  {isSelected && shouldShowSelect && (
+                    <div className="bg-green-100 text-green-700 px-3 py-2 rounded-lg text-sm font-medium">
+                      ✓
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
           </div>
-        ))}
+        </div>
+      );
+    };
+
+    content = (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            {searchParams.isRoundTrip ? t.outboundTrip : t.results}
+          </h2>
+          {searchParams.isRoundTrip && (
+            <p className="text-sm text-gray-600 mb-4">{t.selectOutbound}</p>
+          )}
+          <div className="space-y-4">
+            {filteredTrips.map((trip) => renderTripCard(trip, false))}
+          </div>
+        </div>
+
+        {searchParams.isRoundTrip && returnTrips.length > 0 && (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">{t.returnTrip}</h2>
+            <p className="text-sm text-gray-600 mb-4">{t.selectReturn}</p>
+            <div className="space-y-4">
+              {filteredReturnTrips.map((trip) => renderTripCard(trip, true))}
+            </div>
+          </div>
+        )}
+
+        {searchParams.isRoundTrip && selectedOutboundTrip && selectedReturnTrip && (
+          <div className="sticky bottom-4 bg-white rounded-2xl shadow-lg border-2 border-green-500 p-4">
+            <button
+              onClick={() => {
+                onViewDetails(selectedOutboundTrip);
+              }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl transition-all shadow-md hover:shadow-xl flex items-center justify-center gap-3 text-lg font-semibold"
+            >
+              {language === 'de' && 'Beide Fahrten buchen'}
+              {language === 'en' && 'Book Both Trips'}
+              {language === 'ar' && 'احجز كلا الرحلتين'}
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -446,10 +576,21 @@ export function SearchResults({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl text-gray-900 mb-2">{t.results}</h1>
-        <p className="text-gray-600">
-          {searchParams.from} → {searchParams.to} • {searchParams.date}
-        </p>
+        <h1 className="text-3xl text-gray-900 mb-2">
+          {searchParams.isRoundTrip ? `${t.results} - ${t.roundTrip}` : t.results}
+        </h1>
+        <div className="flex flex-col gap-2">
+          <p className="text-gray-600 flex items-center gap-2">
+            <span className="font-medium">{t.outboundTrip}:</span>
+            {searchParams.from} → {searchParams.to} • {searchParams.date}
+          </p>
+          {searchParams.isRoundTrip && searchParams.returnDate && (
+            <p className="text-gray-600 flex items-center gap-2">
+              <span className="font-medium">{t.returnTrip}:</span>
+              {searchParams.to} → {searchParams.from} • {searchParams.returnDate}
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-6">
