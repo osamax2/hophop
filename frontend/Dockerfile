@@ -12,8 +12,8 @@ RUN npm install
 # Copy source code (including .env.production)
 COPY . .
 
-# Build the app (Vite will automatically use .env.production in production mode)
-RUN npm run build
+# Build the app (explicitly set NODE_ENV=production to ensure Vite uses .env.production)
+RUN NODE_ENV=production npm run build
 
 # Production stage with nginx
 FROM nginx:alpine AS production
