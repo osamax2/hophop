@@ -36,12 +36,13 @@ app.use(helmet({
   contentSecurityPolicy: isProduction ? {
     directives: {
       defaultSrc: ["'self'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "https://hophopsy.com"],
+      scriptSrc: ["'self'", "'unsafe-inline'", "https://hophopsy.com", "https://www.google.com", "https://www.gstatic.com"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
       fontSrc: ["'self'", "https://fonts.gstatic.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
-      connectSrc: ["'self'", "https://hophopsy.com"],
-      frameSrc: ["'none'"],
+      connectSrc: ["'self'", "https://hophopsy.com", "https://www.google.com"],
+      frameSrc: ["'self'", "https://www.google.com", "https://www.gstatic.com"],
+      frameAncestors: ["'self'"],
       objectSrc: ["'none'"],
       upgradeInsecureRequests: [],
     },
