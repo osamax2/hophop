@@ -149,14 +149,20 @@ export const verifyCaptchaEnterpriseForGuests = async (req: AuthedRequest, res: 
       return next();
     }
 
-    // Guest booking - require captcha
+    // Guest booking - check if captcha is configured
     const captchaToken = req.body.captcha_token;
+
+    // If no API key is configured, skip verification with warning
+    if (!RECAPTCHA_API_KEY) {
+      console.warn('⚠️ reCAPTCHA Enterprise API key not configured - skipping verification (using rate limiting only)');
+      return next();
+    }
 
     if (!captchaToken) {
       console.warn('⚠️ Guest booking without captcha token');
-      return res.status(400).json({ 
-        message: 'Security verification required for guest bookings' 
-      });
+      // Allow the request but log it
+      console.warn('⚠️ Allowing guest booking without captcha (API key configured but no token provided)');
+      return next();
     }
 
     // Get user IP
@@ -171,10 +177,9 @@ export const verifyCaptchaEnterpriseForGuests = async (req: AuthedRequest, res: 
 
     if (!verification.valid) {
       console.warn('❌ reCAPTCHA Enterprise verification failed:', verification.invalidReason);
-      return res.status(403).json({ 
-        message: 'Security verification failed. Please try again.',
-        details: verification.invalidReason 
-      });
+      // Log but allow - rely on rate limiting
+      console.warn('⚠️ Allowing request despite failed captcha verification (rate limiting active)');
+      return next();
     }
 
     if (verification.score < RECAPTCHA_MIN_SCORE) {
@@ -182,10 +187,9 @@ export const verifyCaptchaEnterpriseForGuests = async (req: AuthedRequest, res: 
       if (verification.reasons && verification.reasons.length > 0) {
         console.warn('Reasons:', verification.reasons.join(', '));
       }
-      return res.status(403).json({ 
-        message: 'Suspicious activity detected. Please try again later.',
-        score: verification.score 
-      });
+      // Log but allow - rely on rate limiting
+      console.warn('⚠️ Allowing request despite low score (rate limiting active)');
+      return next();
     }
 
     console.log(`✅ reCAPTCHA Enterprise verified successfully - Score: ${verification.score}`);
@@ -195,17 +199,9 @@ export const verifyCaptchaEnterpriseForGuests = async (req: AuthedRequest, res: 
   } catch (error) {
     console.error('❌ reCAPTCHA Enterprise middleware error:', error);
     
-    // In production, fail closed (block request)
-    // In development, could fail open (allow request)
-    if (process.env.NODE_ENV === 'production') {
-      return res.status(500).json({ 
-        message: 'Security verification service unavailable. Please try again later.' 
-      });
-    } else {
-      // Development: log error but allow request
-      console.warn('⚠️ Allowing request in development mode despite captcha error');
-      next();
-    }
+    // Always fail open (allow request) and rely on rate limiting
+    console.warn('⚠️ Allowing request despite captcha error (rate limiting active)');
+    next();
   }
 };
 
