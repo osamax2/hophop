@@ -56,8 +56,21 @@ app.use(helmet({
 }));
 
 // Custom Permissions-Policy header to avoid browser warnings
+// Explicitly disable experimental Chrome features to suppress console warnings
 app.use((req, res, next) => {
-  res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=(), payment=(self)');
+  res.setHeader('Permissions-Policy', 
+    'geolocation=(self), ' +
+    'camera=(), ' +
+    'microphone=(), ' +
+    'payment=(self), ' +
+    'browsing-topics=(), ' +
+    'run-ad-auction=(), ' +
+    'join-ad-interest-group=(), ' +
+    'private-state-token-redemption=(), ' +
+    'private-state-token-issuance=(), ' +
+    'private-aggregation=(), ' +
+    'attribution-reporting=()'
+  );
   next();
 });
 
