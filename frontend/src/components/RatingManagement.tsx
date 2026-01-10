@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Trash2, RotateCcw, Edit2, Star, X } from 'lucide-react';
+import { Search, Filter, Trash2, RotateCcw, Edit2, Star, X, Download } from 'lucide-react';
 
 // Rating Management Component v2.0
 interface Rating {
@@ -59,6 +59,7 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
       showDeleted: 'Gelöschte anzeigen',
       hideDeleted: 'Gelöschte ausblenden',
       clearFilters: 'Filter löschen',
+      exportToCSV: 'Als CSV exportieren',
       results: 'Ergebnisse',
       user: 'Benutzer',
       punctuality: 'Pünktlichkeit',
@@ -99,6 +100,7 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
       showDeleted: 'Show Deleted',
       hideDeleted: 'Hide Deleted',
       clearFilters: 'Clear Filters',
+      exportToCSV: 'Export to CSV',
       results: 'Results',
       user: 'User',
       punctuality: 'Punctuality',
@@ -139,6 +141,7 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
       showDeleted: 'إظهار المحذوفة',
       hideDeleted: 'إخفاء المحذوفة',
       clearFilters: 'مسح الفلاتر',
+      exportToCSV: 'تصدير كملف CSV',
       results: 'النتائج',
       user: 'المستخدم',
       punctuality: 'الالتزام بالمواعيد',
@@ -307,7 +310,71 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
     setMinRatingFilter('');
     setMaxRatingFilter('');
   };
+  // Export filtered ratings to CSV
+  const exportToCSV = () => {
+    if (ratings.length === 0) {
+      alert(t.noRatings);
+      return;
+    }
 
+    // CSV headers
+    const headers = [
+      'ID',
+      'User Name',
+      'User Email',
+      'Company',
+      'Punctuality',
+      'Friendliness',
+      'Cleanliness',
+      'Average',
+      'Comment',
+      'Created At',
+      'Status'
+    ];
+    
+    // CSV rows
+    const rows = ratings.map(rating => {
+      const avgRating = rating.average_rating || 
+        ((rating.punctuality_rating + rating.friendliness_rating + rating.cleanliness_rating) / 3).toFixed(2);
+      
+      return [
+        rating.id,
+        `"${(rating.user_name || '').replace(/"/g, '""')}"`,
+        rating.user_email || '',
+        `"${(rating.company_name || '').replace(/"/g, '""')}"`,
+        rating.punctuality_rating,
+        rating.friendliness_rating,
+        rating.cleanliness_rating,
+        avgRating,
+        `"${(rating.comment || t.noComment).replace(/"/g, '""')}"`,
+        new Date(rating.created_at).toLocaleString(language === 'de' ? 'de-DE' : language === 'ar' ? 'ar-SY' : 'en-US'),
+        rating.deleted_at ? `Deleted (${new Date(rating.deleted_at).toLocaleDateString()})` : 'Active'
+      ];
+    });
+
+    // Combine headers and rows
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\\n');
+
+    // Generate filename with filters
+    const timestamp = new Date().toISOString().split('T')[0];
+    let filename = `ratings_${timestamp}`;
+    if (searchQuery) filename += '_search';
+    if (companyFilter !== 'all') {
+      const company = companies.find(c => c.id.toString() === companyFilter);
+      if (company) filename += `_${company.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    }
+    if (minRatingFilter) filename += `_min${minRatingFilter}`;
+    if (maxRatingFilter) filename += `_max${maxRatingFilter}`;
+    if (showDeleted) filename += '_with_deleted';
+    filename += '.csv';
+
+    // Create and download file
+    const blob = new Blob(['\\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  };
   const renderStars = (rating: number) => {
     return (
       <div className="flex gap-0.5">
@@ -450,6 +517,16 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
               {t.clearFilters}
             </button>
           )}
+
+          {/* Export to CSV */}
+          <button
+            onClick={exportToCSV}
+            disabled={ratings.length === 0}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            {t.exportToCSV}
+          </button>
         </div>
 
         {/* Results Count */}

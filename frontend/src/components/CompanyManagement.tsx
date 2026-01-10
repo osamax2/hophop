@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, RotateCcw, Loader2, Building2, Mail, Phone, MapPin, FileText, X, Search, Filter } from 'lucide-react';
+import { Plus, Edit, Trash2, RotateCcw, Loader2, Building2, Mail, Phone, MapPin, FileText, X, Search, Filter, Download } from 'lucide-react';
 import type { Language } from '../App';
 
 interface CompanyManagementProps {
@@ -56,6 +56,7 @@ const translations = {
     activeOnly: 'Nur Aktive',
     inactiveOnly: 'Nur Inaktive',
     clearFilters: 'Filter löschen',
+    exportToCSV: 'Als CSV exportieren',
   },
   en: {
     companyManagement: 'Company Management',
@@ -106,6 +107,7 @@ const translations = {
     activeOnly: 'Active Only',
     inactiveOnly: 'Inactive Only',
     clearFilters: 'Clear Filters',
+    exportToCSV: 'Export to CSV',
   },
   ar: {
     companyManagement: 'إدارة الشركات',
@@ -407,6 +409,49 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
     return matchesSearch && matchesStatus;
   });
 
+  // Export filtered companies to CSV
+  const exportToCSV = () => {
+    if (filteredCompanies.length === 0) {
+      alert(t.noCompanies);
+      return;
+    }
+
+    // CSV headers
+    const headers = ['ID', 'Name', 'Email', 'Phone', 'CR Number', 'Address', 'Status', 'Trips Count', 'Users Count', 'Created At', 'Description'];
+    
+    // CSV rows
+    const rows = filteredCompanies.map(company => [
+      company.id,
+      `"${(company.name || '').replace(/"/g, '""')}"`,
+      company.email || '',
+      company.phone || '',
+      company.cr_number || '',
+      `"${(company.address || '').replace(/"/g, '""')}"`,
+      company.is_active ? t.active : t.inactive,
+      company.trips_count || 0,
+      company.users_count || 0,
+      new Date(company.created_at).toLocaleString(language === 'de' ? 'de-DE' : language === 'ar' ? 'ar-SY' : 'en-US'),
+      `"${(company.description || '').replace(/"/g, '""')}"`
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+
+    // Generate filename with filters
+    const timestamp = new Date().toISOString().split('T')[0];
+    let filename = `companies_${timestamp}`;
+    if (searchQuery) filename += `_search`;
+    if (statusFilter !== 'all') filename += `_${statusFilter}`;
+    filename += '.csv';
+
+    // Create and download file
+    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  };
+
   return (
     <>
       <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
@@ -453,6 +498,16 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
               {t.clearFilters}
             </button>
           )}
+
+          {/* Export to CSV */}
+          <button
+            onClick={exportToCSV}
+            disabled={filteredCompanies.length === 0}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            {t.exportToCSV}
+          </button>
         </div>
 
         {/* Results count */}
