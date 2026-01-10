@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { X, Search, Filter, Trash2, RotateCcw, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Search, Filter, Trash2, RotateCcw, AlertCircle, Loader2, Download } from 'lucide-react';
 
 interface Booking {
   id: number;
@@ -81,6 +81,7 @@ const translations = {
     updateError: 'Fehler beim Aktualisieren der Buchung',
     deleteError: 'Fehler beim Löschen der Buchung',
     restoreError: 'Fehler beim Wiederherstellen der Buchung',
+    exportToCSV: 'Als CSV exportieren',
   },
   en: {
     title: 'Booking Management',
@@ -133,6 +134,7 @@ const translations = {
     updateError: 'Error updating booking',
     deleteError: 'Error deleting booking',
     restoreError: 'Error restoring booking',
+    exportToCSV: 'Export to CSV',
   },
   ar: {
     title: 'إدارة الحجوزات',
@@ -185,6 +187,7 @@ const translations = {
     updateError: 'خطأ في تحديث الحجز',
     deleteError: 'خطأ في حذف الحجز',
     restoreError: 'خطأ في استعادة الحجز',
+    exportToCSV: 'تصدير كملف CSV',
   },
 };
 
@@ -371,6 +374,89 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
     setShowDeleted(false);
   };
 
+  const exportToCSV = () => {
+    if (bookings.length === 0) {
+      alert('No bookings to export');
+      return;
+    }
+
+    // CSV Headers
+    const headers = [
+      'ID',
+      'User Name',
+      'User Email',
+      'User Phone',
+      'Route',
+      'From City',
+      'To City',
+      'Company',
+      'Status',
+      'Seats',
+      'Price',
+      'Currency',
+      'Departure Time',
+      'Arrival Time',
+      'Created At',
+      'Deleted'
+    ];
+
+    // Convert bookings to CSV rows
+    const rows = bookings.map(booking => [
+      booking.id,
+      booking.user_name || booking.guest_name || 'Guest',
+      booking.user_email || booking.guest_email || '',
+      booking.user_phone || booking.guest_phone || '',
+      `${booking.from_city} → ${booking.to_city}`,
+      booking.from_city,
+      booking.to_city,
+      booking.company_name,
+      booking.booking_status,
+      booking.seats_booked,
+      booking.total_price,
+      booking.currency,
+      new Date(booking.departure_time).toLocaleString(),
+      new Date(booking.arrival_time).toLocaleString(),
+      new Date(booking.created_at).toLocaleString(),
+      booking.deleted_at ? 'Yes' : 'No'
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => {
+        // Escape quotes and wrap in quotes if contains comma
+        const cellStr = String(cell).replace(/"/g, '""');
+        return cellStr.includes(',') || cellStr.includes('\n') ? `"${cellStr}"` : cellStr;
+      }).join(','))
+    ].join('\n');
+
+    // Create blob and download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    // Generate filename with timestamp and filters
+    const timestamp = new Date().toISOString().split('T')[0];
+    let filename = `bookings_${timestamp}`;
+    
+    if (statusFilter) filename += `_${statusFilter}`;
+    if (companyFilter) {
+      const company = companies.find(c => c.id === parseInt(companyFilter));
+      if (company) filename += `_${company.name.replace(/\s+/g, '_')}`;
+    }
+    if (fromDate) filename += `_from_${fromDate}`;
+    if (toDate) filename += `_to_${toDate}`;
+    
+    filename += '.csv';
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString(language === 'ar' ? 'ar' : language);
   };
@@ -492,12 +578,22 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
             />
             <span className="text-sm text-gray-700">{t.showDeleted}</span>
           </label>
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            {t.clearFilters}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {t.clearFilters}
+            </button>
+            <button
+              onClick={exportToCSV}
+              disabled={bookings.length === 0}
+              className="flex items-center gap-2 px-4 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            >
+              <Download className="w-4 h-4" />
+              {t.exportToCSV}
+            </button>
+          </div>
         </div>
       </div>
 
