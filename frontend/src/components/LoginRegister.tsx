@@ -716,6 +716,7 @@ export function LoginRegister({ onLogin, language }: LoginRegisterProps) {
               </label>
               <input
                 type="email"
+                autoComplete="email"
                 value={formData.email}
                 onChange={(e) => {
                   const newEmail = e.target.value;

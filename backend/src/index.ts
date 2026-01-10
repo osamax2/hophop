@@ -55,6 +55,12 @@ app.use(helmet({
   },
 }));
 
+// Custom Permissions-Policy header to avoid browser warnings
+app.use((req, res, next) => {
+  res.setHeader('Permissions-Policy', 'geolocation=(self), camera=(), microphone=(), payment=(self)');
+  next();
+});
+
 // ====== Middlewares ======
 // CORS configuration - restrict to specific origins
 const allowedOrigins = [
