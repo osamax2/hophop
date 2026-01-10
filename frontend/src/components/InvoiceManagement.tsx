@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Filter, Trash2, RotateCcw, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Search, Filter, Trash2, RotateCcw, AlertCircle, Loader2, Download } from 'lucide-react';
 
 interface Invoice {
   id: number;
@@ -48,6 +48,7 @@ const translations = {
     toDate: 'Bis Datum',
     showDeleted: 'Gelöschte anzeigen',
     clearFilters: 'Filter löschen',
+    exportToCSV: 'Als CSV exportieren',
     resultsCount: 'Ergebnisse',
     id: 'ID',
     invoiceNumber: 'Rechnungsnummer',
@@ -106,6 +107,7 @@ const translations = {
     toDate: 'To Date',
     showDeleted: 'Show Deleted',
     clearFilters: 'Clear Filters',
+    exportToCSV: 'Export to CSV',
     resultsCount: 'Results',
     id: 'ID',
     invoiceNumber: 'Invoice Number',
@@ -164,6 +166,7 @@ const translations = {
     toDate: 'إلى تاريخ',
     showDeleted: 'إظهار المحذوفة',
     clearFilters: 'مسح الفلاتر',
+    exportToCSV: 'تصدير كملف CSV',
     resultsCount: 'النتائج',
     id: 'المعرف',
     invoiceNumber: 'رقم الفاتورة',
@@ -363,6 +366,75 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
     setShowDeleted(false);
   };
 
+  // Export filtered invoices to CSV
+  const exportToCSV = () => {
+    if (invoices.length === 0) {
+      alert(t.noInvoices);
+      return;
+    }
+
+    // CSV headers
+    const headers = [
+      'ID',
+      'Invoice Number',
+      'User Name',
+      'User Email',
+      'Company',
+      'Amount',
+      'Currency',
+      'Status',
+      'Payment Method',
+      'Issue Date',
+      'Due Date',
+      'Payment Date',
+      'Booking Status',
+      'Seats Booked',
+      'Created At',
+      'Deleted At'
+    ];
+    
+    // CSV rows
+    const rows = invoices.map(invoice => [
+      invoice.id,
+      invoice.invoice_number,
+      `"${(invoice.user_name || '').replace(/"/g, '""')}"`,
+      invoice.user_email || '',
+      `"${(invoice.company_name || '').replace(/"/g, '""')}"`,
+      invoice.amount,
+      invoice.currency,
+      invoice.status,
+      invoice.payment_method || '-',
+      formatDate(invoice.issue_date),
+      formatDate(invoice.due_date),
+      formatDate(invoice.payment_date),
+      invoice.booking_status,
+      invoice.seats_booked,
+      formatDate(invoice.created_at),
+      invoice.deleted_at ? formatDate(invoice.deleted_at) : '-'
+    ]);
+
+    // Combine headers and rows
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\\n');
+
+    // Generate filename with filters
+    const timestamp = new Date().toISOString().split('T')[0];
+    let filename = `invoices_${timestamp}`;
+    if (searchQuery) filename += '_search';
+    if (statusFilter) filename += `_${statusFilter}`;
+    if (paymentMethodFilter) filename += `_${paymentMethodFilter}`;
+    if (fromDate) filename += `_from_${fromDate}`;
+    if (toDate) filename += `_to_${toDate}`;
+    if (showDeleted) filename += '_with_deleted';
+    filename += '.csv';
+
+    // Create and download file
+    const blob = new Blob(['\\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+  };
+
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString(language === 'ar' ? 'ar' : language);
@@ -481,12 +553,22 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
             />
             <span className="text-sm text-gray-700">{t.showDeleted}</span>
           </label>
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
-          >
-            {t.clearFilters}
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {t.clearFilters}
+            </button>
+            <button
+              onClick={exportToCSV}
+              disabled={invoices.length === 0}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              {t.exportToCSV}
+            </button>
+          </div>
         </div>
       </div>
 

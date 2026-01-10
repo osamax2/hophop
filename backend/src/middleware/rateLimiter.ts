@@ -86,14 +86,13 @@ export const emailVerificationLimiter = rateLimit({
  * Applies to all API routes as a baseline protection
  */
 export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 500, // limit each IP to 500 requests per windowMs (increased for admin dashboard)
+  windowMs: 1 * 60 * 1000, // 1 minute (shorter window for faster recovery)
+  max: 1000, // limit each IP to 1000 requests per minute
   message: {
     message: 'Too many requests. Please try again later.',
     code: 'API_RATE_LIMIT_EXCEEDED'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip counting successful requests to allow more legitimate traffic
   skipSuccessfulRequests: false,
 });
