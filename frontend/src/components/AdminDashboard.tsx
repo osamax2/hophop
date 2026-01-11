@@ -181,6 +181,11 @@ const translations = {
     scheduled: 'Geplant',
     completed: 'Abgeschlossen',
     cancelled: 'Storniert',
+    recurringTrip: 'Wiederholende Fahrt',
+    once: 'Einmalig',
+    daily: 'Täglich (30 Tage)',
+    weekly: 'Wöchentlich (4 Wochen)',
+    recurringInfo: 'Wählen Sie, ob diese Fahrt einmalig oder wiederkehrend erstellt werden soll',
   },
   en: {
     adminDashboard: 'Admin Dashboard',
@@ -298,6 +303,11 @@ const translations = {
     scheduled: 'Scheduled',
     completed: 'Completed',
     cancelled: 'Cancelled',
+    recurringTrip: 'Recurring Trip',
+    once: 'Once',
+    daily: 'Daily (30 days)',
+    weekly: 'Weekly (4 weeks)',
+    recurringInfo: 'Choose whether this trip should be created once or recurring',
   },
   ar: {
     adminDashboard: 'لوحة الإدارة',
@@ -397,6 +407,11 @@ const translations = {
     scheduled: 'مجدولة',
     completed: 'مكتملة',
     cancelled: 'ملغاة',
+    recurringTrip: 'رحلة متكررة',
+    once: 'مرة واحدة',
+    daily: 'يومياً (30 يوم)',
+    weekly: 'أسبوعياً (4 أسابيع)',
+    recurringInfo: 'اختر ما إذا كان يجب إنشاء هذه الرحلة مرة واحدة أو متكررة',
     deletePermanently: 'حذف هذه الرحلة المعطلة نهائياً؟',
     deletePermanentlyConfirm: 'هل أنت متأكد من حذف هذه الرحلة المعطلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
     welcomeMessage: 'أهلاً',
@@ -491,6 +506,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     seats_available: string;
   }>>([]);
   const [newRoute, setNewRoute] = useState({ from_city: '', to_city: '' });
+  const [recurringType, setRecurringType] = useState<'once' | 'daily' | 'weekly'>('once');
   const [newTrip, setNewTrip] = useState({
     route_id: '',
     company_id: '',
@@ -2134,6 +2150,107 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           }
         }
         
+        // Handle recurring trips
+        if (recurringType !== 'once') {
+          const baseDepartureTime = new Date(newTrip.departure_time);
+          const baseArrivalTime = new Date(newTrip.arrival_time);
+          const iterations = recurringType === 'daily' ? 30 : 4;
+          const dayIncrement = recurringType === 'daily' ? 1 : 7;
+          
+          for (let i = 1; i < iterations; i++) {
+            try {
+              const recurringDepartureTime = new Date(baseDepartureTime);
+              recurringDepartureTime.setDate(recurringDepartureTime.getDate() + (dayIncrement * i));
+              
+              const recurringArrivalTime = new Date(baseArrivalTime);
+              recurringArrivalTime.setDate(recurringArrivalTime.getDate() + (dayIncrement * i));
+              
+              const recurringTripData = {
+                ...tripData,
+                departure_time: recurringDepartureTime.toISOString(),
+                arrival_time: recurringArrivalTime.toISOString(),
+              };
+              
+              const recurringTrip = await adminApi.createTrip(recurringTripData);
+              
+              // Link image to recurring trip as well
+              if (tripImageId && recurringTrip.id) {
+                try {
+                  await fetch(`/api/admin/images/${tripImageId}`, {
+                    method: 'PATCH',
+                    headers: {
+                      'Content-Type': 'application/json',
+                      'Authorization': `Bearer ${localStorage.getItem('token')}`,
+                    },
+                    body: JSON.stringify({
+                      entity_type: 'trip',
+                      entity_id: recurringTrip.id,
+                    }),
+                  });
+                } catch (imgErr) {
+                  console.error('Error linking recurring trip image:', imgErr);
+                }
+              }
+              
+              // Add stops to recurring trip
+              if (newTripStops.length > 0 && recurringTrip.id) {
+                try {
+                  const API_BASE = import.meta.env.VITE_API_BASE || "";
+                  const token = localStorage.getItem("token");
+                  
+                  for (const stop of newTripStops) {
+                    // Calculate stop times based on the recurring trip times
+                    const stopDepartureTime = stop.departure_time ? new Date(stop.departure_time) : null;
+                    const stopArrivalTime = stop.arrival_time ? new Date(stop.arrival_time) : null;
+                    
+                    if (stopDepartureTime) {
+                      stopDepartureTime.setDate(stopDepartureTime.getDate() + (dayIncrement * i));
+                    }
+                    if (stopArrivalTime) {
+                      stopArrivalTime.setDate(stopArrivalTime.getDate() + (dayIncrement * i));
+                    }
+                    
+                    await fetch(`${API_BASE}/api/admin/trips/${recurringTrip.id}/steps`, {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                      },
+                      body: JSON.stringify({
+                        station_id: parseInt(stop.station_id),
+                        stop_order: stop.stop_order,
+                        arrival_time: stopArrivalTime ? stopArrivalTime.toISOString() : null,
+                        departure_time: stopDepartureTime ? stopDepartureTime.toISOString() : null,
+                      }),
+                    });
+                  }
+                } catch (stopsErr) {
+                  console.error('Error adding stops to recurring trip:', stopsErr);
+                }
+              }
+              
+              // Copy fares to recurring trip
+              if (tripFares.length > 0 && recurringTrip.id) {
+                try {
+                  await adminApi.createTripFares(recurringTrip.id, tripFares.map(fare => ({
+                    fare_category_id: parseInt(fare.fare_category_id),
+                    booking_option_id: parseInt(fare.booking_option_id),
+                    price_modifier: parseFloat(fare.price_modifier),
+                    seats_available: parseInt(fare.seats_available) || 0,
+                  })));
+                } catch (faresErr) {
+                  console.error('Error saving recurring trip fares:', faresErr);
+                }
+              }
+              
+              // Add recurring trip to local state
+              setTrips(prevTrips => [...prevTrips, recurringTrip]);
+            } catch (recurringErr) {
+              console.error(`Error creating recurring trip ${i + 1}:`, recurringErr);
+            }
+          }
+        }
+        
         alert(t.tripAdded || 'Trip added successfully!');
       }
       
@@ -2142,6 +2259,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setNewTripStops([]);
       setTripImageId(null);
       setTripFares([]);
+      setRecurringType('once');
       setNewTrip({
         from_city: '',
         to_city: '',
@@ -2191,6 +2309,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     setEditingTripId(null);
     setTripImageId(null);
     setTripFares([]);
+    setRecurringType('once');
     // For Agent Managers, automatically set their company_id
     const agentManagerCompanyId = (user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id) 
       ? String(user.company_id) 
@@ -3474,6 +3593,49 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                     />
                   </div>
+
+                  {/* Recurring Trip Option */}
+                  {!editingTripId && (
+                    <div className="border-t pt-4 mt-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">{t.recurringTrip}</label>
+                      <div className="space-y-2">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="recurring"
+                            value="once"
+                            checked={recurringType === 'once'}
+                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'weekly')}
+                            className="w-4 h-4 text-green-600"
+                          />
+                          <span className="text-sm">{t.once}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="recurring"
+                            value="daily"
+                            checked={recurringType === 'daily'}
+                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'weekly')}
+                            className="w-4 h-4 text-green-600"
+                          />
+                          <span className="text-sm">{t.daily}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="recurring"
+                            value="weekly"
+                            checked={recurringType === 'weekly'}
+                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'weekly')}
+                            className="w-4 h-4 text-green-600"
+                          />
+                          <span className="text-sm">{t.weekly}</span>
+                        </label>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-2">{t.recurringInfo}</p>
+                    </div>
+                  )}
 
                   {/* Bus Photo Section */}
                   <div className="space-y-3">
