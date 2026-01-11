@@ -54,7 +54,9 @@ router.post("/bulk", async (req, res) => {
   }
 
   if (fares.length === 0) {
-    return res.json({ message: "No fares to create", created: [] });
+    // If no fares provided, just delete existing ones
+    await pool.query('DELETE FROM trip_fares WHERE trip_id = $1', [trip_id]);
+    return res.json({ message: "Existing fares deleted, no new fares to create", created: [] });
   }
 
   try {
@@ -62,18 +64,15 @@ router.post("/bulk", async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      // First, get the trip currency and base price
+      // Check if trip exists
       const tripQuery = await client.query(
-        `SELECT price, currency FROM trips WHERE id = $1`,
+        `SELECT id FROM trips WHERE id = $1`,
         [trip_id]
       );
       
       if (tripQuery.rows.length === 0) {
         throw new Error('Trip not found');
       }
-
-      const basePrice = tripQuery.rows[0].price || 0;
-      const currency = tripQuery.rows[0].currency || 'SYP';
 
       // Delete existing fares for this trip before adding new ones
       await client.query('DELETE FROM trip_fares WHERE trip_id = $1', [trip_id]);
@@ -84,11 +83,15 @@ router.post("/bulk", async (req, res) => {
         const { fare_category_id, booking_option_id, price_modifier, seats_available } = fare;
         
         if (!fare_category_id || !booking_option_id) {
+          console.log('Skipping invalid fare entry:', fare);
           continue; // Skip invalid entries
         }
 
-        const finalPrice = parseFloat(basePrice) + parseFloat(price_modifier || 0);
-        const seats = seats_available || 0;
+        // price_modifier is used as the actual price (can be positive or negative adjustment from a base)
+        // For now, we'll use price_modifier as the absolute price value
+        const finalPrice = parseFloat(price_modifier) || 0;
+        const seats = parseInt(seats_available) || 0;
+        const currency = 'SYP'; // Default currency
 
         const result = await client.query(
           `INSERT INTO trip_fares (trip_id, fare_category_id, booking_option_id, price, currency, seats_available)
@@ -101,6 +104,7 @@ router.post("/bulk", async (req, res) => {
       }
 
       await client.query('COMMIT');
+      console.log('Successfully created fares for trip', trip_id, ':', createdFares.length);
       res.status(201).json({ message: "Fares created successfully", created: createdFares });
     } catch (err) {
       await client.query('ROLLBACK');

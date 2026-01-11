@@ -1825,7 +1825,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               id: f.id,
               fare_category_id: String(f.fare_category_id || ''),
               booking_option_id: String(f.booking_option_id || ''),
-              price_modifier: String(f.price_modifier || '0'),
+              price_modifier: String(f.price || f.price_modifier || '0'),
               seats_available: String(f.seats_available || ''),
             }));
           }
@@ -2058,17 +2058,24 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         setScheduleRefreshTrigger(prev => prev + 1);
         
         // Save trip fares if any
+        console.log('Saving trip fares - editingTripId:', editingTripId, 'tripFares:', tripFares);
         if (tripFares.length > 0 && editingTripId) {
           try {
-            await adminApi.createTripFares(editingTripId, tripFares.map(fare => ({
+            const faresData = tripFares.map(fare => ({
               fare_category_id: parseInt(fare.fare_category_id),
               booking_option_id: parseInt(fare.booking_option_id),
               price_modifier: parseFloat(fare.price_modifier),
               seats_available: parseInt(fare.seats_available) || 0,
-            })));
+            }));
+            console.log('Sending fares data:', faresData);
+            const result = await adminApi.createTripFares(editingTripId, faresData);
+            console.log('Fares saved result:', result);
           } catch (faresErr) {
             console.error('Error saving trip fares:', faresErr);
+            alert('Error saving trip fares: ' + (faresErr as any).message);
           }
+        } else {
+          console.log('No trip fares to save or no editingTripId');
         }
         
         alert(language === 'ar' ? 'تم تحديث الرحلة بنجاح' : language === 'de' ? 'Fahrt erfolgreich aktualisiert' : 'Trip updated successfully!');
@@ -2135,17 +2142,24 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         setScheduleRefreshTrigger(prev => prev + 1);
         
         // Save trip fares if any
+        console.log('Saving trip fares for NEW trip - tripId:', newCreatedTrip.id, 'tripFares:', tripFares);
         if (tripFares.length > 0 && newCreatedTrip.id) {
           try {
-            await adminApi.createTripFares(newCreatedTrip.id, tripFares.map(fare => ({
+            const faresData = tripFares.map(fare => ({
               fare_category_id: parseInt(fare.fare_category_id),
               booking_option_id: parseInt(fare.booking_option_id),
               price_modifier: parseFloat(fare.price_modifier),
               seats_available: parseInt(fare.seats_available) || 0,
-            })));
+            }));
+            console.log('Sending fares data for new trip:', faresData);
+            const result = await adminApi.createTripFares(newCreatedTrip.id, faresData);
+            console.log('Fares saved result for new trip:', result);
           } catch (faresErr) {
             console.error('Error saving trip fares:', faresErr);
+            alert('Error saving trip fares: ' + (faresErr as any).message);
           }
+        } else {
+          console.log('No trip fares to save for new trip or no trip id');
         }
         
         // Handle recurring trips
@@ -3395,9 +3409,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       <button
                         type="button"
                         onClick={() => {
+                          console.log('Adding new fare - fareCategories:', fareCategories, 'bookingOptions:', bookingOptions);
                           setTripFares([...tripFares, {
-                            fare_category_id: fareCategories[0]?.id || '',
-                            booking_option_id: bookingOptions[0]?.id || '',
+                            fare_category_id: String(fareCategories[0]?.id || ''),
+                            booking_option_id: String(bookingOptions[0]?.id || ''),
                             price_modifier: '0',
                             seats_available: newTrip.seats_total || ''
                           }]);
@@ -3463,7 +3478,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
                             <div className="col-span-2">
                               <label className="block text-xs font-medium text-gray-700 mb-1">
-                                {language === 'ar' ? 'تعديل السعر' : language === 'de' ? 'Preisänderung' : 'Price +/-'}
+                                {language === 'ar' ? 'السعر' : language === 'de' ? 'Preis' : 'Price'}
                               </label>
                               <input
                                 type="number"
@@ -3474,7 +3489,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                                   newFares[index].price_modifier = e.target.value;
                                   setTripFares(newFares);
                                 }}
-                                placeholder="0"
+                                placeholder="1000"
                                 className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
                               />
                             </div>
