@@ -45,6 +45,75 @@ router.post("/", async (req, res) => {
   res.status(201).json(r.rows[0]);
 });
 
+// POST /api/admin/fares/bulk - Create multiple fares for a trip
+router.post("/bulk", async (req, res) => {
+  const { trip_id, fares } = req.body;
+
+  if (!trip_id || !fares || !Array.isArray(fares)) {
+    return res.status(400).json({ message: "Missing trip_id or fares array" });
+  }
+
+  if (fares.length === 0) {
+    return res.json({ message: "No fares to create", created: [] });
+  }
+
+  try {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // First, get the trip currency and base price
+      const tripQuery = await client.query(
+        `SELECT price, currency FROM trips WHERE id = $1`,
+        [trip_id]
+      );
+      
+      if (tripQuery.rows.length === 0) {
+        throw new Error('Trip not found');
+      }
+
+      const basePrice = tripQuery.rows[0].price || 0;
+      const currency = tripQuery.rows[0].currency || 'SYP';
+
+      // Optional: Delete existing fares for this trip (if updating)
+      // await client.query('DELETE FROM trip_fares WHERE trip_id = $1', [trip_id]);
+
+      const createdFares = [];
+      
+      for (const fare of fares) {
+        const { fare_category_id, booking_option_id, price_modifier, seats_available } = fare;
+        
+        if (!fare_category_id || !booking_option_id) {
+          continue; // Skip invalid entries
+        }
+
+        const finalPrice = parseFloat(basePrice) + parseFloat(price_modifier || 0);
+        const seats = seats_available || 0;
+
+        const result = await client.query(
+          `INSERT INTO trip_fares (trip_id, fare_category_id, booking_option_id, price, currency, seats_available)
+           VALUES ($1, $2, $3, $4, $5, $6)
+           RETURNING *`,
+          [trip_id, fare_category_id, booking_option_id, finalPrice, currency, seats]
+        );
+
+        createdFares.push(result.rows[0]);
+      }
+
+      await client.query('COMMIT');
+      res.status(201).json({ message: "Fares created successfully", created: createdFares });
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } catch (err: any) {
+    console.error('Error creating bulk fares:', err);
+    res.status(500).json({ message: err.message || "Error creating fares" });
+  }
+});
+
 // PATCH /api/admin/fares/:id
 router.patch("/:id", async (req, res) => {
   const id = Number(req.params.id);

@@ -481,6 +481,15 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const [transportTypes, setTransportTypes] = useState<any[]>([]);
   const [stations, setStations] = useState<any[]>([]);
   const [cities, setCities] = useState<any[]>([]);
+  const [fareCategories, setFareCategories] = useState<any[]>([]);
+  const [bookingOptions, setBookingOptions] = useState<any[]>([]);
+  const [tripFares, setTripFares] = useState<Array<{
+    id?: number;
+    fare_category_id: string;
+    booking_option_id: string;
+    price_modifier: string;
+    seats_available: string;
+  }>>([]);
   const [newRoute, setNewRoute] = useState({ from_city: '', to_city: '' });
   const [newTrip, setNewTrip] = useState({
     route_id: '',
@@ -637,18 +646,24 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
   const loadTripFormData = async () => {
     try {
-      const [companiesData, transportTypesData, stationsData, citiesData] = await Promise.all([
+      const [companiesData, transportTypesData, stationsData, citiesData, fareCategoriesData, bookingOptionsData] = await Promise.all([
         adminApi.getCompanies(),
         adminApi.getTransportTypes(),
         adminApi.getStations(),
         adminApi.getCities(), // Use adminApi.getCities()
+        adminApi.getFareCategories(),
+        adminApi.getBookingOptions(),
       ]);
       console.log('Loaded cities:', citiesData?.length || 0);
       console.log('Cities data:', citiesData);
+      console.log('Loaded fare categories:', fareCategoriesData);
+      console.log('Loaded booking options:', bookingOptionsData);
       setCompanies(companiesData);
       setTransportTypes(transportTypesData);
       setStations(stationsData);
       setCities(Array.isArray(citiesData) ? citiesData : []);
+      setFareCategories(Array.isArray(fareCategoriesData) ? fareCategoriesData : []);
+      setBookingOptions(Array.isArray(bookingOptionsData) ? bookingOptionsData : []);
       // Load bus images for trip photo selection
       await loadBusImages();
     } catch (err) {
@@ -1784,6 +1799,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       // Get trip price from trip_fares if available
       let tripPrice = '';
       let tripCurrency = 'SYP';
+      let loadedFares: any[] = [];
       if (trip.id) {
         try {
           const tripIdNum = typeof trip.id === 'string' ? parseInt(trip.id) : trip.id;
@@ -1791,6 +1807,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           if (fares && Array.isArray(fares) && fares.length > 0) {
             tripPrice = String(fares[0].price || '');
             tripCurrency = fares[0].currency || 'SYP';
+            loadedFares = fares.map((f: any) => ({
+              id: f.id,
+              fare_category_id: String(f.fare_category_id || ''),
+              booking_option_id: String(f.booking_option_id || ''),
+              price_modifier: String(f.price_modifier || '0'),
+              seats_available: String(f.seats_available || ''),
+            }));
           }
         } catch (e) {
           console.log('Could not load trip fares:', e);
@@ -1831,6 +1854,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         console.log('Could not load trip image:', imgErr);
         setTripImageId(null);
       }
+      
+      // Set loaded fares or empty array
+      setTripFares(loadedFares);
       
       console.log('Setting editingTripId and opening dialog...');
       setEditingTripId(tripId);
@@ -2017,6 +2043,20 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         // Trigger ScheduleManagement to refresh its data
         setScheduleRefreshTrigger(prev => prev + 1);
         
+        // Save trip fares if any
+        if (tripFares.length > 0 && editingTripId) {
+          try {
+            await adminApi.createTripFares(editingTripId, tripFares.map(fare => ({
+              fare_category_id: parseInt(fare.fare_category_id),
+              booking_option_id: parseInt(fare.booking_option_id),
+              price_modifier: parseFloat(fare.price_modifier),
+              seats_available: parseInt(fare.seats_available) || 0,
+            })));
+          } catch (faresErr) {
+            console.error('Error saving trip fares:', faresErr);
+          }
+        }
+        
         alert(language === 'ar' ? 'تم تحديث الرحلة بنجاح' : language === 'de' ? 'Fahrt erfolgreich aktualisiert' : 'Trip updated successfully!');
       } else {
         // Create new trip
@@ -2080,6 +2120,20 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         // Trigger ScheduleManagement to refresh its data
         setScheduleRefreshTrigger(prev => prev + 1);
         
+        // Save trip fares if any
+        if (tripFares.length > 0 && newCreatedTrip.id) {
+          try {
+            await adminApi.createTripFares(newCreatedTrip.id, tripFares.map(fare => ({
+              fare_category_id: parseInt(fare.fare_category_id),
+              booking_option_id: parseInt(fare.booking_option_id),
+              price_modifier: parseFloat(fare.price_modifier),
+              seats_available: parseInt(fare.seats_available) || 0,
+            })));
+          } catch (faresErr) {
+            console.error('Error saving trip fares:', faresErr);
+          }
+        }
+        
         alert(t.tripAdded || 'Trip added successfully!');
       }
       
@@ -2087,6 +2141,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setEditingTripId(null);
       setNewTripStops([]);
       setTripImageId(null);
+      setTripFares([]);
       setNewTrip({
         from_city: '',
         to_city: '',
@@ -2135,6 +2190,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const handleAddTrip = () => {
     setEditingTripId(null);
     setTripImageId(null);
+    setTripFares([]);
     // For Agent Managers, automatically set their company_id
     const agentManagerCompanyId = (user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id) 
       ? String(user.company_id) 
@@ -3211,6 +3267,148 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                         <option value="EUR">EUR (Euro - يورو)</option>
                       </select>
                     </div>
+                  </div>
+
+                  {/* Trip Fares & Options */}
+                  <div className="border-t pt-4 mt-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {language === 'ar' ? 'أسعار الرحلة والخيارات' : language === 'de' ? 'Fahrpreise & Optionen' : 'Trip Fares & Options'}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setTripFares([...tripFares, {
+                            fare_category_id: fareCategories[0]?.id || '',
+                            booking_option_id: bookingOptions[0]?.id || '',
+                            price_modifier: '0',
+                            seats_available: newTrip.seats_total || ''
+                          }]);
+                        }}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+                      >
+                        <Plus className="h-4 w-4" />
+                        {language === 'ar' ? 'إضافة سعر' : language === 'de' ? 'Preis hinzufügen' : 'Add Fare'}
+                      </button>
+                    </div>
+
+                    {tripFares.length === 0 ? (
+                      <div className="text-center py-4 text-gray-500">
+                        {language === 'ar' ? 'لا توجد أسعار. انقر على "إضافة سعر" لإضافة خيارات التسعير.' : language === 'de' ? 'Keine Preise. Klicken Sie auf "Preis hinzufügen", um Preisoptionen hinzuzufügen.' : 'No fares. Click "Add Fare" to add pricing options.'}
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {tripFares.map((fare, index) => (
+                          <div key={index} className="grid grid-cols-12 gap-2 items-end border border-gray-200 p-3 rounded-lg bg-gray-50">
+                            <div className="col-span-3">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                {language === 'ar' ? 'فئة السعر' : language === 'de' ? 'Preiskategorie' : 'Fare Category'}
+                              </label>
+                              <select
+                                value={fare.fare_category_id}
+                                onChange={(e) => {
+                                  const newFares = [...tripFares];
+                                  newFares[index].fare_category_id = e.target.value;
+                                  setTripFares(newFares);
+                                }}
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                              >
+                                <option value="">{language === 'ar' ? 'اختر فئة' : language === 'de' ? 'Wählen' : 'Select'}</option>
+                                {fareCategories.map(cat => (
+                                  <option key={cat.id} value={cat.id}>
+                                    {language === 'ar' && cat.label_ar ? cat.label_ar : cat.label || cat.code}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="col-span-3">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                {language === 'ar' ? 'خيار الحجز' : language === 'de' ? 'Buchungsoption' : 'Booking Option'}
+                              </label>
+                              <select
+                                value={fare.booking_option_id}
+                                onChange={(e) => {
+                                  const newFares = [...tripFares];
+                                  newFares[index].booking_option_id = e.target.value;
+                                  setTripFares(newFares);
+                                }}
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                              >
+                                <option value="">{language === 'ar' ? 'اختر خيار' : language === 'de' ? 'Wählen' : 'Select'}</option>
+                                {bookingOptions.map(opt => (
+                                  <option key={opt.id} value={opt.id}>
+                                    {language === 'ar' && opt.label_ar ? opt.label_ar : opt.label || opt.code}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div className="col-span-2">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                {language === 'ar' ? 'تعديل السعر' : language === 'de' ? 'Preisänderung' : 'Price +/-'}
+                              </label>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={fare.price_modifier}
+                                onChange={(e) => {
+                                  const newFares = [...tripFares];
+                                  newFares[index].price_modifier = e.target.value;
+                                  setTripFares(newFares);
+                                }}
+                                placeholder="0"
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                              />
+                            </div>
+
+                            <div className="col-span-2">
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                {language === 'ar' ? 'المقاعد' : language === 'de' ? 'Sitze' : 'Seats'}
+                              </label>
+                              <input
+                                type="number"
+                                value={fare.seats_available}
+                                onChange={(e) => {
+                                  const newFares = [...tripFares];
+                                  newFares[index].seats_available = e.target.value;
+                                  setTripFares(newFares);
+                                }}
+                                placeholder="10"
+                                className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
+                              />
+                            </div>
+
+                            <div className="col-span-2 flex items-center justify-between">
+                              <div className="text-sm font-medium text-gray-700">
+                                {language === 'ar' ? 'السعر النهائي:' : language === 'de' ? 'Endpreis:' : 'Final:'}
+                                <br />
+                                <span className="text-green-600">
+                                  {(parseFloat(newTrip.price || '0') + parseFloat(fare.price_modifier || '0')).toFixed(2)}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setTripFares(tripFares.filter((_, i) => i !== index));
+                                }}
+                                className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <p className="text-xs text-gray-500 mt-2">
+                      {language === 'ar' 
+                        ? 'قم بإنشاء خيارات تسعير متعددة للرحلة نفسها (مثل: بالغ، طفل، طالب) مع خيارات حجز مختلفة (مثل: قياسي، مقعد بجانب النافذة، أمتعة إضافية).'
+                        : language === 'de'
+                        ? 'Erstellen Sie mehrere Preisoptionen für dieselbe Fahrt (z.B. Erwachsener, Kind, Student) mit verschiedenen Buchungsoptionen (z.B. Standard, Fensterplatz, Extra-Gepäck).'
+                        : 'Create multiple pricing options for the same trip (e.g., Adult, Child, Student) with different booking options (e.g., Standard, Window Seat, Extra Luggage).'}
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">

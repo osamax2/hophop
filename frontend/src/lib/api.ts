@@ -645,6 +645,37 @@ export const adminApi = {
     });
     return handleResponse(response);
   },
+
+  getFareCategories: async () => {
+    const response = await fetch(`${API_BASE}/api/admin/fare-categories`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  getBookingOptions: async (transportTypeId?: number) => {
+    const url = transportTypeId 
+      ? `${API_BASE}/api/admin/booking-options?transport_type_id=${transportTypeId}`
+      : `${API_BASE}/api/admin/booking-options`;
+    const response = await fetch(url, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(response);
+  },
+
+  createTripFares: async (tripId: number, fares: Array<{
+    fare_category_id: number;
+    booking_option_id: number;
+    price_modifier: number;
+    seats_available?: number;
+  }>) => {
+    const response = await fetch(`${API_BASE}/api/admin/fares/bulk`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ trip_id: tripId, fares }),
+    });
+    return handleResponse(response);
+  },
 };
 
 // Booking APIs
