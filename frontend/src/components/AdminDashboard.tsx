@@ -1825,7 +1825,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               id: f.id,
               fare_category_id: String(f.fare_category_id || ''),
               booking_option_id: String(f.booking_option_id || ''),
-              price_modifier: String(f.price || f.price_modifier || '0'),
+              // price_modifier is calculated as: stored_price - base_price
+              // When loading, f.price is the final price stored in DB
+              // We need to calculate the modifier by subtracting base price later
+              price_modifier: String(f.price_modifier !== undefined ? f.price_modifier : f.price || '0'),
               seats_available: String(f.seats_available || ''),
             }));
           }
@@ -3478,20 +3481,25 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
                             <div className="col-span-2">
                               <label className="block text-xs font-medium text-gray-700 mb-1">
-                                {language === 'ar' ? 'السعر' : language === 'de' ? 'Preis' : 'Price'}
+                                {language === 'ar' ? 'تعديل السعر (+/-)' : language === 'de' ? 'Preisänderung (+/-)' : 'Price Modifier (+/-)'}
                               </label>
                               <input
                                 type="number"
-                                step="0.01"
+                                step="1"
                                 value={fare.price_modifier}
                                 onChange={(e) => {
                                   const newFares = [...tripFares];
                                   newFares[index].price_modifier = e.target.value;
                                   setTripFares(newFares);
                                 }}
-                                placeholder="1000"
+                                placeholder="0"
                                 className="w-full px-2 py-1.5 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
                               />
+                              <p className="text-xs text-gray-500 mt-1">
+                                {language === 'ar' ? `السعر النهائي: ${parseFloat(newTrip.price || '0') + parseFloat(fare.price_modifier || '0')}` 
+                                : language === 'de' ? `Endpreis: ${parseFloat(newTrip.price || '0') + parseFloat(fare.price_modifier || '0')}` 
+                                : `Final: ${parseFloat(newTrip.price || '0') + parseFloat(fare.price_modifier || '0')}`}
+                              </p>
                             </div>
 
                             <div className="col-span-2">

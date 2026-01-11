@@ -251,7 +251,7 @@ router.post("/", async (req, res) => {
   try {
     await client.query("BEGIN");
 
-    // Insert trip
+    // Insert trip with base price
     const tripResult = await client.query(
       `
       INSERT INTO trips (
@@ -261,7 +261,8 @@ router.post("/", async (req, res) => {
         seats_total, seats_available,
         status, is_active,
         bus_number, driver_name,
-        equipment, cancellation_policy, extra_info
+        equipment, cancellation_policy, extra_info,
+        price, currency
       )
       VALUES (
         $1,$2,$3,
@@ -270,7 +271,8 @@ router.post("/", async (req, res) => {
         $9,$10,
         $11,$12,
         $13,$14,
-        $15,$16,$17
+        $15,$16,$17,
+        $18,$19
       )
       RETURNING *
       `,
@@ -281,7 +283,8 @@ router.post("/", async (req, res) => {
         seats_total, seats_total, // seats_available = seats_total initially
         status, is_active,
         bus_number, driver_name,
-        equipment, cancellation_policy, extra_info
+        equipment, cancellation_policy, extra_info,
+        price || 0, currency || 'SYP'
       ]
     );
 
@@ -373,6 +376,8 @@ router.patch("/:id", async (req, res) => {
     "equipment",
     "cancellation_policy",
     "extra_info",
+    "price",
+    "currency",
   ];
 
   const updates: string[] = [];

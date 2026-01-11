@@ -12,10 +12,13 @@ router.get("/", async (req, res) => {
     SELECT
       tf.*,
       fc.code as fare_category_code,
-      bo.code as booking_option_code
+      bo.code as booking_option_code,
+      t.price as base_price,
+      (tf.price - COALESCE(t.price, 0)) as price_modifier
     FROM trip_fares tf
     JOIN fare_categories fc ON fc.id=tf.fare_category_id
     JOIN booking_options bo ON bo.id=tf.booking_option_id
+    JOIN trips t ON t.id=tf.trip_id
     ${tripId ? "WHERE tf.trip_id = $1" : ""}
     ORDER BY tf.id DESC
     `,
@@ -64,15 +67,20 @@ router.post("/bulk", async (req, res) => {
     try {
       await client.query('BEGIN');
 
-      // Check if trip exists
+      // Get trip with base price
       const tripQuery = await client.query(
-        `SELECT id FROM trips WHERE id = $1`,
+        `SELECT id, price, currency FROM trips WHERE id = $1`,
         [trip_id]
       );
       
       if (tripQuery.rows.length === 0) {
         throw new Error('Trip not found');
       }
+
+      const basePrice = parseFloat(tripQuery.rows[0].price) || 0;
+      const tripCurrency = tripQuery.rows[0].currency || 'SYP';
+
+      console.log('Trip base price:', basePrice, 'currency:', tripCurrency);
 
       // Delete existing fares for this trip before adding new ones
       await client.query('DELETE FROM trip_fares WHERE trip_id = $1', [trip_id]);
@@ -87,17 +95,20 @@ router.post("/bulk", async (req, res) => {
           continue; // Skip invalid entries
         }
 
-        // price_modifier is used as the actual price (can be positive or negative adjustment from a base)
-        // For now, we'll use price_modifier as the absolute price value
-        const finalPrice = parseFloat(price_modifier) || 0;
+        // Calculate final price: base price + modifier (modifier can be negative)
+        // Example: base=1000, child modifier=-500 → final=500
+        // Example: base=1000, VIP modifier=+500 → final=1500
+        const modifier = parseFloat(price_modifier) || 0;
+        const finalPrice = basePrice + modifier;
         const seats = parseInt(seats_available) || 0;
-        const currency = 'SYP'; // Default currency
+
+        console.log(`Fare: category=${fare_category_id}, modifier=${modifier}, basePrice=${basePrice}, finalPrice=${finalPrice}`);
 
         const result = await client.query(
           `INSERT INTO trip_fares (trip_id, fare_category_id, booking_option_id, price, currency, seats_available)
            VALUES ($1, $2, $3, $4, $5, $6)
            RETURNING *`,
-          [trip_id, fare_category_id, booking_option_id, finalPrice, currency, seats]
+          [trip_id, fare_category_id, booking_option_id, finalPrice, tripCurrency, seats]
         );
 
         createdFares.push(result.rows[0]);
