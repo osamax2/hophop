@@ -278,6 +278,14 @@ export function BookingModal({ isOpen, onClose, trip, tripFares = [], language, 
   const pricePerSeat = selectedFare ? selectedFare.price : trip.price;
   const totalPrice = pricePerSeat * quantity;
 
+  // Debug logging
+  useEffect(() => {
+    console.log('BookingModal - tripFares:', tripFares);
+    console.log('BookingModal - selectedFareId:', selectedFareId);
+    console.log('BookingModal - selectedFare:', selectedFare);
+    console.log('BookingModal - pricePerSeat:', pricePerSeat);
+  }, [tripFares, selectedFareId, selectedFare, pricePerSeat]);
+
   const handleBooking = async () => {
     if (quantity < 1 || quantity > trip.seatsAvailable) {
       setError(t.notEnoughSeats);

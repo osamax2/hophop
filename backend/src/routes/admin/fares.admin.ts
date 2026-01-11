@@ -75,8 +75,8 @@ router.post("/bulk", async (req, res) => {
       const basePrice = tripQuery.rows[0].price || 0;
       const currency = tripQuery.rows[0].currency || 'SYP';
 
-      // Optional: Delete existing fares for this trip (if updating)
-      // await client.query('DELETE FROM trip_fares WHERE trip_id = $1', [trip_id]);
+      // Delete existing fares for this trip before adding new ones
+      await client.query('DELETE FROM trip_fares WHERE trip_id = $1', [trip_id]);
 
       const createdFares = [];
       

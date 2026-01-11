@@ -119,6 +119,22 @@ export function RouteMap({ fromCity, toCity, stops, departureStation, arrivalSta
 
     if (!fromCoords || !toCoords) {
       console.warn('Could not find coordinates for cities:', fromCity, toCity);
+      // Show Syria map as fallback
+      const syriaCenter: [number, number] = [34.8021, 38.9968]; // Center of Syria
+      
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+
+      const map = L.map(mapRef.current).setView(syriaCenter, 6);
+      mapInstanceRef.current = map;
+
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(map);
+
       return;
     }
 
