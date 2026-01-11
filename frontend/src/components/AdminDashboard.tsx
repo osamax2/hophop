@@ -1790,11 +1790,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setLoading(true);
       console.log('Loading trip details for ID:', tripId);
       
-      // Load trip form data first if not already loaded
-      if (cities.length === 0 || companies.length === 0 || transportTypes.length === 0 || stations.length === 0) {
-        console.log('Loading trip form data first...');
-        await loadTripFormData();
-      }
+      // Always reload trip form data to ensure we have the latest fare categories and booking options
+      console.log('Loading trip form data...');
+      await loadTripFormData();
       
       // Load trip details
       const trip = await tripsApi.getById(tripId);
