@@ -19,6 +19,8 @@ export interface CreateBookingDto {
   seats_booked: number;
   total_price: number;
   currency?: string;
+  fare_category_id?: number;
+  booking_option_id?: number;
 }
 
 export interface UpdateBookingDto {
@@ -98,8 +100,8 @@ export class BookingsService {
    */
   async create(data: CreateBookingDto): Promise<Booking> {
     const result = await pool.query(
-      `INSERT INTO bookings (user_id, trip_id, booking_status, seats_booked, total_price, currency)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO bookings (user_id, trip_id, booking_status, seats_booked, total_price, currency, fare_category_id, booking_option_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING id, user_id, trip_id, booking_status, seats_booked, total_price, currency, created_at, updated_at`,
       [
         data.user_id,
@@ -108,6 +110,8 @@ export class BookingsService {
         data.seats_booked,
         data.total_price,
         data.currency || "USD",
+        data.fare_category_id || null,
+        data.booking_option_id || null,
       ]
     );
     return result.rows[0];

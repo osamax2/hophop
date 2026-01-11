@@ -48,6 +48,11 @@ const translations = {
     cancellationPolicy: 'Stornierungsbedingungen',
     additionalInfo: 'Zusätzliche Informationen',
     noInfo: 'Keine Informationen verfügbar',
+    fareOptions: 'Tarifoptionen',
+    fareCategory: 'Kategorie',
+    bookingOption: 'Option',
+    seatsLeft: 'Plätze übrig',
+    noFareOptions: 'Nur Standardpreis verfügbar',
   },
   en: {
     tripDetails: 'Trip Details',
@@ -81,6 +86,11 @@ const translations = {
     cancellationPolicy: 'Cancellation Policy',
     additionalInfo: 'Additional Information',
     noInfo: 'No information available',
+    fareOptions: 'Fare Options',
+    fareCategory: 'Category',
+    bookingOption: 'Option',
+    seatsLeft: 'Seats left',
+    noFareOptions: 'Standard price only',
   },
   ar: {
     tripDetails: 'تفاصيل الرحلة',
@@ -114,12 +124,18 @@ const translations = {
     cancellationPolicy: 'سياسة الإلغاء',
     additionalInfo: 'معلومات إضافية',
     noInfo: 'لا توجد معلومات متاحة',
+    fareOptions: 'خيارات الأسعار',
+    fareCategory: 'الفئة',
+    bookingOption: 'الخيار',
+    seatsLeft: 'مقاعد متبقية',
+    noFareOptions: 'السعر القياسي فقط',
   },
 };
 
 export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, isLoggedIn }: TripDetailsProps) {
   const t = translations[language];
   const [trip, setTrip] = useState<any>(null);
+  const [tripFares, setTripFares] = useState<any[]>([]);
   const [tripImages, setTripImages] = useState<any[]>([]);
   const [busImages, setBusImages] = useState<any[]>([]);
   const [stationImages, setStationImages] = useState<any[]>([]);
@@ -161,19 +177,24 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
         
         setTrip(formattedTrip);
 
-        // Fetch images and reviews for this trip
+        // Fetch images, fares and reviews for this trip
         try {
-          const [tripImgs, busImgs, stationImgs, reviews] = await Promise.all([
+          const [tripImgs, busImgs, stationImgs, reviews, fares] = await Promise.all([
             imagesApi.getByEntity('trip', data.id || 0),
             imagesApi.getByEntity('bus', data.company_id || 0),
             imagesApi.getByEntity('station', data.departure_station_id || 0),
             ratingsApi.getByCompany(data.company_id || 0).catch(() => []),
+            fetch(`/api/admin/fares?trip_id=${data.id}`, {
+              headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            }).then(r => r.ok ? r.json() : []).catch(() => []),
           ]);
           console.log('Company reviews fetched:', reviews.length, 'reviews for company_id:', data.company_id);
+          console.log('Trip fares fetched:', fares.length, 'fares for trip_id:', data.id);
           setTripImages(tripImgs);
           setBusImages(busImgs);
           setStationImages(stationImgs);
           setCompanyReviews(reviews);
+          setTripFares(fares);
         } catch (imgErr) {
           console.error('Error fetching images:', imgErr);
           // Images are optional, so we continue
@@ -389,6 +410,39 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                 </div>
                 <div className="text-sm text-gray-600">{t.price}</div>
               </div>
+
+              {/* Fare Options Table */}
+              {tripFares.length > 0 && (
+                <div className="mb-6 border-t border-gray-200 pt-4">
+                  <h3 className="text-sm font-semibold text-gray-900 mb-3">{t.fareOptions}</h3>
+                  <div className="space-y-2">
+                    {tripFares.map((fare: any, index: number) => (
+                      <div key={index} className="flex justify-between items-center text-xs bg-gray-50 p-2 rounded">
+                        <div className="flex flex-col">
+                          <span className="font-medium text-gray-900">
+                            {language === 'ar' && fare.fare_category_label_ar 
+                              ? fare.fare_category_label_ar 
+                              : fare.fare_category_code || fare.fare_category_label}
+                          </span>
+                          <span className="text-gray-600">
+                            {language === 'ar' && fare.booking_option_label_ar 
+                              ? fare.booking_option_label_ar 
+                              : fare.booking_option_code || fare.booking_option_label}
+                          </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                          <span className="font-semibold text-green-600">
+                            {formatCurrency(fare.price, language, fare.currency || trip.currency)}
+                          </span>
+                          <span className="text-gray-500">
+                            {fare.seats_available} {t.seatsLeft}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between py-3 border-b border-gray-100">
@@ -651,6 +705,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
           isOpen={showBookingModal}
           onClose={() => setShowBookingModal(false)}
           trip={trip}
+          tripFares={tripFares}
           language={language}
           isLoggedIn={isLoggedIn}
         />

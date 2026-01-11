@@ -21,6 +21,7 @@ interface BookingModalProps {
     seatsAvailable: number;
     totalSeats: number;
   };
+  tripFares?: any[];
   language: Language;
   isLoggedIn?: boolean;
 }
@@ -182,9 +183,10 @@ const translations = {
   },
 };
 
-export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = false }: BookingModalProps) {
+export function BookingModal({ isOpen, onClose, trip, tripFares = [], language, isLoggedIn = false }: BookingModalProps) {
   const t = translations[language];
   const [quantity, setQuantity] = useState(1);
+  const [selectedFareId, setSelectedFareId] = useState<number | null>(null);
   const [fareCategory, setFareCategory] = useState('STANDARD');
   const [bookingOption, setBookingOption] = useState('DEFAULT');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -226,6 +228,7 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
     if (isOpen) {
       setTimeRemaining(600);
       setQuantity(1);
+      setSelectedFareId(tripFares.length > 0 ? tripFares[0].id : null);
       setFareCategory('STANDARD');
       setBookingOption('DEFAULT');
       setError(null);
@@ -236,7 +239,7 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
       setPassengerNames([]);
       setStatusLink(null);
     }
-  }, [isOpen]);
+  }, [isOpen, tripFares]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
@@ -256,17 +259,24 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
   const seconds = timeRemaining % 60;
 
   const handleQuantityChange = (value: number) => {
-    if (value >= 1 && value <= trip.seatsAvailable) {
+    // Check available seats based on selected fare
+    const selectedFare = tripFares.find(f => f.id === selectedFareId);
+    const maxSeats = selectedFare ? selectedFare.seats_available : trip.seatsAvailable;
+    
+    if (value >= 1 && value <= maxSeats) {
       setQuantity(value);
       setError(null);
       // Initialize passenger names array
       setPassengerNames(new Array(value).fill(''));
-    } else if (value > trip.seatsAvailable) {
+    } else if (value > maxSeats) {
       setError(t.notEnoughSeats);
     }
   };
 
-  const totalPrice = trip.price * quantity;
+  // Calculate price based on selected fare or default trip price
+  const selectedFare = tripFares.find(f => f.id === selectedFareId);
+  const pricePerSeat = selectedFare ? selectedFare.price : trip.price;
+  const totalPrice = pricePerSeat * quantity;
 
   const handleBooking = async () => {
     if (quantity < 1 || quantity > trip.seatsAvailable) {
@@ -350,10 +360,18 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
       const bookingData: any = {
         trip_id: parseInt(trip.id),
         quantity,
-        fare_category_code: fareCategory,
-        booking_option_code: bookingOption,
         passenger_names: quantity > 1 ? passengerNames : [guestName || 'Main Passenger'],
       };
+
+      // Add fare information if selected
+      if (selectedFareId && selectedFare) {
+        bookingData.fare_category_id = selectedFare.fare_category_id;
+        bookingData.booking_option_id = selectedFare.booking_option_id;
+      } else {
+        // Fallback to codes if no fare selected
+        bookingData.fare_category_code = fareCategory;
+        bookingData.booking_option_code = bookingOption;
+      }
 
       // Add guest info if not logged in
       if (!isLoggedIn) {
@@ -517,6 +535,58 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
                 <span className="text-base text-gray-900">{trip.duration}</span>
               </div>
             </div>
+
+            {/* Fare Selection (if multiple fares available) */}
+            {tripFares.length > 0 && (
+              <div className="space-y-3 border-t-2 border-gray-200 pt-6">
+                <label className="block text-sm font-medium text-gray-700">
+                  {t.fareCategory} / {t.bookingOption}
+                </label>
+                <div className="space-y-2">
+                  {tripFares.map((fare: any) => (
+                    <div
+                      key={fare.id}
+                      onClick={() => {
+                        setSelectedFareId(fare.id);
+                        // Reset quantity if exceeds new fare's available seats
+                        if (quantity > fare.seats_available) {
+                          setQuantity(Math.min(quantity, fare.seats_available));
+                          setPassengerNames(new Array(Math.min(quantity, fare.seats_available)).fill(''));
+                        }
+                      }}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        selectedFareId === fare.id
+                          ? 'border-green-500 bg-green-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <div className="font-semibold text-gray-900">
+                            {language === 'ar' && fare.fare_category_label_ar 
+                              ? fare.fare_category_label_ar 
+                              : fare.fare_category_code || 'Standard'}
+                            {' • '}
+                            {language === 'ar' && fare.booking_option_label_ar 
+                              ? fare.booking_option_label_ar 
+                              : fare.booking_option_code || 'Default'}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {fare.seats_available} {t.seatsAvailable}
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xl font-bold text-green-600">
+                            {formatCurrency(fare.price, language, fare.currency || trip.currency)}
+                          </div>
+                          <div className="text-xs text-gray-500">{t.pricePerSeat}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Number of Seats */}
             <div className="space-y-2">
