@@ -126,6 +126,7 @@ type Trip = {
   arrivalTime: string;
   duration: string;
   price: number;
+  currency?: string;
   company: string;
   type: 'vip' | 'normal' | 'van';
   amenities: string[];
@@ -505,7 +506,7 @@ export function SearchResults({
               <div className="flex md:flex-col items-center md:items-end gap-3">
                 <div className="text-right flex-1 md:flex-none">
                   <div className="text-2xl text-green-600">
-                    {formatCurrency(trip.price, language)}
+                    {formatCurrency(trip.price, language, trip.currency || 'SYP')}
                   </div>
                 </div>
                 <div className="flex gap-2">

@@ -602,13 +602,24 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
 
   // Auto-calculate duration when departure_time or arrival_time changes
   useEffect(() => {
-    if (newTrip.departure_time && newTrip.arrival_time) {
-      const dep = new Date(newTrip.departure_time);
-      const arr = new Date(newTrip.arrival_time);
+    const depTime = newTrip.departure_time;
+    const arrTime = newTrip.arrival_time;
+    
+    if (depTime && arrTime) {
+      const dep = new Date(depTime);
+      const arr = new Date(arrTime);
       
       if (!isNaN(dep.getTime()) && !isNaN(arr.getTime()) && arr > dep) {
         const durationMinutes = Math.round((arr.getTime() - dep.getTime()) / (1000 * 60));
-        setNewTrip(prev => ({ ...prev, duration_minutes: String(durationMinutes) }));
+        
+        // Only update if the duration has actually changed to avoid infinite loops
+        setNewTrip(prev => {
+          const currentDuration = parseInt(prev.duration_minutes) || 0;
+          if (currentDuration !== durationMinutes) {
+            return { ...prev, duration_minutes: String(durationMinutes) };
+          }
+          return prev;
+        });
       }
     }
   }, [newTrip.departure_time, newTrip.arrival_time]);
@@ -1932,12 +1943,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         return;
       }
 
-      // Calculate duration if not provided
+      // Calculate duration if not provided or invalid
       let duration = parseInt(newTrip.duration_minutes);
-      if (!duration && newTrip.departure_time && newTrip.arrival_time) {
-        const dep = new Date(newTrip.departure_time);
-        const arr = new Date(newTrip.arrival_time);
-        duration = Math.round((arr.getTime() - dep.getTime()) / (1000 * 60));
+      if (isNaN(duration) || duration <= 0) {
+        if (newTrip.departure_time && newTrip.arrival_time) {
+          const dep = new Date(newTrip.departure_time);
+          const arr = new Date(newTrip.arrival_time);
+          if (!isNaN(dep.getTime()) && !isNaN(arr.getTime())) {
+            duration = Math.round((arr.getTime() - dep.getTime()) / (1000 * 60));
+          }
+        }
       }
 
       // For Agent Managers, always use their company_id
@@ -2901,7 +2916,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       onChange={(e) => {
                         const fromCity = e.target.value;
                         const fromCityObj = cities.find((c: any) => c.name === fromCity);
-                        setNewTrip((prev: any) => ({ ...prev, from_city: fromCity, route_id: '' }));
+                        setNewTrip((prev: any) => ({ 
+                          ...prev, 
+                          from_city: fromCity, 
+                          route_id: '',
+                          departure_station_id: '' // Reset departure station when city changes
+                        }));
                         // Auto-select route if to_city is already selected
                         if (newTrip.to_city && fromCity && fromCityObj) {
                           const toCityObj = cities.find((c: any) => c.name === newTrip.to_city);
@@ -2910,7 +2930,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                               r.from_city_id === fromCityObj.id && r.to_city_id === toCityObj.id
                             );
                             if (existingRoute) {
-                              setNewTrip((prev: any) => ({ ...prev, from_city: fromCity, route_id: String(existingRoute.id) }));
+                              setNewTrip((prev: any) => ({ 
+                                ...prev, 
+                                from_city: fromCity, 
+                                route_id: String(existingRoute.id),
+                                departure_station_id: '' // Reset departure station when city changes
+                              }));
                             }
                           }
                         }
@@ -2941,7 +2966,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       onChange={(e) => {
                         const toCity = e.target.value;
                         const toCityObj = cities.find((c: any) => c.name === toCity);
-                        setNewTrip((prev: any) => ({ ...prev, to_city: toCity, route_id: '' }));
+                        setNewTrip((prev: any) => ({ 
+                          ...prev, 
+                          to_city: toCity, 
+                          route_id: '',
+                          arrival_station_id: '' // Reset arrival station when city changes
+                        }));
                         // Auto-select route if from_city is already selected
                         if (newTrip.from_city && toCity && toCityObj) {
                           const fromCityObj = cities.find((c: any) => c.name === newTrip.from_city);
@@ -2950,7 +2980,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                               r.from_city_id === fromCityObj.id && r.to_city_id === toCityObj.id
                             );
                             if (existingRoute) {
-                              setNewTrip((prev: any) => ({ ...prev, to_city: toCity, route_id: String(existingRoute.id) }));
+                              setNewTrip((prev: any) => ({ 
+                                ...prev, 
+                                to_city: toCity, 
+                                route_id: String(existingRoute.id),
+                                arrival_station_id: '' // Reset arrival station when city changes
+                              }));
                             }
                           }
                         }
@@ -3033,13 +3068,22 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                         value={newTrip.departure_station_id}
                         onChange={(e) => setNewTrip({ ...newTrip, departure_station_id: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        disabled={!newTrip.from_city}
                       >
-                        <option value="">{t.selectStation || 'Select Station'}</option>
-                        {stations.map((station: any) => (
-                          <option key={station.id} value={station.id}>
-                            {station.city_name} - {station.name}
-                          </option>
-                        ))}
+                        <option value="">
+                          {!newTrip.from_city 
+                            ? (language === 'ar' ? 'اختر مدينة المغادرة أولاً' : language === 'de' ? 'Wähle zuerst Abfahrtsstadt' : 'Select departure city first')
+                            : (t.selectStation || 'Select Station')
+                          }
+                        </option>
+                        {stations
+                          .filter((station: any) => station.city_name === newTrip.from_city)
+                          .map((station: any) => (
+                            <option key={station.id} value={station.id}>
+                              {station.name}
+                            </option>
+                          ))
+                        }
                       </select>
                     </div>
 
@@ -3050,13 +3094,22 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                         value={newTrip.arrival_station_id}
                         onChange={(e) => setNewTrip({ ...newTrip, arrival_station_id: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        disabled={!newTrip.to_city}
                       >
-                        <option value="">{t.selectStation || 'Select Station'}</option>
-                        {stations.map((station: any) => (
-                          <option key={station.id} value={station.id}>
-                            {station.city_name} - {station.name}
-                          </option>
-                        ))}
+                        <option value="">
+                          {!newTrip.to_city 
+                            ? (language === 'ar' ? 'اختر مدينة الوصول أولاً' : language === 'de' ? 'Wähle zuerst Ankunftsstadt' : 'Select arrival city first')
+                            : (t.selectStation || 'Select Station')
+                          }
+                        </option>
+                        {stations
+                          .filter((station: any) => station.city_name === newTrip.to_city)
+                          .map((station: any) => (
+                            <option key={station.id} value={station.id}>
+                              {station.name}
+                            </option>
+                          ))
+                        }
                       </select>
                     </div>
                   </div>
@@ -3151,9 +3204,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                         onChange={(e) => setNewTrip({ ...newTrip, currency: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
                       >
-                        <option value="SYP">SYP (ليرة سورية)</option>
-                        <option value="USD">USD (دولار أمريكي)</option>
-                        <option value="EUR">EUR (يورو)</option>
+                        <option value="SYP">SYP (Old Syrian Pound - ليرة سورية قديمة)</option>
+                        <option value="NEW_SYP">NEW SYP (New Syrian Pound - ليرة السورية الجديدة)</option>
+                        <option value="TRY">TRY (Turkish Lira - ليرة تركية)</option>
+                        <option value="USD">USD (US Dollar - دولار أمريكي)</option>
+                        <option value="EUR">EUR (Euro - يورو)</option>
                       </select>
                     </div>
                   </div>

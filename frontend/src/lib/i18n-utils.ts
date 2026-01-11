@@ -125,7 +125,17 @@ export function formatCurrency(value: number, language: Language, currency: stri
     'SYP': {
       en: 'SYP',
       de: 'SYP',
-      ar: 'ليرة',
+      ar: 'ل.س',
+    },
+    'NEW_SYP': {
+      en: 'New SYP',
+      de: 'Neue SYP',
+      ar: 'ل.س.ج',
+    },
+    'TRY': {
+      en: 'TRY',
+      de: 'TRY',
+      ar: 'ليرة تركية',
     },
     'USD': {
       en: 'USD',

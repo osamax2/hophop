@@ -212,7 +212,7 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
                     Preis
                   </div>
                   <span className="text-lg text-green-600">
-                    {formatCurrency(trip.price, language)}
+                    {formatCurrency(trip.price, language, (trip as any).currency || 'SYP')}
                   </span>
                 </div>
               </div>

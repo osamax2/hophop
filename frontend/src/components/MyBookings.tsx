@@ -404,7 +404,7 @@ export function MyBookings({ language, isLoggedIn, user, onNavigateToLogin, onNa
                 {/* Price and Date */}
                 <div className="text-right">
                   <div className="text-2xl font-bold text-green-600 mb-1">
-                    {formatCurrency(booking.total_price, language)}
+                    {formatCurrency(booking.total_price, language, booking.currency)}
                   </div>
                   <div className="text-xs text-gray-600 mb-3">
                     {t.bookedOn} {formatDate(booking.created_at)}

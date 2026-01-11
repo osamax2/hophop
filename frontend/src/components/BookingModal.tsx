@@ -685,7 +685,7 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
               <div className="flex justify-between items-center text-sm">
                 <span className="text-gray-700">{t.pricePerSeat}</span>
                 <span className="text-gray-900 font-medium">
-                  {formatCurrency(trip.price, language)}
+                  {formatCurrency(trip.price, language, trip.currency)}
                 </span>
               </div>
               <div className="flex justify-between items-center text-sm">
@@ -695,7 +695,7 @@ export function BookingModal({ isOpen, onClose, trip, language, isLoggedIn = fal
               <div className="pt-2 border-t-2 border-green-300 flex justify-between items-center">
                 <span className="text-base font-semibold text-gray-900">{t.totalPrice}</span>
                 <span className="text-2xl font-bold text-green-700">
-                  {formatCurrency(totalPrice, language)}
+                  {formatCurrency(totalPrice, language, trip.currency)}
                 </span>
               </div>
             </div>

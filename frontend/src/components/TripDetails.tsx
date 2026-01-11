@@ -385,7 +385,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-24">
               <div className="mb-6">
                 <div className="text-3xl text-green-600 mb-1">
-                  {formatCurrency(trip.price, language)}
+                  {formatCurrency(trip.price, language, trip.currency)}
                 </div>
                 <div className="text-sm text-gray-600">{t.price}</div>
               </div>

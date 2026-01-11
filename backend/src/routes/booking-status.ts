@@ -90,12 +90,12 @@ router.get("/user/:userId", async (req, res) => {
         b.created_at,
         t.departure_time,
         t.arrival_time,
-        fc.city_name_en as from_city,
-        fc.city_name_de as from_city_de,
-        fc.city_name_ar as from_city_ar,
-        tc.city_name_en as to_city,
-        tc.city_name_de as to_city_de,
-        tc.city_name_ar as to_city_ar,
+        fc.name as from_city,
+        fc.name as from_city_de,
+        fc.name as from_city_ar,
+        tc.name as to_city,
+        tc.name as to_city_de,
+        tc.name as to_city_ar,
         comp.name as company_name,
         COALESCE(
           json_agg(
@@ -108,8 +108,9 @@ router.get("/user/:userId", async (req, res) => {
         ) as passengers
       FROM bookings b
       LEFT JOIN trips t ON t.id = b.trip_id
-      LEFT JOIN cities fc ON fc.id = t.from_city_id
-      LEFT JOIN cities tc ON tc.id = t.to_city_id
+      LEFT JOIN routes r ON r.id = t.route_id
+      LEFT JOIN cities fc ON fc.id = r.from_city_id
+      LEFT JOIN cities tc ON tc.id = r.to_city_id
       LEFT JOIN transport_companies comp ON comp.id = t.company_id
       LEFT JOIN booking_passengers bp ON bp.booking_id = b.id
       WHERE b.user_id = $1

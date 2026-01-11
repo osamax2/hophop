@@ -262,7 +262,7 @@ export function RoundTripBooking({
         </div>
         <div>
           <div className="text-sm text-gray-600">{t.price}</div>
-          <div className="text-2xl font-bold text-green-600">{formatCurrency(trip.price, language)}</div>
+          <div className="text-2xl font-bold text-green-600">{formatCurrency(trip.price, language, (trip as any).currency || 'SYP')}</div>
         </div>
         <div>
           <div className="text-sm text-gray-600">{t.seats}</div>
@@ -353,15 +353,15 @@ export function RoundTripBooking({
             <div className="border-t border-gray-200 pt-4 mb-6">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">{t.outboundTrip}</span>
-                <span className="text-gray-900">{formatCurrency(outboundTrip.price * seats, language)}</span>
+                <span className="text-gray-900">{formatCurrency(outboundTrip.price * seats, language, (outboundTrip as any).currency || 'SYP')}</span>
               </div>
               <div className="flex justify-between items-center mb-4">
                 <span className="text-gray-600">{t.returnTrip}</span>
-                <span className="text-gray-900">{formatCurrency(returnTrip.price * seats, language)}</span>
+                <span className="text-gray-900">{formatCurrency(returnTrip.price * seats, language, (returnTrip as any).currency || 'SYP')}</span>
               </div>
               <div className="flex justify-between items-center text-xl font-bold">
                 <span>{t.totalPrice}</span>
-                <span className="text-green-600">{formatCurrency(totalPrice, language)}</span>
+                <span className="text-green-600">{formatCurrency(totalPrice, language, (outboundTrip as any).currency || 'SYP')}</span>
               </div>
             </div>
 

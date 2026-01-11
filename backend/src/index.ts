@@ -338,6 +338,7 @@ app.get("/api/trips", async (req, res) => {
         arrivalTime: formatTime(row.arrival_time),
         duration: formatDuration(row.duration_minutes || 0),
         price: parseFloat(row.price) || 0,
+        currency: row.currency || 'SYP',
         company: row.company_name || 'Unknown',
         type: tripType,
         amenities: amenities,
