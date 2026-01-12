@@ -23,6 +23,7 @@ import bookingsCrudRoutes from "./routes/bookings-crud";
 import tripsCrudRoutes from "./routes/trips-crud";
 import citiesRoutes from "./routes/cities";
 import companiesRoutes from "./routes/companies";
+import faresRoutes from "./routes/fares";
 import helmet from "helmet";
 
 const app = express();
@@ -132,6 +133,7 @@ app.use("/api/users", usersRoutes);
 app.use("/api/bookings-crud", bookingsCrudRoutes);
 app.use("/api/trips-crud", tripsCrudRoutes);
 app.use("/api/cities", citiesRoutes);
+app.use("/api/fares", faresRoutes);
 
 
 // ====== Test Route ======

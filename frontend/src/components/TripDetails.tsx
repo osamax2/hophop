@@ -184,9 +184,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
             imagesApi.getByEntity('bus', data.company_id || 0),
             imagesApi.getByEntity('station', data.departure_station_id || 0),
             ratingsApi.getByCompany(data.company_id || 0).catch(() => []),
-            fetch(`/api/admin/fares?trip_id=${data.id}`, {
-              headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
-            }).then(r => r.ok ? r.json() : []).catch(() => []),
+            fetch(`/api/fares?trip_id=${data.id}`).then(r => r.ok ? r.json() : []).catch(() => []),
           ]);
           console.log('Company reviews fetched:', reviews.length, 'reviews for company_id:', data.company_id);
           console.log('Trip fares fetched:', fares.length, 'fares for trip_id:', data.id);

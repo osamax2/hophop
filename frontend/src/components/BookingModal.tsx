@@ -253,6 +253,20 @@ export function BookingModal({ isOpen, onClose, trip, tripFares = [], language, 
     };
   }, [isOpen]);
 
+  // Calculate price based on selected fare or default trip price
+  const selectedFare = tripFares.find(f => f.id === selectedFareId);
+  const pricePerSeat = selectedFare ? selectedFare.price : trip.price;
+  const totalPrice = pricePerSeat * quantity;
+
+  // Debug logging - must be before any conditional returns to maintain hooks order
+  useEffect(() => {
+    if (!isOpen) return;
+    console.log('BookingModal - tripFares:', tripFares);
+    console.log('BookingModal - selectedFareId:', selectedFareId);
+    console.log('BookingModal - selectedFare:', selectedFare);
+    console.log('BookingModal - pricePerSeat:', pricePerSeat);
+  }, [isOpen, tripFares, selectedFareId, selectedFare, pricePerSeat]);
+
   if (!isOpen) return null;
 
   const minutes = Math.floor(timeRemaining / 60);
@@ -260,8 +274,8 @@ export function BookingModal({ isOpen, onClose, trip, tripFares = [], language, 
 
   const handleQuantityChange = (value: number) => {
     // Check available seats based on selected fare
-    const selectedFare = tripFares.find(f => f.id === selectedFareId);
-    const maxSeats = selectedFare ? selectedFare.seats_available : trip.seatsAvailable;
+    const fareForSeats = tripFares.find(f => f.id === selectedFareId);
+    const maxSeats = fareForSeats ? fareForSeats.seats_available : trip.seatsAvailable;
     
     if (value >= 1 && value <= maxSeats) {
       setQuantity(value);
@@ -272,19 +286,6 @@ export function BookingModal({ isOpen, onClose, trip, tripFares = [], language, 
       setError(t.notEnoughSeats);
     }
   };
-
-  // Calculate price based on selected fare or default trip price
-  const selectedFare = tripFares.find(f => f.id === selectedFareId);
-  const pricePerSeat = selectedFare ? selectedFare.price : trip.price;
-  const totalPrice = pricePerSeat * quantity;
-
-  // Debug logging
-  useEffect(() => {
-    console.log('BookingModal - tripFares:', tripFares);
-    console.log('BookingModal - selectedFareId:', selectedFareId);
-    console.log('BookingModal - selectedFare:', selectedFare);
-    console.log('BookingModal - pricePerSeat:', pricePerSeat);
-  }, [tripFares, selectedFareId, selectedFare, pricePerSeat]);
 
   const handleBooking = async () => {
     if (quantity < 1 || quantity > trip.seatsAvailable) {
