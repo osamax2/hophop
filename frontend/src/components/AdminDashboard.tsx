@@ -2421,6 +2421,80 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     }
   };
 
+  const handleSponsorTrip = async (tripId: number) => {
+    const confirmMessage = language === 'ar'
+      ? 'هل أنت متأكد من رعاية هذه الرحلة؟ التكلفة: 5 دولار لمدة 7 أيام. ستظهر الرحلة في الصفحة الرئيسية وأول نتائج البحث.'
+      : language === 'de'
+      ? 'Möchten Sie diese Fahrt sponsern? Kosten: $5 für 7 Tage. Die Fahrt wird auf der Startseite und zuerst in Suchergebnissen angezeigt.'
+      : 'Do you want to sponsor this trip? Cost: $5 for 7 days. The trip will appear on the homepage and first in search results.';
+    
+    if (!confirm(confirmMessage)) return;
+    
+    try {
+      setLoading(true);
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_BASE}/api/admin/trips/${tripId}/sponsor`, {
+        method: 'POST',
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ days: 7 })
+      });
+      
+      if (!response.ok) throw new Error('Failed to sponsor trip');
+      
+      const result = await response.json();
+      
+      alert(language === 'ar' 
+        ? `تم رعاية الرحلة بنجاح! ستظهر حتى ${new Date(result.sponsored_until).toLocaleDateString()}` 
+        : language === 'de' 
+        ? `Fahrt erfolgreich gesponsert! Wird angezeigt bis ${new Date(result.sponsored_until).toLocaleDateString()}`
+        : `Trip sponsored successfully! Will be displayed until ${new Date(result.sponsored_until).toLocaleDateString()}`
+      );
+      
+      await loadSchedules(false);
+    } catch (err: any) {
+      console.error('Error sponsoring trip:', err);
+      alert(err.message || 'Failed to sponsor trip');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveSponsor = async (tripId: number) => {
+    const confirmMessage = language === 'ar'
+      ? 'هل أنت متأكد من إزالة الرعاية من هذه الرحلة؟'
+      : language === 'de'
+      ? 'Möchten Sie das Sponsoring dieser Fahrt entfernen?'
+      : 'Do you want to remove the sponsorship from this trip?';
+    
+    if (!confirm(confirmMessage)) return;
+    
+    try {
+      setLoading(true);
+      const API_BASE = import.meta.env.VITE_API_BASE || "";
+      const token = localStorage.getItem("token");
+      
+      const response = await fetch(`${API_BASE}/api/admin/trips/${tripId}/sponsor`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (!response.ok) throw new Error('Failed to remove sponsorship');
+      
+      alert(language === 'ar' ? 'تم إزالة الرعاية' : language === 'de' ? 'Sponsoring entfernt' : 'Sponsorship removed');
+      await loadSchedules(false);
+    } catch (err: any) {
+      console.error('Error removing sponsorship:', err);
+      alert(err.message || 'Failed to remove sponsorship');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleViewSteps = async (trip: any) => {
     try {
       setSelectedTripForSteps(trip);
@@ -3028,6 +3102,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             language={language}
             onEditTrip={handleEditTrip}
             onAddTrip={() => setShowAddTripDialog(true)}
+            onSponsorTrip={handleSponsorTrip}
+            onRemoveSponsor={handleRemoveSponsor}
             refreshTrigger={scheduleRefreshTrigger}
           />
 

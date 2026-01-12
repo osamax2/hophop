@@ -783,4 +783,112 @@ router.post("/:id/restore", async (req, res) => {
   }
 });
 
+// POST /api/admin/trips/:id/sponsor - Sponsor a trip
+router.post("/:id/sponsor", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { days = 7 } = req.body; // Default 7 days sponsorship
+    
+    // Check if trip exists
+    const tripCheck = await pool.query('SELECT id, company_id FROM trips WHERE id = $1', [id]);
+    if (tripCheck.rows.length === 0) {
+      return res.status(404).json({ message: "Trip not found" });
+    }
+    
+    // Calculate sponsor end date
+    const sponsoredUntil = new Date();
+    sponsoredUntil.setDate(sponsoredUntil.getDate() + days);
+    
+    // Update trip to be sponsored
+    await pool.query(
+      `UPDATE trips 
+       SET is_sponsored = TRUE, 
+           sponsored_until = $2, 
+           sponsor_amount = 5.00
+       WHERE id = $1`,
+      [id, sponsoredUntil]
+    );
+    
+    res.json({ 
+      ok: true, 
+      message: "Trip sponsored successfully",
+      sponsored_until: sponsoredUntil,
+      amount: 5.00,
+      currency: 'USD'
+    });
+  } catch (error: any) {
+    console.error("Error sponsoring trip:", error);
+    res.status(500).json({ 
+      message: "Error sponsoring trip", 
+      error: error.message || String(error)
+    });
+  }
+});
+
+// DELETE /api/admin/trips/:id/sponsor - Remove sponsorship
+router.delete("/:id/sponsor", async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    
+    await pool.query(
+      `UPDATE trips 
+       SET is_sponsored = FALSE, 
+           sponsored_until = NULL, 
+           sponsor_amount = 0
+       WHERE id = $1`,
+      [id]
+    );
+    
+    res.json({ 
+      ok: true, 
+      message: "Sponsorship removed"
+    });
+  } catch (error: any) {
+    console.error("Error removing sponsorship:", error);
+    res.status(500).json({ 
+      message: "Error removing sponsorship", 
+      error: error.message || String(error)
+    });
+  }
+});
+
+// GET /api/admin/trips/sponsored - Get all sponsored trips
+router.get("/sponsored", async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT
+        t.*,
+        c1.name as from_city,
+        c2.name as to_city,
+        COALESCE(comp.name, 'Unknown') AS company_name,
+        tt.label as transport_type_name,
+        COALESCE((
+          SELECT price FROM trip_fares tf 
+          WHERE tf.trip_id = t.id 
+          LIMIT 1
+        ), 0) as price
+      FROM trips t
+      JOIN routes r ON r.id = t.route_id
+      JOIN cities c1 ON c1.id = r.from_city_id
+      JOIN cities c2 ON c2.id = r.to_city_id
+      LEFT JOIN transport_companies comp ON t.company_id = comp.id
+      LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
+      WHERE t.is_sponsored = TRUE 
+        AND t.sponsored_until > NOW()
+        AND t.status = 'scheduled'
+        AND t.departure_time > NOW()
+      ORDER BY t.departure_time ASC
+      LIMIT 10
+    `);
+    
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error("Error fetching sponsored trips:", error);
+    res.status(500).json({ 
+      message: "Error fetching sponsored trips", 
+      error: error.message || String(error)
+    });
+  }
+});
+
 export default router;

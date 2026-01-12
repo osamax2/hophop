@@ -29,6 +29,9 @@ const translations = {
     transportType: 'Transportart (optional)',
     popularRoutes: 'Beliebte Routen',
     whyHopHop: 'Warum HopHop ist deine beste Wahl',
+    sponsoredTrips: 'Empfohlene Reisen',
+    viewTrip: 'Details ansehen',
+    noSponsoredTrips: 'Keine gesponserten Reisen verfügbar',
     typeAll: 'Alle',
     typeBus: 'Bus',
     typeVan: 'Van',
@@ -82,6 +85,9 @@ const translations = {
     transportType: 'Transport Type (optional)',
     popularRoutes: 'Popular Routes',
     whyHopHop: 'Why HopHop is your best choice',
+    sponsoredTrips: 'Featured Trips',
+    viewTrip: 'View Details',
+    noSponsoredTrips: 'No sponsored trips available',
     typeAll: 'All',
     typeBus: 'Bus',
     typeVan: 'Van',
@@ -135,6 +141,9 @@ const translations = {
     transportType: 'نوع النقل (اختياري)',
     popularRoutes: 'الطرق الشائعة',
     whyHopHop: 'لماذا هوب هوب خيارك الأفضل',
+    sponsoredTrips: 'رحلات مميزة',
+    viewTrip: 'عرض التفاصيل',
+    noSponsoredTrips: 'لا توجد رحلات مُرعاة متاحة',
     typeAll: 'الكل',
     typeBus: 'باص',
     typeVan: 'فان',
@@ -191,6 +200,26 @@ export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, o
   const [isRoundTrip, setIsRoundTrip] = useState(searchParams?.isRoundTrip || false);
   const [returnDate, setReturnDate] = useState(searchParams?.returnDate || '');
   const [searchError, setSearchError] = useState('');
+  const [sponsoredTrips, setSponsoredTrips] = useState<any[]>([]);
+  const [loadingSponsoredTrips, setLoadingSponsoredTrips] = useState(true);
+  
+  // Fetch sponsored trips
+  useEffect(() => {
+    const fetchSponsoredTrips = async () => {
+      try {
+        const response = await fetch('/api/trips-crud/sponsored');
+        if (response.ok) {
+          const data = await response.json();
+          setSponsoredTrips(data);
+        }
+      } catch (error) {
+        console.error('Error fetching sponsored trips:', error);
+      } finally {
+        setLoadingSponsoredTrips(false);
+      }
+    };
+    fetchSponsoredTrips();
+  }, []);
   
   // Update fields when searchParams change
   useEffect(() => {
@@ -460,6 +489,85 @@ export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, o
           ))}
         </div>
       </div>
+
+      {/* Sponsored Trips Section */}
+      {!loadingSponsoredTrips && sponsoredTrips.length > 0 && (
+        <div className="max-w-6xl mx-auto px-6 py-12">
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
+            <h2 className="text-3xl text-gray-900 text-center">{t.sponsoredTrips}</h2>
+            <Star className="w-8 h-8 text-yellow-500 fill-yellow-500" />
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sponsoredTrips.map((trip: any) => (
+              <div 
+                key={trip.id}
+                className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border-2 border-yellow-400 relative overflow-hidden"
+              >
+                {/* Sponsored Badge */}
+                <div className="absolute top-3 right-3 bg-yellow-500 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
+                  <Star className="w-3 h-3 fill-white" />
+                  {language === 'de' ? 'Gesponsert' : language === 'ar' ? 'مُرعى' : 'Sponsored'}
+                </div>
+                
+                {/* Company Name */}
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-gray-600" />
+                  <span className="font-semibold text-gray-900">{trip.company_name}</span>
+                </div>
+                
+                {/* Route */}
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-green-600" />
+                    <span className="text-gray-800">{trip.origin_name}</span>
+                  </div>
+                  <span className="text-gray-400">→</span>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="w-5 h-5 text-red-500" />
+                    <span className="text-gray-800">{trip.destination_name}</span>
+                  </div>
+                </div>
+                
+                {/* Departure */}
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <span className="text-gray-600">
+                    {new Date(trip.departure_time).toLocaleTimeString(language === 'ar' ? 'ar-SY' : language === 'de' ? 'de-DE' : 'en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+                
+                {/* Transport Type & Price */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Bus className="w-4 h-4 text-blue-500" />
+                    <span className="text-sm text-gray-600">{trip.transport_type}</span>
+                  </div>
+                  {trip.price && (
+                    <span className="font-semibold text-green-600">{trip.price} {trip.currency || 'SYP'}</span>
+                  )}
+                </div>
+                
+                {/* View Button */}
+                <button
+                  onClick={() => {
+                    onSearch({ 
+                      from: trip.origin_name, 
+                      to: trip.destination_name, 
+                      date: new Date().toISOString().split('T')[0], 
+                      time: '08:00', 
+                      type: trip.transport_type 
+                    });
+                  }}
+                  className="mt-4 w-full py-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl hover:from-yellow-600 hover:to-amber-600 transition-all font-medium"
+                >
+                  {t.viewTrip}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Feature Cards Section */}
       <div className="max-w-6xl mx-auto px-6 py-20">

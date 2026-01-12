@@ -191,7 +191,10 @@ export class TripsService {
       values.push(filters.companyId);
     }
 
-    query += ` ORDER BY t.departure_time ASC`;
+    // Order by sponsored first, then by departure time
+    query += ` ORDER BY 
+      CASE WHEN t.is_sponsored = TRUE AND (t.sponsored_until IS NULL OR t.sponsored_until > NOW()) THEN 0 ELSE 1 END,
+      t.departure_time ASC`;
 
     if (filters.limit) {
       query += ` LIMIT $${paramIndex++}`;

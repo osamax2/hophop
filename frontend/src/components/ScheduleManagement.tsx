@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Plus, X, Loader2, Trash2, RotateCcw, MapPin } from 'lucide-react';
+import { Plus, X, Loader2, Trash2, RotateCcw, MapPin, Star } from 'lucide-react';
 import type { Language } from '../App';
 
 interface ScheduleManagementProps {
   language: Language;
   onEditTrip: (tripId: number) => void;
   onAddTrip: () => void;
+  onSponsorTrip?: (tripId: number) => void;
+  onRemoveSponsor?: (tripId: number) => void;
   refreshTrigger?: number;
 }
 
@@ -121,6 +123,9 @@ const translations = {
     stopRemoved: 'Stopp entfernt',
     selectStation: 'Haltestelle auswählen',
     close: 'Schließen',
+    sponsor: 'Sponsern',
+    sponsored: 'Gesponsert',
+    removeSponsor: 'Sponsoring entfernen',
   },
   en: {
     scheduleManagement: 'Schedule Management',
@@ -178,6 +183,9 @@ const translations = {
     stopRemoved: 'Stop removed',
     selectStation: 'Select station',
     close: 'Close',
+    sponsor: 'Sponsor',
+    sponsored: 'Sponsored',
+    removeSponsor: 'Remove Sponsor',
   },
   ar: {
     scheduleManagement: 'إدارة الجدول الزمني',
@@ -235,10 +243,13 @@ const translations = {
     stopRemoved: 'تم حذف المحطة',
     selectStation: 'اختر المحطة',
     close: 'إغلاق',
+    sponsor: 'رعاية',
+    sponsored: 'مُرعى',
+    removeSponsor: 'إزالة الرعاية',
   },
 };
 
-export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTrigger }: ScheduleManagementProps) {
+export function ScheduleManagement({ language, onEditTrip, onAddTrip, onSponsorTrip, onRemoveSponsor, refreshTrigger }: ScheduleManagementProps) {
   const t = translations[language];
   const [loading, setLoading] = useState(false);
   const [trips, setTrips] = useState<any[]>([]);
@@ -780,6 +791,25 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, refreshTri
                                 <MapPin className="w-3 h-3" />
                                 {t.viewStops}
                               </button>
+                              {trip.is_sponsored && trip.sponsored_until && new Date(trip.sponsored_until) > new Date() ? (
+                                <button 
+                                  onClick={() => onRemoveSponsor?.(trip.id)}
+                                  className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 flex items-center gap-1"
+                                  disabled={loading}
+                                >
+                                  <Star className="w-3 h-3 fill-current" />
+                                  {t.removeSponsor}
+                                </button>
+                              ) : (
+                                <button 
+                                  onClick={() => onSponsorTrip?.(trip.id)}
+                                  className="px-2 py-1 text-xs bg-yellow-100 text-yellow-700 rounded hover:bg-yellow-200 flex items-center gap-1"
+                                  disabled={loading}
+                                >
+                                  <Star className="w-3 h-3" />
+                                  {t.sponsor}
+                                </button>
+                              )}
                               <button 
                                 onClick={() => handleDeleteTrip(trip.id, false)}
                                 className="px-2 py-1 text-xs bg-red-100 text-red-700 rounded hover:bg-red-200"
