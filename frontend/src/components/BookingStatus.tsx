@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { CheckCircle, XCircle, Clock, Loader2, MapPin, Calendar, Users, CreditCard, QrCode } from 'lucide-react';
 import type { Language } from '../App';
 import { companyBookingsApi } from '../lib/api';
+import { formatCurrency } from '../lib/i18n-utils';
 
 interface BookingStatusProps {
   token: string;
@@ -384,7 +385,7 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
             </div>
             <div className="border-t pt-3 flex justify-between text-lg font-bold text-gray-900">
               <span>{t.totalPrice}:</span>
-              <span className="text-green-700">{booking.total_price} {booking.currency}</span>
+              <span className="text-green-700">{formatCurrency(booking.total_price, language, booking.currency)}</span>
             </div>
             <div className="text-sm text-gray-500 text-right">
               {t.bookedOn}: {new Date(booking.created_at).toLocaleDateString(language === 'de' ? 'de-DE' : language === 'ar' ? 'ar-SA' : 'en-US')}
