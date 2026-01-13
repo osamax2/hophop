@@ -2855,16 +2855,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
                               {language === 'ar' ? 'الاسم' : language === 'de' ? 'Name' : 'Name'}
                             </th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>
                               {language === 'ar' ? 'البريد الإلكتروني' : language === 'de' ? 'E-Mail' : 'Email'}
                             </th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                               {language === 'ar' ? 'رقم الهاتف' : language === 'de' ? 'Telefonnummer' : 'Phone'}
                             </th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                               {language === 'ar' ? 'نوع الحساب' : language === 'de' ? 'Kontotyp' : 'Account Type'}
                             </th>
                           </tr>
@@ -3041,10 +3041,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.company}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.company}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -4222,11 +4222,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.userName}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{t.userEmail}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.userRole}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}>{language === 'ar' ? 'الحالة' : language === 'de' ? 'Status' : 'Status'}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.actions}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.userName}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{t.userEmail}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.userRole}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}>{language === 'ar' ? 'الحالة' : language === 'de' ? 'Status' : 'Status'}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -4424,28 +4424,28 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '80px' }}>
                       {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '100px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '100px' }}>
                       {language === 'ar' ? 'معرّف الصورة' : language === 'de' ? 'Bild-ID' : 'Image ID'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px' }}>
                       {language === 'ar' ? 'اسم الملف' : language === 'de' ? 'Dateiname' : 'File Name'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '120px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '120px' }}>
                       {language === 'ar' ? 'نوع الصورة' : language === 'de' ? 'Foto-Typ' : 'Photo Type'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '100px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '100px' }}>
                       {language === 'ar' ? 'معرف الكيان' : language === 'de' ? 'Entitäts-ID' : 'Entity ID'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '180px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '180px' }}>
                       {language === 'ar' ? 'تم الرفع بواسطة' : language === 'de' ? 'Hochgeladen von' : 'Uploaded By'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px' }}>
                       {language === 'ar' ? 'التاريخ' : language === 'de' ? 'Datum' : 'Date'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '150px' }}>
                       {t.actions}
                     </th>
                   </tr>

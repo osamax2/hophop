@@ -244,7 +244,7 @@ const translations = {
     selectStation: 'اختر المحطة',
     close: 'إغلاق',
     sponsor: 'رعاية',
-    sponsored: 'مُرعى',
+    sponsored: 'دعاية',
     removeSponsor: 'إزالة الرعاية',
   },
 };

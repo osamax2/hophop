@@ -504,11 +504,11 @@ export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, o
                 key={trip.id}
                 className="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all border-2 border-yellow-400 relative overflow-hidden"
               >
-                {/* Sponsored Badge */}
-                <div className="absolute top-3 right-3 bg-yellow-500 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1">
+ {/* Sponsored Badge */}
+                <div className={`relative w-fit top-3 ${language === 'ar' ? 'left-3' : 'right-3'} bg-yellow-500 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1`}>
                   <Star className="w-3 h-3 fill-white" />
-                  {language === 'de' ? 'Gesponsert' : language === 'ar' ? 'مُرعى' : 'Sponsored'}
-                </div>
+                  {language === 'de' ? 'Gesponsert' : language === 'ar' ? 'ديعاية' : 'Sponsored'}
+                </div>               
                 
                 {/* Company Name */}
                 <div className="flex items-center gap-2 mb-4">
@@ -559,7 +559,7 @@ export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, o
                       type: trip.transport_type 
                     });
                   }}
-                  className="mt-4 w-full py-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl hover:from-yellow-600 hover:to-amber-600 transition-all font-medium"
+                  className="mt-4 w-full py-2 bg-gradient-to-r from-yellow-500 to-amber-500 text-black rounded-xl hover:from-yellow-600 hover:to-amber-600 transition-all font-medium"
                 >
                   {t.viewTrip}
                 </button>
