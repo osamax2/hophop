@@ -164,6 +164,7 @@ export function SearchResults({
   const [sortBy, setSortBy] = useState<'earliest' | 'cheapest'>('earliest');
   const [showFilters, setShowFilters] = useState(true);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
+  const [maxPriceLoaded, setMaxPriceLoaded] = useState<number | null>(null); // Store max price once loaded
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
@@ -195,6 +196,7 @@ export function SearchResults({
         setLoading(true);
         setError(null);
         setHasNoTrips(false);
+        setMaxPriceLoaded(null); // Reset max price for new search
 
         // Get current translations based on language
         const currentTranslations = translations[language];
@@ -313,15 +315,18 @@ export function SearchResults({
   }, [searchParams.from, searchParams.to, searchParams.date, searchParams.returnDate, searchParams.isRoundTrip, language]);
 
   // Update price range based on all loaded trips (outbound + return) - using normalized price
+  // Only set max price once when trips first load, don't change it after
   useEffect(() => {
     const allTrips = [...trips, ...returnTrips];
-    if (allTrips.length > 0) {
+    if (allTrips.length > 0 && maxPriceLoaded === null) {
       // Use normalized price (priceInNewSyp) for consistent filtering across currencies
       const maxPrice = Math.max(...allTrips.map((t) => t.priceInNewSyp || convertToNewSypSync(t.price, t.currency || 'NEW_SYP')));
       console.log('Setting priceRange based on normalized prices. Max price in NEW_SYP:', maxPrice);
-      setPriceRange([0, Math.ceil(maxPrice)]);
+      const roundedMax = Math.ceil(maxPrice);
+      setMaxPriceLoaded(roundedMax);
+      setPriceRange([0, roundedMax]);
     }
-  }, [trips, returnTrips]);
+  }, [trips, returnTrips, maxPriceLoaded]);
 
   // هذا useEffect لم يعد ضرورياً لأننا نستدعي callback مباشرة في fetchTrips
 
