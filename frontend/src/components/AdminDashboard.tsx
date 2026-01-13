@@ -4953,12 +4953,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200 relative z-[10001] border border-gray-200"
-            style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem' }}
+            className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col animate-in fade-in zoom-in duration-200 relative z-[10001] border border-gray-200"
+            style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem', maxHeight: '90vh' }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header - Fixed */}
-            <div className="bg-gray-50 border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl">
+            <div className="bg-gray-50 border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl flex-shrink-0">
               <h3 className="text-xl font-bold text-gray-800">
                 {language === 'ar' ? 'تحرير المستخدم' : language === 'de' ? 'Benutzer bearbeiten' : 'Edit User'}
               </h3>
@@ -4986,7 +4986,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
 
           {/* Content - Scrollable */}
-          <div className="overflow-y-auto flex-1 p-6">
+          <div className="overflow-y-auto flex-1 p-6" style={{ minHeight: 0 }}>
             <div className="space-y-4">
               {/* First Name */}
               <div>
@@ -5158,8 +5158,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
           </div>
 
-          {/* Footer */}
-          <div className="bg-gray-50 border-t border-gray-200 p-6 flex flex-col gap-3 rounded-b-2xl">
+          {/* Footer - Fixed */}
+          <div className="bg-gray-50 border-t border-gray-200 p-6 flex flex-col gap-3 rounded-b-2xl flex-shrink-0">
               <div className="flex gap-4">
                 <button
                   onClick={() => {
