@@ -3140,7 +3140,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header - Sticky */}
-                <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+                <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
                   <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                     {editingTripId ? (
                       <>
@@ -4550,7 +4550,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
               <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                 <Upload className="w-6 h-6" />
                 {editingImage 
@@ -4570,7 +4570,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               <div className="space-y-4">
                 {editingImage && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -4759,7 +4759,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
               <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                 <Upload className="w-6 h-6" />
                 {t.dataImport}
@@ -4773,7 +4773,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t.uploadCSV}</label>
@@ -4999,7 +4999,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
 
             {/* Content - Scrollable */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               <div className="space-y-4">
                 {/* First Name */}
                 <div>
@@ -5272,7 +5272,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
               <h2 className="text-2xl font-bold text-gray-900">
                 {language === 'ar' ? 'إضافة مستخدم جديد' : language === 'de' ? 'Neuen Benutzer hinzufügen' : 'Add New User'}
               </h2>

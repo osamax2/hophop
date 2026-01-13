@@ -880,7 +880,7 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, onSponsorT
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               {/* Current Stops */}
               {tripSteps.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl">

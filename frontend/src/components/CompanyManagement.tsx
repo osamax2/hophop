@@ -671,7 +671,7 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center">
               <h3 className="text-xl font-bold">
                 {editingCompany ? t.editCompany : t.addCompany}
               </h3>
@@ -688,7 +688,7 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
             </div>
 
             {/* Content - Scrollable */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               <form id="companyForm" onSubmit={handleSubmit} className="space-y-4">
               {/* Company Details */}
               <div className="grid grid-cols-2 gap-4">
