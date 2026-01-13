@@ -705,7 +705,7 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-black p-6 flex justify-between items-center">
               <h3 className="text-xl font-bold">{t.editRating}</h3>
               <button
                 onClick={() => {

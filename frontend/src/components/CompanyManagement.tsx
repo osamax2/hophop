@@ -662,33 +662,40 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] flex flex-col"
             style={{ 
               position: 'relative',
               zIndex: 100000,
-              animation: 'fadeIn 0.2s ease-out',
+              overflow: 'hidden',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center">
-              <h3 className="text-xl font-bold">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900">
                 {editingCompany ? t.editCompany : t.addCompany}
-              </h3>
+              </h2>
               <button
                 onClick={() => {
                   setShowDialog(false);
                   setEditingCompany(null);
                   resetForm();
                 }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                className="text-black hover:bg-black/10 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             {/* Content - Scrollable */}
-            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
+            <div 
+              className="flex-1 p-6"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                maxHeight: 'calc(95vh - 160px)',
+              }}
+            >
               <form id="companyForm" onSubmit={handleSubmit} className="space-y-4">
               {/* Company Details */}
               <div className="grid grid-cols-2 gap-4">
@@ -894,31 +901,31 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
               </form>
             </div>
             
-            {/* Footer */}
-            <div className="bg-gray-100 border-t border-gray-200 p-6 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDialog(false);
-                    setEditingCompany(null);
-                    resetForm();
-                  }}
-                  className="px-6 py-3 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  {t.cancel}
-                </button>
-                <button
-                  type="submit"
-                  form="companyForm"
-                  disabled={loading}
-                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {loading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : null}
-                  {t.save}
-                </button>
-              </div>
+            {/* Footer with buttons */}
+            <div className="sticky bottom-0 bg-gray-50 p-6 border-t border-gray-200 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDialog(false);
+                  setEditingCompany(null);
+                  resetForm();
+                }}
+                className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+              >
+                {t.cancel}
+              </button>
+              <button
+                type="submit"
+                form="companyForm"
+                disabled={loading}
+                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : null}
+                {t.save}
+              </button>
+            </div>
           </div>
         </div>
       )}

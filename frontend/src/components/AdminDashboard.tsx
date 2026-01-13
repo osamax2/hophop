@@ -4962,19 +4962,19 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[95vh] flex flex-col"
             style={{ 
               position: 'relative',
               zIndex: 100000,
-              animation: 'fadeIn 0.2s ease-out',
+              overflow: 'hidden',
             }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex items-center justify-between">
-              <h3 className="text-xl font-bold">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900">
                 {language === 'ar' ? 'تحرير المستخدم' : language === 'de' ? 'Benutzer bearbeiten' : 'Edit User'}
-              </h3>
+              </h2>
               <button
                 onClick={() => {
                   setShowEditProfileDialog(false);
@@ -4992,14 +4992,21 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   setShowEditCompanySuggestions(false);
                   setEditSelectedCompanyName('');
                 }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                className="text-black hover:bg-black/10 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             {/* Content - Scrollable */}
-            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
+            <div 
+              className="flex-1 p-6"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                maxHeight: 'calc(95vh - 160px)',
+              }}
+            >
               <div className="space-y-4">
                 {/* First Name */}
                 <div>
@@ -5168,12 +5175,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   placeholder={language === 'ar' ? 'أدخل كلمة مرور جديدة (اختياري)' : language === 'de' ? 'Neues Passwort eingeben (optional)' : 'Enter new password (optional)'}
                 />
               </div>
-            </div>
+              </div>
             </div>
 
-            {/* Footer */}
-            <div className="bg-gray-100 border-t border-gray-200 p-6 flex flex-col gap-3">
-              <div className="flex gap-4">
+            {/* Footer with buttons */}
+            <div className="sticky bottom-0 bg-gray-50 p-6 border-t border-gray-200 flex flex-col gap-3">
+              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowEditProfileDialog(false);
@@ -5191,7 +5198,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     setShowEditCompanySuggestions(false);
                     setEditSelectedCompanyName('');
                   }}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   {language === 'ar' ? 'إلغاء' : language === 'de' ? 'Abbrechen' : 'Cancel'}
                 </button>
@@ -5294,7 +5301,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   setSelectedCompanyName('');
                   setShowCompanySuggestions(false);
                 }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                className="text-black hover:bg-black/10 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
