@@ -4,25 +4,12 @@
  * 
  * Conversion rates:
  * - OLD_SYP (SYP): 100 old = 1 NEW_SYP
- * - USD, EUR, TRY: Uses Fixer.io API with SYP as target
+ * - USD, EUR, TRY: Uses fixed rates (Fixer.io API disabled due to HTTPS/Mixed Content issues)
  */
 
-const FIXER_API_KEY = '9fa62b026d0b7b944b9255bc65e47062';
-const FIXER_BASE_URL = 'http://data.fixer.io/api';
-
-// Cache for exchange rates (valid for 1 hour)
-interface RateCache {
-  rates: Record<string, number>;
-  timestamp: number;
-  baseCurrency: string;
-}
-
-let rateCache: RateCache | null = null;
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour in milliseconds
-
-// Approximate rate: 1 USD = 15,000 NEW_SYP (as of 2026)
-// This is a fallback if API fails
-const FALLBACK_RATES: Record<string, number> = {
+// Fixed exchange rates (Fixer.io free plan only supports HTTP, which causes Mixed Content issues on HTTPS sites)
+// These rates are approximate and suitable for a local travel booking app
+const FIXED_RATES: Record<string, number> = {
   USD: 15000,      // 1 USD = 15,000 NEW_SYP
   EUR: 16000,      // 1 EUR = 16,000 NEW_SYP
   TRY: 500,        // 1 TRY = 500 NEW_SYP
@@ -31,72 +18,19 @@ const FALLBACK_RATES: Record<string, number> = {
 };
 
 /**
- * Fetch exchange rates from Fixer.io API
- * Note: Free plan only supports EUR as base currency
+ * Get exchange rates (using fixed rates)
+ * Note: Fixer.io API disabled because free plan only supports HTTP,
+ * which causes Mixed Content errors on HTTPS sites like hophopsy.com
  */
-async function fetchExchangeRates(): Promise<Record<string, number>> {
-  // Check cache first
-  if (rateCache && Date.now() - rateCache.timestamp < CACHE_DURATION) {
-    console.log('Using cached exchange rates');
-    return rateCache.rates;
-  }
-
-  try {
-    // Fixer.io free plan only allows EUR as base
-    const response = await fetch(
-      `${FIXER_BASE_URL}/latest?access_key=${FIXER_API_KEY}&symbols=USD,TRY,SYP`
-    );
-    
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status}`);
-    }
-
-    const data = await response.json();
-    
-    if (!data.success) {
-      console.error('Fixer API error:', data.error);
-      throw new Error(data.error?.info || 'API error');
-    }
-
-    // data.rates contains rates from EUR to each currency
-    // Example: { USD: 1.08, TRY: 35.5, SYP: 13500 }
-    const eurRates = data.rates;
-    
-    // Convert to NEW_SYP as base
-    // First, calculate how many NEW_SYP per EUR
-    // If SYP in API is old SYP, then NEW_SYP = SYP / 100
-    const oldSypPerEur = eurRates.SYP || 1350000; // fallback
-    const newSypPerEur = oldSypPerEur / 100;
-    
-    // Now calculate all rates relative to NEW_SYP
-    const newSypRates: Record<string, number> = {
-      NEW_SYP: 1,
-      SYP: 0.01, // 100 old = 1 new
-      EUR: newSypPerEur,
-      USD: newSypPerEur / (eurRates.USD || 1.08),
-      TRY: newSypPerEur / (eurRates.TRY || 35.5),
-    };
-
-    // Cache the rates
-    rateCache = {
-      rates: newSypRates,
-      timestamp: Date.now(),
-      baseCurrency: 'NEW_SYP',
-    };
-
-    console.log('Fetched new exchange rates:', newSypRates);
-    return newSypRates;
-  } catch (error) {
-    console.error('Failed to fetch exchange rates, using fallback:', error);
-    return FALLBACK_RATES;
-  }
+function getExchangeRates(): Record<string, number> {
+  return FIXED_RATES;
 }
 
 /**
  * Convert a price from any currency to NEW_SYP
  * @param price The price value
  * @param currency The currency code (SYP, NEW_SYP, USD, EUR, TRY)
- * @param rates Optional exchange rates (will fetch if not provided)
+ * @param rates Optional exchange rates (will use fixed rates if not provided)
  * @returns Price in NEW_SYP
  */
 export async function convertToNewSyp(
@@ -104,7 +38,7 @@ export async function convertToNewSyp(
   currency: string = 'NEW_SYP',
   rates?: Record<string, number>
 ): Promise<number> {
-  const exchangeRates = rates || await fetchExchangeRates();
+  const exchangeRates = rates || getExchangeRates();
   
   const normalizedCurrency = currency.toUpperCase();
   
@@ -121,13 +55,13 @@ export async function convertToNewSyp(
       return price / 100;
     
     case 'USD':
-      return price * (exchangeRates.USD || FALLBACK_RATES.USD);
+      return price * (exchangeRates.USD || FIXED_RATES.USD);
     
     case 'EUR':
-      return price * (exchangeRates.EUR || FALLBACK_RATES.EUR);
+      return price * (exchangeRates.EUR || FIXED_RATES.EUR);
     
     case 'TRY':
-      return price * (exchangeRates.TRY || FALLBACK_RATES.TRY);
+      return price * (exchangeRates.TRY || FIXED_RATES.TRY);
     
     default:
       console.warn(`Unknown currency: ${currency}, assuming NEW_SYP`);
@@ -136,14 +70,14 @@ export async function convertToNewSyp(
 }
 
 /**
- * Synchronous conversion using cached or fallback rates
+ * Synchronous conversion using fixed rates
  * Use this when async is not possible (e.g., in filter functions)
  */
 export function convertToNewSypSync(
   price: number,
   currency: string = 'NEW_SYP'
 ): number {
-  const rates = rateCache?.rates || FALLBACK_RATES;
+  const rates = FIXED_RATES;
   
   const normalizedCurrency = currency.toUpperCase();
   
@@ -158,13 +92,13 @@ export function convertToNewSypSync(
       return price / 100;
     
     case 'USD':
-      return price * (rates.USD || FALLBACK_RATES.USD);
+      return price * rates.USD;
     
     case 'EUR':
-      return price * (rates.EUR || FALLBACK_RATES.EUR);
+      return price * rates.EUR;
     
     case 'TRY':
-      return price * (rates.TRY || FALLBACK_RATES.TRY);
+      return price * rates.TRY;
     
     default:
       return price;
@@ -172,23 +106,22 @@ export function convertToNewSypSync(
 }
 
 /**
- * Pre-fetch exchange rates to populate cache
- * Call this on app startup or before filtering
+ * Pre-load exchange rates (no-op now, kept for API compatibility)
  */
 export async function preloadExchangeRates(): Promise<void> {
-  await fetchExchangeRates();
+  // No-op - using fixed rates now
 }
 
 /**
- * Get the current cached rates (or fallback)
+ * Get the current rates
  */
 export function getCachedRates(): Record<string, number> {
-  return rateCache?.rates || FALLBACK_RATES;
+  return FIXED_RATES;
 }
 
 /**
- * Clear the rate cache (for testing or manual refresh)
+ * Clear the rate cache (no-op, kept for API compatibility)
  */
 export function clearRateCache(): void {
-  rateCache = null;
+  // No-op - using fixed rates now
 }
