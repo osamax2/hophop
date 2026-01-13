@@ -4930,8 +4930,17 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Edit Profile Dialog */}
       {showEditProfileDialog && selectedUserForEdit && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[10000] p-4 backdrop-blur-md"
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
           onClick={(e) => {
             // Close dialog when clicking on backdrop
             if (e.target === e.currentTarget) {
@@ -4953,13 +4962,17 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-md flex flex-col animate-in fade-in zoom-in duration-200 relative z-[10001] border border-gray-200"
-            style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem', maxHeight: '90vh' }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col"
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              animation: 'fadeIn 0.2s ease-out',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Header - Fixed */}
-            <div className="bg-gray-50 border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl flex-shrink-0">
-              <h3 className="text-xl font-bold text-gray-800">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex items-center justify-between">
+              <h3 className="text-xl font-bold">
                 {language === 'ar' ? 'تحرير المستخدم' : language === 'de' ? 'Benutzer bearbeiten' : 'Edit User'}
               </h3>
               <button
@@ -4979,22 +4992,22 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   setShowEditCompanySuggestions(false);
                   setEditSelectedCompanyName('');
                 }}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-          {/* Content - Scrollable */}
-          <div className="overflow-y-auto flex-1 p-6" style={{ minHeight: 0 }}>
-            <div className="space-y-4">
-              {/* First Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {language === 'ar' ? 'الاسم الأول' : language === 'de' ? 'Vorname' : 'First Name'}
-                </label>
-                <input
-                  type="text"
+            {/* Content - Scrollable */}
+            <div className="overflow-y-auto flex-1 p-6">
+              <div className="space-y-4">
+                {/* First Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'الاسم الأول' : language === 'de' ? 'Vorname' : 'First Name'}
+                  </label>
+                  <input
+                    type="text"
                   value={editProfileData.first_name}
                   onChange={(e) => setEditProfileData({ ...editProfileData, first_name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -5156,10 +5169,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 />
               </div>
             </div>
-          </div>
+            </div>
 
-          {/* Footer - Fixed */}
-          <div className="bg-gray-50 border-t border-gray-200 p-6 flex flex-col gap-3 rounded-b-2xl flex-shrink-0">
+            {/* Footer */}
+            <div className="bg-gray-100 border-t border-gray-200 p-6 flex flex-col gap-3">
               <div className="flex gap-4">
                 <button
                   onClick={() => {
