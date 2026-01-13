@@ -642,8 +642,17 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
       {/* Add/Edit Dialog - Outside main container */}
       {showDialog && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-          style={{ zIndex: 9999 }}
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowDialog(false);
@@ -653,11 +662,17 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
           }}
         >
           <div 
-            className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              animation: 'fadeIn 0.2s ease-out',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-xl font-semibold text-gray-900">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center">
+              <h3 className="text-xl font-bold">
                 {editingCompany ? t.editCompany : t.addCompany}
               </h3>
               <button
@@ -666,13 +681,15 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
                   setEditingCompany(null);
                   resetForm();
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
+            {/* Content - Scrollable */}
+            <div className="overflow-y-auto flex-1 p-6">
+              <form id="companyForm" onSubmit={handleSubmit} className="space-y-4">
               {/* Company Details */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
@@ -874,7 +891,11 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
               )}
 
               {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+              </form>
+            </div>
+            
+            {/* Footer */}
+            <div className="bg-gray-100 border-t border-gray-200 p-6 flex justify-end gap-3">
                 <button
                   type="button"
                   onClick={() => {
@@ -882,23 +903,22 @@ export function CompanyManagement({ language }: CompanyManagementProps) {
                     setEditingCompany(null);
                     resetForm();
                   }}
-                  className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                  className="px-6 py-3 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   {t.cancel}
                 </button>
                 <button
                   type="submit"
+                  form="companyForm"
                   disabled={loading}
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
-                  ) : (
-                    t.save
-                  )}
+                  ) : null}
+                  {t.save}
                 </button>
               </div>
-            </form>
           </div>
         </div>
       )}
