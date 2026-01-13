@@ -95,7 +95,12 @@ router.get("/", async (req, res) => {
           SELECT price FROM trip_fares tf 
           WHERE tf.trip_id = t.id 
           LIMIT 1
-        ), 0) as price
+        ), 0) as price,
+        COALESCE((
+          SELECT currency FROM trip_fares tf 
+          WHERE tf.trip_id = t.id 
+          LIMIT 1
+        ), 'NEW_SYP') as fare_currency
       FROM trips t
       JOIN routes r ON r.id = t.route_id
       JOIN cities c1 ON c1.id = r.from_city_id
