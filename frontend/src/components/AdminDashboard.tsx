@@ -2855,16 +2855,16 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>
                               {language === 'ar' ? 'الاسم' : language === 'de' ? 'Name' : 'Name'}
                             </th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>
                               {language === 'ar' ? 'البريد الإلكتروني' : language === 'de' ? 'E-Mail' : 'Email'}
                             </th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                               {language === 'ar' ? 'رقم الهاتف' : language === 'de' ? 'Telefonnummer' : 'Phone'}
                             </th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>
                               {language === 'ar' ? 'نوع الحساب' : language === 'de' ? 'Kontotyp' : 'Account Type'}
                             </th>
                           </tr>
@@ -3041,10 +3041,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                       <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                         <thead className="bg-gray-50">
                           <tr>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
-                            <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.company}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.from}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.to}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '150px', minWidth: '150px', maxWidth: '150px' }}>{t.departure}</th>
+                            <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '250px', minWidth: '250px', maxWidth: '250px' }}>{t.company}</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200">
@@ -3140,7 +3140,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Header - Sticky */}
-                <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+                <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
                   <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                     {editingTripId ? (
                       <>
@@ -4222,11 +4222,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.userName}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{t.userEmail}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.userRole}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}>{language === 'ar' ? 'الحالة' : language === 'de' ? 'Status' : 'Status'}</th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.actions}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px', minWidth: '200px', maxWidth: '200px' }}>{t.userName}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '280px', minWidth: '280px', maxWidth: '280px' }}>{t.userEmail}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.userRole}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '140px', minWidth: '140px', maxWidth: '140px' }}>{language === 'ar' ? 'الحالة' : language === 'de' ? 'Status' : 'Status'}</th>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px', minWidth: '160px', maxWidth: '160px' }}>{t.actions}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -4424,28 +4424,28 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
               <table className="w-full" style={{ borderCollapse: 'collapse' }}>
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '80px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '80px' }}>
                       {language === 'ar' ? 'معاينة' : language === 'de' ? 'Vorschau' : 'Preview'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '100px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '100px' }}>
                       {language === 'ar' ? 'معرّف الصورة' : language === 'de' ? 'Bild-ID' : 'Image ID'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '200px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '200px' }}>
                       {language === 'ar' ? 'اسم الملف' : language === 'de' ? 'Dateiname' : 'File Name'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '120px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '120px' }}>
                       {language === 'ar' ? 'نوع الصورة' : language === 'de' ? 'Foto-Typ' : 'Photo Type'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '100px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '100px' }}>
                       {language === 'ar' ? 'معرف الكيان' : language === 'de' ? 'Entitäts-ID' : 'Entity ID'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '180px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '180px' }}>
                       {language === 'ar' ? 'تم الرفع بواسطة' : language === 'de' ? 'Hochgeladen von' : 'Uploaded By'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '160px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '160px' }}>
                       {language === 'ar' ? 'التاريخ' : language === 'de' ? 'Datum' : 'Date'}
                     </th>
-                    <th className="px-6 py-3 text-left text-xs text-gray-700 uppercase tracking-wider" style={{ width: '150px' }}>
+                    <th className={`px-6 py-3 ${language === 'ar' ? 'text-right' : 'text-left'} text-xs text-gray-700 uppercase tracking-wider`} style={{ width: '150px' }}>
                       {t.actions}
                     </th>
                   </tr>
@@ -4550,7 +4550,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
               <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                 <Upload className="w-6 h-6" />
                 {editingImage 
@@ -4570,7 +4570,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               <div className="space-y-4">
                 {editingImage && (
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
@@ -4759,7 +4759,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
               <h2 className="text-2xl font-bold flex items-center gap-3 text-gray-900">
                 <Upload className="w-6 h-6" />
                 {t.dataImport}
@@ -4773,7 +4773,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">{t.uploadCSV}</label>
@@ -4930,8 +4930,17 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Edit Profile Dialog */}
       {showEditProfileDialog && selectedUserForEdit && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[10000] p-4 backdrop-blur-md"
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
           onClick={(e) => {
             // Close dialog when clicking on backdrop
             if (e.target === e.currentTarget) {
@@ -4953,20 +4962,59 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
           }}
         >
           <div 
-            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200 relative z-[10001] border border-gray-200"
-            style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem' }}
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[95vh] flex flex-col"
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              overflow: 'hidden',
+            }}
             onClick={(e) => e.stopPropagation()}
           >
-          {/* Content - Scrollable */}
-          <div className="overflow-y-auto flex-1 p-6">
-            <div className="space-y-4">
-              {/* First Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {language === 'ar' ? 'الاسم الأول' : language === 'de' ? 'Vorname' : 'First Name'}
-                </label>
-                <input
-                  type="text"
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
+              <h2 className="text-2xl font-bold text-gray-900">
+                {language === 'ar' ? 'تحرير المستخدم' : language === 'de' ? 'Benutzer bearbeiten' : 'Edit User'}
+              </h2>
+              <button
+                onClick={() => {
+                  setShowEditProfileDialog(false);
+                  setSelectedUserForEdit(null);
+                  setEditProfileData({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    password: '',
+                    role: 'User',
+                    company_id: '' as string | number,
+                    agent_type: ''
+                  });
+                  setEditCompanySearchQuery('');
+                  setShowEditCompanySuggestions(false);
+                  setEditSelectedCompanyName('');
+                }}
+                className="text-black hover:bg-black/10 rounded-full p-2 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Content - Scrollable */}
+            <div 
+              className="flex-1 p-6"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                maxHeight: 'calc(95vh - 160px)',
+              }}
+            >
+              <div className="space-y-4">
+                {/* First Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {language === 'ar' ? 'الاسم الأول' : language === 'de' ? 'Vorname' : 'First Name'}
+                  </label>
+                  <input
+                    type="text"
                   value={editProfileData.first_name}
                   onChange={(e) => setEditProfileData({ ...editProfileData, first_name: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
@@ -5127,12 +5175,12 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   placeholder={language === 'ar' ? 'أدخل كلمة مرور جديدة (اختياري)' : language === 'de' ? 'Neues Passwort eingeben (optional)' : 'Enter new password (optional)'}
                 />
               </div>
+              </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="bg-gray-50 border-t border-gray-200 p-6 flex flex-col gap-3 rounded-b-2xl">
-              <div className="flex gap-4">
+            {/* Footer with buttons */}
+            <div className="sticky bottom-0 bg-gray-50 p-6 border-t border-gray-200 flex flex-col gap-3">
+              <div className="flex gap-3">
                 <button
                   onClick={() => {
                     setShowEditProfileDialog(false);
@@ -5150,7 +5198,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                     setShowEditCompanySuggestions(false);
                     setEditSelectedCompanyName('');
                   }}
-                  className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
                 >
                   {language === 'ar' ? 'إلغاء' : language === 'de' ? 'Abbrechen' : 'Cancel'}
                 </button>
@@ -5231,7 +5279,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
               <h2 className="text-2xl font-bold text-gray-900">
                 {language === 'ar' ? 'إضافة مستخدم جديد' : language === 'de' ? 'Neuen Benutzer hinzufügen' : 'Add New User'}
               </h2>
@@ -5253,7 +5301,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   setSelectedCompanyName('');
                   setShowCompanySuggestions(false);
                 }}
-                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+                className="text-black hover:bg-black/10 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>

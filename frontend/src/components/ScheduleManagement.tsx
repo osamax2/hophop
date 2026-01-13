@@ -66,6 +66,27 @@ const getTransportTypeName = (code: string, language: Language): string => {
   return translations[normalizedCode]?.[language] || code || '';
 };
 
+// Format price with currency
+const formatPrice = (price: number, currency: string, language: Language): string => {
+  const formattedPrice = Number(price).toLocaleString();
+  const arabicPrice = toArabicNumerals(formattedPrice);
+  
+  const currencyLabels: Record<string, Record<Language, string>> = {
+    'NEW_SYP': { en: 'NEW SYP', de: 'NEUE SYP', ar: 'ل.س جديدة' },
+    'SYP': { en: 'SYP', de: 'SYP', ar: 'ل.س' },
+    'USD': { en: 'USD', de: 'USD', ar: 'دولار' },
+    'EUR': { en: 'EUR', de: 'EUR', ar: 'يورو' },
+    'TRY': { en: 'TRY', de: 'TRY', ar: 'ليرة تركية' },
+  };
+  
+  const currencyLabel = currencyLabels[currency]?.[language] || currency;
+  
+  if (language === 'ar') {
+    return `${arabicPrice} ${currencyLabel}`;
+  }
+  return `${formattedPrice} ${currencyLabel}`;
+};
+
 const translations = {
   de: {
     scheduleManagement: 'Fahrplanverwaltung',
@@ -244,7 +265,7 @@ const translations = {
     selectStation: 'اختر المحطة',
     close: 'إغلاق',
     sponsor: 'رعاية',
-    sponsored: 'مُرعى',
+    sponsored: 'دعاية',
     removeSponsor: 'إزالة الرعاية',
   },
 };
@@ -746,7 +767,7 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, onSponsorT
                         {trip.duration_minutes ? (language === 'ar' ? `${toArabicNumerals(trip.duration_minutes)}دقيقة` : `${trip.duration_minutes}m`) : 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-gray-900 font-medium">
-                        {trip.price ? (language === 'ar' ? `${toArabicNumerals(Number(trip.price).toLocaleString())} ليرة` : `${Number(trip.price).toLocaleString()} SYP`) : 'N/A'}
+                        {trip.price ? formatPrice(trip.price, trip.fare_currency || trip.currency || 'NEW_SYP', language) : 'N/A'}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
                         <span className={trip.seats_available < 5 ? 'text-red-600 font-medium' : ''}>
@@ -880,7 +901,7 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, onSponsorT
             </div>
 
             {/* Content */}
-            <div className="overflow-y-auto flex-1 p-6">
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
               {/* Current Stops */}
               {tripSteps.length === 0 ? (
                 <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-xl">

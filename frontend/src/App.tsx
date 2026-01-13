@@ -403,6 +403,7 @@ export default function App() {
               onToggleFavorite={toggleFavorite}
               isLoggedIn={!!user}
               onNoTripsFound={handleNoTripsFound}
+              onBackToSearch={() => setCurrentPage('home')}
             />
           </>
         )}

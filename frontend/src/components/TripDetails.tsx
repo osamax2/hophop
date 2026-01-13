@@ -34,6 +34,7 @@ const translations = {
     departure: 'Abfahrt',
     arrival: 'Ankunft',
     duration: 'Dauer',
+    date: 'Datum',
     price: 'Preis',
     company: 'Busgesellschaft',
     tripUnavailable: 'Diese Verbindung ist derzeit nicht verfügbar',
@@ -72,6 +73,7 @@ const translations = {
     departure: 'Departure',
     arrival: 'Arrival',
     duration: 'Duration',
+    date: 'Date',
     price: 'Price',
     company: 'Bus Company',
     tripUnavailable: 'This connection is currently unavailable',
@@ -110,6 +112,7 @@ const translations = {
     departure: 'المغادرة',
     arrival: 'الوصول',
     duration: 'المدة',
+    date: 'التاريخ',
     price: 'السعر',
     company: 'شركة الباص',
     tripUnavailable: 'هذه الرحلة غير متاحة حاليًا',
@@ -156,6 +159,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
           id: data.id,
           from: data.from_city,
           to: data.to_city,
+          departureDate: data.departure_time,
           departureTime: formatTime(data.departure_time, language),
           arrivalTime: formatTime(data.arrival_time, language),
           duration: formatDuration(data.duration_minutes, language),
@@ -446,6 +450,12 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                 <div className="flex justify-between py-3 border-b border-gray-100">
                   <span className="text-sm text-gray-600">{t.company}</span>
                   <span className="text-sm text-gray-900">{trip.company}</span>
+                </div>
+                <div className="flex justify-between py-3 border-b border-gray-100">
+                  <span className="text-sm text-gray-600">{t.date}</span>
+                  <span className="text-sm text-gray-900">
+                    {new Date(trip.departureDate).toLocaleDateString(language === 'ar' ? 'ar-SA' : language === 'de' ? 'de-DE' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                  </span>
                 </div>
                 <div className="flex justify-between py-3 border-b border-gray-100">
                   <span className="text-sm text-gray-600">{t.departure}</span>

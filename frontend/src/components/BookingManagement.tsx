@@ -497,7 +497,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t.searchPlaceholder}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
               />
             </div>
           </div>
@@ -614,8 +614,14 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
         </div>
       ) : (
         <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          {/* Scroll indicator */}
+          <div className="text-xs text-gray-500 text-center py-2 bg-gray-50 border-b flex items-center justify-center gap-2">
+            <span>←</span>
+            <span>{language === 'ar' ? 'اسحب للتمرير' : language === 'de' ? 'Wischen zum Scrollen' : 'Swipe to scroll'}</span>
+            <span>→</span>
+          </div>
+          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <table className="w-full min-w-[1200px]">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -754,29 +760,49 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
       {/* Edit Modal */}
       {editingBooking && ReactDOM.createPortal(
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[99999]" 
+          className="fixed inset-0 flex items-center justify-center p-4" 
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setEditingBooking(null);
             }
           }}
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+          style={{ 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
         >
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-4">
+          <div 
+            className={`bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-hidden flex flex-col ${language === 'ar' ? 'rtl' : 'ltr'}`}
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              animation: 'fadeIn 0.2s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-black p-6 flex items-center justify-between">
               <h3 className="text-xl font-bold">{t.editBooking}</h3>
               <button
                 onClick={() => setEditingBooking(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            {/* Content - Scrollable */}
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
+              <div className="space-y-4">
               {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium text-gray-700 mb-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
                   {t.updateStatus}
                 </label>
                 <select
@@ -794,7 +820,7 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
 
               {/* Seats */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium text-gray-700 mb-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
                   {t.updateSeats}
                 </label>
                 <input
@@ -802,13 +828,13 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                   min="1"
                   value={editSeats}
                   onChange={(e) => setEditSeats(parseInt(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${language === 'ar' ? 'text-right' : 'text-left'}`}
                 />
               </div>
 
               {/* Price */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className={`block text-sm font-medium text-gray-700 mb-2 ${language === 'ar' ? 'text-right' : 'text-left'}`}>
                   {t.updatePrice}
                 </label>
                 <input
@@ -817,24 +843,25 @@ const BookingManagement: React.FC<BookingManagementProps> = ({ language }) => {
                   step="0.01"
                   value={editPrice}
                   onChange={(e) => setEditPrice(parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className={`w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 ${language === 'ar' ? 'text-right' : 'text-left'}`}
                 />
               </div>
             </div>
+            </div>
 
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={handleSaveEdit}
-                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 font-medium"
-                style={{ backgroundColor: '#3b82f6', color: '#ffffff' }}
-              >
-                {t.save}
-              </button>
+            {/* Footer */}
+            <div className="bg-gray-100 border-t border-gray-200 p-6 flex gap-4">
               <button
                 onClick={() => setEditingBooking(null)}
-                className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
               >
                 {t.cancel}
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                {t.save}
               </button>
             </div>
           </div>

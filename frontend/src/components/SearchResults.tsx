@@ -10,9 +10,12 @@ import {
   ChevronDown,
   ChevronUp,
   Heart,
+  ArrowLeft,
+  Search,
 } from 'lucide-react';
 import type { Language, SearchParams } from '../App';
 import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
+import { convertToNewSypSync, preloadExchangeRates } from '../lib/currency-converter';
 
 interface SearchResultsProps {
   searchParams: SearchParams;
@@ -23,6 +26,7 @@ interface SearchResultsProps {
   onToggleFavorite: (tripId: string) => void;
   isLoggedIn: boolean;
   onNoTripsFound?: () => void;
+  onBackToSearch?: () => void;
 }
 
 const translations = {
@@ -55,6 +59,7 @@ const translations = {
     night: 'Nacht (0-6)',
     emptyFieldsError: 'Bitte geben Sie einen Abfahrts- und einen Ankunftsort ein',
     loadError: 'Fehler beim Laden der Fahrten',
+    backToSearch: 'Neue Suche',
   },
   en: {
     results: 'Search Results',
@@ -85,6 +90,7 @@ const translations = {
     night: 'Night (0-6)',
     emptyFieldsError: 'Please enter both departure and arrival locations',
     loadError: 'Failed to load trips',
+    backToSearch: 'New Search',
   },
   ar: {
     results: 'نتائج البحث',
@@ -109,12 +115,13 @@ const translations = {
     noResultsForDate: 'لا توجد رحلات في هذا التاريخ',
     tryDifferent: 'جرب معايير بحث مختلفة',
     amenities: 'المرافق',
-    morning: 'صباح (6-12)',
-    afternoon: 'بعد الظهر (12-18)',
-    evening: 'مساء (18-24)',
-    night: 'ليل (0-6)',
+    morning: 'صباحا (6-12)',
+    afternoon: 'ظهرا (12-18)',
+    evening: 'مساءا (18-24)',
+    night: 'ليلا (0-6)',
     emptyFieldsError: 'يرجى إدخال مكان المغادرة ومكان الوصول',
     loadError: 'فشل تحميل الرحلات',
+    backToSearch: 'بحث جديد',
   },
 } as const;
 
@@ -127,6 +134,7 @@ type Trip = {
   duration: string;
   price: number;
   currency?: string;
+  priceInNewSyp?: number; // Normalized price for filtering
   company: string;
   type: 'vip' | 'normal' | 'van';
   amenities: string[];
@@ -144,6 +152,7 @@ export function SearchResults({
   onToggleFavorite,
   isLoggedIn,
   onNoTripsFound,
+  onBackToSearch,
 }: SearchResultsProps) {
   console.log('SearchResults component rendered', { 
     from: searchParams.from, 
@@ -162,6 +171,7 @@ export function SearchResults({
   const [sortBy, setSortBy] = useState<'earliest' | 'cheapest'>('earliest');
   const [showFilters, setShowFilters] = useState(true);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 5000]);
+  const [maxPriceLoaded, setMaxPriceLoaded] = useState<number | null>(null); // Store max price once loaded
   const [selectedTimeSlots, setSelectedTimeSlots] = useState<string[]>([]);
   const [selectedCompanies, setSelectedCompanies] = useState<string[]>([]);
 
@@ -172,6 +182,13 @@ export function SearchResults({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasNoTrips, setHasNoTrips] = useState(false);
+
+  // Preload exchange rates on component mount
+  useEffect(() => {
+    preloadExchangeRates().catch(err => {
+      console.error('Failed to preload exchange rates:', err);
+    });
+  }, []);
 
   // استدعاء الرحلات من الـ backend
   useEffect(() => {
@@ -186,6 +203,7 @@ export function SearchResults({
         setLoading(true);
         setError(null);
         setHasNoTrips(false);
+        setMaxPriceLoaded(null); // Reset max price for new search
 
         // Get current translations based on language
         const currentTranslations = translations[language];
@@ -219,7 +237,13 @@ export function SearchResults({
 
         const data: Trip[] = await res.json();
         console.log('Trips data received:', data.length, 'trips');
-        setTrips(data);
+        
+        // Add normalized price in NEW_SYP for each trip
+        const tripsWithNormalizedPrice = data.map(trip => ({
+          ...trip,
+          priceInNewSyp: convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP')
+        }));
+        setTrips(tripsWithNormalizedPrice);
 
         // Fetch return trips if round trip
         if (searchParams.isRoundTrip && searchParams.returnDate) {
@@ -240,7 +264,12 @@ export function SearchResults({
           if (returnRes.ok) {
             const returnData: Trip[] = await returnRes.json();
             console.log('Return trips data received:', returnData.length, 'trips', returnData);
-            setReturnTrips(returnData);
+            // Add normalized price in NEW_SYP for each return trip
+            const returnTripsWithNormalizedPrice = returnData.map(trip => ({
+              ...trip,
+              priceInNewSyp: convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP')
+            }));
+            setReturnTrips(returnTripsWithNormalizedPrice);
           } else {
             console.error('Failed to fetch return trips:', returnRes.status, returnRes.statusText);
             setReturnTrips([]);
@@ -292,15 +321,19 @@ export function SearchResults({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.from, searchParams.to, searchParams.date, searchParams.returnDate, searchParams.isRoundTrip, language]);
 
-  // Update price range based on all loaded trips (outbound + return)
+  // Update price range based on all loaded trips (outbound + return) - using normalized price
+  // Only set max price once when trips first load, don't change it after
   useEffect(() => {
     const allTrips = [...trips, ...returnTrips];
-    if (allTrips.length > 0) {
-      const maxPrice = Math.max(...allTrips.map((t) => t.price));
-      console.log('Setting priceRange based on all trips. Max price:', maxPrice);
-      setPriceRange([0, maxPrice]);
+    if (allTrips.length > 0 && maxPriceLoaded === null) {
+      // Use normalized price (priceInNewSyp) for consistent filtering across currencies
+      const maxPrice = Math.max(...allTrips.map((t) => t.priceInNewSyp || convertToNewSypSync(t.price, t.currency || 'NEW_SYP')));
+      console.log('Setting priceRange based on normalized prices. Max price in NEW_SYP:', maxPrice);
+      const roundedMax = Math.ceil(maxPrice);
+      setMaxPriceLoaded(roundedMax);
+      setPriceRange([0, roundedMax]);
     }
-  }, [trips, returnTrips]);
+  }, [trips, returnTrips, maxPriceLoaded]);
 
   // هذا useEffect لم يعد ضرورياً لأننا نستدعي callback مباشرة في fetchTrips
 
@@ -316,10 +349,11 @@ export function SearchResults({
     }
   }, [language, searchParams.from, searchParams.to]);
 
-  // Filter and sort trips
+  // Filter and sort trips - using normalized price (priceInNewSyp) for consistent filtering
   let filteredTrips = trips.filter((trip) => {
-    // Price filter
-    if (trip.price < priceRange[0] || trip.price > priceRange[1]) return false;
+    // Price filter - use normalized price
+    const normalizedPrice = trip.priceInNewSyp || convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP');
+    if (normalizedPrice < priceRange[0] || normalizedPrice > priceRange[1]) return false;
 
     // Time slot filter
     if (selectedTimeSlots.length > 0) {
@@ -342,18 +376,22 @@ export function SearchResults({
     return true;
   });
 
-  // Sort trips
+  // Sort trips - use normalized price for sorting
   filteredTrips = [...filteredTrips].sort((a, b) => {
     if (sortBy === 'earliest') {
       return a.departureTime.localeCompare(b.departureTime);
     } else {
-      return a.price - b.price;
+      // Sort by normalized price for consistent ordering across currencies
+      const aPriceNormalized = a.priceInNewSyp || convertToNewSypSync(a.price, a.currency || 'NEW_SYP');
+      const bPriceNormalized = b.priceInNewSyp || convertToNewSypSync(b.price, b.currency || 'NEW_SYP');
+      return aPriceNormalized - bPriceNormalized;
     }
   });
 
-  // Filter and sort return trips
+  // Filter and sort return trips - using normalized price
   let filteredReturnTrips = returnTrips.filter((trip) => {
-    if (trip.price < priceRange[0] || trip.price > priceRange[1]) return false;
+    const normalizedPrice = trip.priceInNewSyp || convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP');
+    if (normalizedPrice < priceRange[0] || normalizedPrice > priceRange[1]) return false;
     if (selectedTimeSlots.length > 0) {
       const hour = parseInt(trip.departureTime.split(':')[0]);
       const slot =
@@ -375,7 +413,9 @@ export function SearchResults({
     if (sortBy === 'earliest') {
       return a.departureTime.localeCompare(b.departureTime);
     } else {
-      return a.price - b.price;
+      const aPriceNormalized = a.priceInNewSyp || convertToNewSypSync(a.price, a.currency || 'NEW_SYP');
+      const bPriceNormalized = b.priceInNewSyp || convertToNewSypSync(b.price, b.currency || 'NEW_SYP');
+      return aPriceNormalized - bPriceNormalized;
     }
   });
 
@@ -641,9 +681,20 @@ export function SearchResults({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl text-gray-900 mb-2">
-          {searchParams.isRoundTrip ? `${t.results} - ${t.roundTrip}` : t.results}
-        </h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl text-gray-900">
+            {searchParams.isRoundTrip ? `${t.results} - ${t.roundTrip}` : t.results}
+          </h1>
+          {onBackToSearch && (
+            <button
+              onClick={onBackToSearch}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm"
+            >
+              <Search className="w-4 h-4" />
+              <span>{t.backToSearch}</span>
+            </button>
+          )}
+        </div>
         <div className="flex flex-col gap-2">
           <p className="text-gray-600 flex items-center gap-2">
             <span className="font-medium">{t.outboundTrip}:</span>
@@ -710,7 +761,7 @@ export function SearchResults({
                   <input
                     type="range"
                     min={0}
-                    max={priceRange[1] || 5000}
+                    max={maxPriceLoaded || 5000}
                     step={100}
                     value={priceRange[1]}
                     onChange={(e) =>
@@ -720,7 +771,7 @@ export function SearchResults({
                   />
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>{formatCurrency(0, language)}</span>
-                    <span>{formatCurrency(priceRange[1], language)}</span>
+                    <span>{formatCurrency(priceRange[1], language)} / {formatCurrency(maxPriceLoaded || 5000, language)}</span>
                   </div>
                 </div>
               </div>
