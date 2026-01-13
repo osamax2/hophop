@@ -10,6 +10,8 @@ import {
   ChevronDown,
   ChevronUp,
   Heart,
+  ArrowLeft,
+  Search,
 } from 'lucide-react';
 import type { Language, SearchParams } from '../App';
 import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
@@ -24,6 +26,7 @@ interface SearchResultsProps {
   onToggleFavorite: (tripId: string) => void;
   isLoggedIn: boolean;
   onNoTripsFound?: () => void;
+  onBackToSearch?: () => void;
 }
 
 const translations = {
@@ -56,6 +59,7 @@ const translations = {
     night: 'Nacht (0-6)',
     emptyFieldsError: 'Bitte geben Sie einen Abfahrts- und einen Ankunftsort ein',
     loadError: 'Fehler beim Laden der Fahrten',
+    backToSearch: 'Neue Suche',
   },
   en: {
     results: 'Search Results',
@@ -86,6 +90,7 @@ const translations = {
     night: 'Night (0-6)',
     emptyFieldsError: 'Please enter both departure and arrival locations',
     loadError: 'Failed to load trips',
+    backToSearch: 'New Search',
   },
   ar: {
     results: 'نتائج البحث',
@@ -110,12 +115,13 @@ const translations = {
     noResultsForDate: 'لا توجد رحلات في هذا التاريخ',
     tryDifferent: 'جرب معايير بحث مختلفة',
     amenities: 'المرافق',
-    morning: 'صباح (6-12)',
-    afternoon: 'بعد الظهر (12-18)',
-    evening: 'مساء (18-24)',
-    night: 'ليل (0-6)',
+    morning: 'صباحا (6-12)',
+    afternoon: 'ظهرا (12-18)',
+    evening: 'مساءا (18-24)',
+    night: 'ليلا (0-6)',
     emptyFieldsError: 'يرجى إدخال مكان المغادرة ومكان الوصول',
     loadError: 'فشل تحميل الرحلات',
+    backToSearch: 'بحث جديد',
   },
 } as const;
 
@@ -146,6 +152,7 @@ export function SearchResults({
   onToggleFavorite,
   isLoggedIn,
   onNoTripsFound,
+  onBackToSearch,
 }: SearchResultsProps) {
   console.log('SearchResults component rendered', { 
     from: searchParams.from, 
@@ -674,9 +681,20 @@ export function SearchResults({
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl text-gray-900 mb-2">
-          {searchParams.isRoundTrip ? `${t.results} - ${t.roundTrip}` : t.results}
-        </h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="text-3xl text-gray-900">
+            {searchParams.isRoundTrip ? `${t.results} - ${t.roundTrip}` : t.results}
+          </h1>
+          {onBackToSearch && (
+            <button
+              onClick={onBackToSearch}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors shadow-sm"
+            >
+              <Search className="w-4 h-4" />
+              <span>{t.backToSearch}</span>
+            </button>
+          )}
+        </div>
         <div className="flex flex-col gap-2">
           <p className="text-gray-600 flex items-center gap-2">
             <span className="font-medium">{t.outboundTrip}:</span>
