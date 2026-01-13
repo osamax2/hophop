@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { Language, SearchParams } from '../App';
 import { formatTime, formatCurrency, formatDuration } from '../lib/i18n-utils';
+import { convertToNewSypSync, preloadExchangeRates } from '../lib/currency-converter';
 
 interface SearchResultsProps {
   searchParams: SearchParams;
@@ -127,6 +128,7 @@ type Trip = {
   duration: string;
   price: number;
   currency?: string;
+  priceInNewSyp?: number; // Normalized price for filtering
   company: string;
   type: 'vip' | 'normal' | 'van';
   amenities: string[];
@@ -172,6 +174,13 @@ export function SearchResults({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasNoTrips, setHasNoTrips] = useState(false);
+
+  // Preload exchange rates on component mount
+  useEffect(() => {
+    preloadExchangeRates().catch(err => {
+      console.error('Failed to preload exchange rates:', err);
+    });
+  }, []);
 
   // استدعاء الرحلات من الـ backend
   useEffect(() => {
@@ -219,7 +228,13 @@ export function SearchResults({
 
         const data: Trip[] = await res.json();
         console.log('Trips data received:', data.length, 'trips');
-        setTrips(data);
+        
+        // Add normalized price in NEW_SYP for each trip
+        const tripsWithNormalizedPrice = data.map(trip => ({
+          ...trip,
+          priceInNewSyp: convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP')
+        }));
+        setTrips(tripsWithNormalizedPrice);
 
         // Fetch return trips if round trip
         if (searchParams.isRoundTrip && searchParams.returnDate) {
@@ -240,7 +255,12 @@ export function SearchResults({
           if (returnRes.ok) {
             const returnData: Trip[] = await returnRes.json();
             console.log('Return trips data received:', returnData.length, 'trips', returnData);
-            setReturnTrips(returnData);
+            // Add normalized price in NEW_SYP for each return trip
+            const returnTripsWithNormalizedPrice = returnData.map(trip => ({
+              ...trip,
+              priceInNewSyp: convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP')
+            }));
+            setReturnTrips(returnTripsWithNormalizedPrice);
           } else {
             console.error('Failed to fetch return trips:', returnRes.status, returnRes.statusText);
             setReturnTrips([]);
@@ -292,13 +312,14 @@ export function SearchResults({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams.from, searchParams.to, searchParams.date, searchParams.returnDate, searchParams.isRoundTrip, language]);
 
-  // Update price range based on all loaded trips (outbound + return)
+  // Update price range based on all loaded trips (outbound + return) - using normalized price
   useEffect(() => {
     const allTrips = [...trips, ...returnTrips];
     if (allTrips.length > 0) {
-      const maxPrice = Math.max(...allTrips.map((t) => t.price));
-      console.log('Setting priceRange based on all trips. Max price:', maxPrice);
-      setPriceRange([0, maxPrice]);
+      // Use normalized price (priceInNewSyp) for consistent filtering across currencies
+      const maxPrice = Math.max(...allTrips.map((t) => t.priceInNewSyp || convertToNewSypSync(t.price, t.currency || 'NEW_SYP')));
+      console.log('Setting priceRange based on normalized prices. Max price in NEW_SYP:', maxPrice);
+      setPriceRange([0, Math.ceil(maxPrice)]);
     }
   }, [trips, returnTrips]);
 
@@ -316,10 +337,11 @@ export function SearchResults({
     }
   }, [language, searchParams.from, searchParams.to]);
 
-  // Filter and sort trips
+  // Filter and sort trips - using normalized price (priceInNewSyp) for consistent filtering
   let filteredTrips = trips.filter((trip) => {
-    // Price filter
-    if (trip.price < priceRange[0] || trip.price > priceRange[1]) return false;
+    // Price filter - use normalized price
+    const normalizedPrice = trip.priceInNewSyp || convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP');
+    if (normalizedPrice < priceRange[0] || normalizedPrice > priceRange[1]) return false;
 
     // Time slot filter
     if (selectedTimeSlots.length > 0) {
@@ -342,18 +364,22 @@ export function SearchResults({
     return true;
   });
 
-  // Sort trips
+  // Sort trips - use normalized price for sorting
   filteredTrips = [...filteredTrips].sort((a, b) => {
     if (sortBy === 'earliest') {
       return a.departureTime.localeCompare(b.departureTime);
     } else {
-      return a.price - b.price;
+      // Sort by normalized price for consistent ordering across currencies
+      const aPriceNormalized = a.priceInNewSyp || convertToNewSypSync(a.price, a.currency || 'NEW_SYP');
+      const bPriceNormalized = b.priceInNewSyp || convertToNewSypSync(b.price, b.currency || 'NEW_SYP');
+      return aPriceNormalized - bPriceNormalized;
     }
   });
 
-  // Filter and sort return trips
+  // Filter and sort return trips - using normalized price
   let filteredReturnTrips = returnTrips.filter((trip) => {
-    if (trip.price < priceRange[0] || trip.price > priceRange[1]) return false;
+    const normalizedPrice = trip.priceInNewSyp || convertToNewSypSync(trip.price, trip.currency || 'NEW_SYP');
+    if (normalizedPrice < priceRange[0] || normalizedPrice > priceRange[1]) return false;
     if (selectedTimeSlots.length > 0) {
       const hour = parseInt(trip.departureTime.split(':')[0]);
       const slot =
@@ -375,7 +401,9 @@ export function SearchResults({
     if (sortBy === 'earliest') {
       return a.departureTime.localeCompare(b.departureTime);
     } else {
-      return a.price - b.price;
+      const aPriceNormalized = a.priceInNewSyp || convertToNewSypSync(a.price, a.currency || 'NEW_SYP');
+      const bPriceNormalized = b.priceInNewSyp || convertToNewSypSync(b.price, b.currency || 'NEW_SYP');
+      return aPriceNormalized - bPriceNormalized;
     }
   });
 
