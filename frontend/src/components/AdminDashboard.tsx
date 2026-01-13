@@ -4957,6 +4957,34 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
             style={{ position: 'relative', zIndex: 10001, maxWidth: '28rem' }}
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Header - Fixed */}
+            <div className="bg-gray-50 border-b border-gray-200 p-6 flex items-center justify-between rounded-t-2xl">
+              <h3 className="text-xl font-bold text-gray-800">
+                {language === 'ar' ? 'تحرير المستخدم' : language === 'de' ? 'Benutzer bearbeiten' : 'Edit User'}
+              </h3>
+              <button
+                onClick={() => {
+                  setShowEditProfileDialog(false);
+                  setSelectedUserForEdit(null);
+                  setEditProfileData({
+                    first_name: '',
+                    last_name: '',
+                    email: '',
+                    password: '',
+                    role: 'User',
+                    company_id: '' as string | number,
+                    agent_type: ''
+                  });
+                  setEditCompanySearchQuery('');
+                  setShowEditCompanySuggestions(false);
+                  setEditSelectedCompanyName('');
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
           {/* Content - Scrollable */}
           <div className="overflow-y-auto flex-1 p-6">
             <div className="space-y-4">
