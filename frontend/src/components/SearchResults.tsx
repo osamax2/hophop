@@ -743,7 +743,7 @@ export function SearchResults({
                   <input
                     type="range"
                     min={0}
-                    max={priceRange[1] || 5000}
+                    max={maxPriceLoaded || 5000}
                     step={100}
                     value={priceRange[1]}
                     onChange={(e) =>
@@ -753,7 +753,7 @@ export function SearchResults({
                   />
                   <div className="flex justify-between text-sm text-gray-600">
                     <span>{formatCurrency(0, language)}</span>
-                    <span>{formatCurrency(priceRange[1], language)}</span>
+                    <span>{formatCurrency(priceRange[1], language)} / {formatCurrency(maxPriceLoaded || 5000, language)}</span>
                   </div>
                 </div>
               </div>
