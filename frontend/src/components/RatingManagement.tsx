@@ -677,8 +677,17 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
       {/* Edit Modal */}
       {showEditModal && editingRating && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4"
-          style={{ zIndex: 9999 }}
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
           onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowEditModal(false);
@@ -686,21 +695,32 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
             }
           }}
         >
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              animation: 'fadeIn 0.2s ease-out',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 flex justify-between items-center">
               <h3 className="text-xl font-bold">{t.editRating}</h3>
               <button
                 onClick={() => {
                   setShowEditModal(false);
                   setEditingRating(null);
                 }}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-4">
+            {/* Content - Scrollable */}
+            <div className="flex-1 p-6" style={{ overflowY: 'scroll' }}>
+              <div className="space-y-4">
               {/* User Info */}
               <div className="bg-gray-50 p-4 rounded-lg">
                 <div className="text-sm text-gray-600">
@@ -731,24 +751,26 @@ const RatingManagement: React.FC<RatingManagementProps> = ({ language }) => {
                 />
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex gap-2 justify-end pt-4">
-                <button
-                  onClick={() => {
-                    setShowEditModal(false);
-                    setEditingRating(null);
-                  }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium"
-                >
-                  {t.cancel}
-                </button>
-                <button
-                  onClick={handleSaveEdit}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                >
-                  {t.save}
-                </button>
               </div>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-100 border-t border-gray-200 p-6 flex gap-4 justify-end">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingRating(null);
+                }}
+                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                {t.cancel}
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              >
+                {t.save}
+              </button>
             </div>
           </div>
         </div>
