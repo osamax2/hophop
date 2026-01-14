@@ -24,6 +24,10 @@ const translations = {
     remove: 'Entfernen',
     availability: 'Verfügbarkeit',
     seatsFree: 'Plätze frei',
+    time: 'Zeit',
+    duration: 'Dauer',
+    company: 'Gesellschaft',
+    price: 'Preis',
   },
   en: {
     favorites: 'My Favorites',
@@ -36,6 +40,10 @@ const translations = {
     remove: 'Remove',
     availability: 'Availability',
     seatsFree: 'seats available',
+    time: 'Time',
+    duration: 'Duration',
+    company: 'Company',
+    price: 'Price',
   },
   ar: {
     favorites: 'المفضلة',
@@ -48,6 +56,10 @@ const translations = {
     remove: 'إزالة',
     availability: 'التوفر',
     seatsFree: 'مقاعد متاحة',
+    time: 'الوقت',
+    duration: 'المدة',
+    company: 'الشركة',
+    price: 'السعر',
   },
 };
 
@@ -63,6 +75,8 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
   const [favoriteTrips, setFavoriteTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [removingTripId, setRemovingTripId] = useState<string | null>(null);
+  const [removalError, setRemovalError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -99,7 +113,32 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
     };
 
     fetchFavorites();
-  }, [isLoggedIn]);
+  }, [isLoggedIn, language]);
+
+  const handleRemoveFavorite = async (tripId: string, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click event
+    
+    if (!isLoggedIn) return;
+    
+    const tripIdNum = parseInt(tripId);
+    if (isNaN(tripIdNum)) return;
+
+    try {
+      setRemovingTripId(tripId);
+      setRemovalError(null);
+      await favoritesApi.remove(tripIdNum);
+      
+      // Optimistically update UI - remove trip from list immediately
+      setFavoriteTrips(prev => prev.filter(trip => trip.id !== tripId));
+    } catch (err: any) {
+      console.error('Error removing favorite:', err);
+      setRemovalError(err.message || 'Failed to remove favorite');
+      // Auto-hide error after 5 seconds
+      setTimeout(() => setRemovalError(null), 5000);
+    } finally {
+      setRemovingTripId(null);
+    }
+  };
 
   if (!isLoggedIn) {
     return (
@@ -154,6 +193,20 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
         </p>
       </div>
 
+      {/* Removal Error Toast */}
+      {removalError && (
+        <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4 flex items-center justify-between">
+          <p className="text-red-700 text-sm">{removalError}</p>
+          <button
+            onClick={() => setRemovalError(null)}
+            className="text-red-600 hover:text-red-800 ml-4"
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {favoriteTrips.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-12 text-center">
           <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -181,7 +234,19 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
                     <span className="text-gray-900">{trip.to}</span>
                   </div>
                 </div>
-                <Heart className="w-6 h-6 text-red-600 fill-current" />
+                <button
+                  onClick={(e) => handleRemoveFavorite(trip.id, e)}
+                  disabled={removingTripId === trip.id}
+                  className="p-1.5 rounded-full hover:bg-red-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                  aria-label={t.remove}
+                  title={t.remove}
+                >
+                  {removingTripId === trip.id ? (
+                    <Loader2 className="w-6 h-6 text-red-600 animate-spin" />
+                  ) : (
+                    <Heart className="w-6 h-6 text-red-600 fill-current hover:scale-110 transition-transform" />
+                  )}
+                </button>
               </div>
 
               {/* Details */}
@@ -189,7 +254,7 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
                 <div className="flex items-center justify-between py-2 border-b border-gray-100">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Clock className="w-4 h-4" />
-                    Zeit
+                    {t.time}
                   </div>
                   <span className="text-sm text-gray-900">
                     {trip.departureTime} - {trip.arrivalTime}
@@ -197,19 +262,19 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
                 </div>
 
                 <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Dauer</span>
+                  <span className="text-sm text-gray-600">{t.duration}</span>
                   <span className="text-sm text-gray-900">{trip.duration}</span>
                 </div>
 
                 <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-600">Gesellschaft</span>
+                  <span className="text-sm text-gray-600">{t.company}</span>
                   <span className="text-sm text-gray-900">{trip.company}</span>
                 </div>
 
                 <div className="flex items-center justify-between py-2">
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <DollarSign className="w-4 h-4" />
-                    Preis
+                    {t.price}
                   </div>
                   <span className="text-lg text-green-600">
                     {formatCurrency(trip.price, language, (trip as any).currency || 'SYP')}
