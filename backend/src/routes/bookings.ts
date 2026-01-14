@@ -252,6 +252,7 @@ router.post("/", bookingLimiter, verifyCaptchaEnterpriseForGuests, optionalAuth,
         recipientName,
         bookingId: newBooking.id,
         isGuestBooking,
+        isConfirmed: false, // New booking is pending, not confirmed yet
         statusUrl: statusLink,
         tripDetails: {
           from: tripDetails.from_city,

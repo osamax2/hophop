@@ -15,6 +15,7 @@ interface BookingEmailData {
   };
   bookingId: number;
   isGuestBooking: boolean;
+  isConfirmed?: boolean; // true = booking confirmed, false/undefined = pending
   qrCodeDataUrl?: string; // Base64 QR code image
   statusUrl?: string; // Link to booking status page
 }
@@ -105,17 +106,28 @@ export class EmailService {
       tripDetails,
       bookingId,
       isGuestBooking,
+      isConfirmed,
       qrCodeDataUrl,
       statusUrl,
     } = data;
 
-    const subject = isGuestBooking
-      ? 'Buchungsanfrage erhalten / Booking Request Received / تم استلام طلب الحجز'
-      : 'Buchungsanfrage erhalten / Booking Request Received / تم استلام طلب الحجز';
+    // Determine subject and template based on booking status
+    let subject: string;
+    let message: string;
 
-    const message = isGuestBooking
-      ? this.getGuestBookingEmailTemplate(recipientName, tripDetails, bookingId, statusUrl)
-      : this.getPendingBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
+    if (isConfirmed) {
+      // Confirmed booking - use confirmation template
+      subject = 'Buchungsbestätigung / Booking Confirmation / تأكيد الحجز';
+      message = this.getConfirmedBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
+    } else if (isGuestBooking) {
+      // Guest booking (pending) - use guest template
+      subject = 'Buchungsanfrage erhalten / Booking Request Received / تم استلام طلب الحجز';
+      message = this.getGuestBookingEmailTemplate(recipientName, tripDetails, bookingId, statusUrl);
+    } else {
+      // User booking (pending) - use pending template
+      subject = 'Buchungsanfrage erhalten / Booking Request Received / تم استلام طلب الحجز';
+      message = this.getPendingBookingEmailTemplate(recipientName, tripDetails, bookingId, qrCodeDataUrl, statusUrl);
+    }
 
     console.log(`📧 Sending ${isGuestBooking ? 'GUEST' : 'USER'} booking email to ${recipientEmail} (Booking #${bookingId})`);
     console.log(`   isGuestBooking: ${isGuestBooking}, hasQRCode: ${!!qrCodeDataUrl}`);

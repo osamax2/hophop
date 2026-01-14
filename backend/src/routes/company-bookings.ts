@@ -226,7 +226,8 @@ router.put("/:id/accept", requireAuth, requireRole(['company_admin']), async (re
           recipientEmail,
           recipientName: recipientName || 'Guest',
           bookingId: bookingId,
-          isGuestBooking: false, // Always send confirmed email with QR code when accepting booking
+          isGuestBooking: false,
+          isConfirmed: true, // Booking is being confirmed
           qrCodeDataUrl: qrCodeDataUrl,
           statusUrl: statusUrl,
           tripDetails: {
