@@ -2596,7 +2596,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     ...(isAgentManager ? [{ id: 'company-bookings' as const, label: language === 'de' ? 'Firmenbuchungen' : language === 'ar' ? 'حجوزات الشركة' : 'Company Bookings', icon: ListChecks }] : []),
     // QR Scanner - Driver or Driver Assistant only
     ...(isDriver ? [{ id: 'qr-scanner' as const, label: language === 'de' ? 'QR-Scanner' : language === 'ar' ? 'ماسح QR' : 'QR Scanner', icon: Scan }] : []),
-    { id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar },
+    // Schedule Management - Admin or Agent Manager only (NOT drivers)
+    ...((isAdmin || isAgentManager) ? [{ id: 'schedules' as const, label: t.scheduleManagement, icon: Calendar }] : []),
     // Users management tab - Admin or Agent Manager
     ...((isAdmin || isAgentManager) ? [{ id: 'users' as const, label: t.userManagement, icon: Users }] : []),
     // Companies management tab - Admin only
@@ -2609,8 +2610,10 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     ...((isAdmin || isAgentManager) ? [{ id: 'bookings' as const, label: t.bookingsManagement, icon: Calendar }] : []),
     // Invoices management tab - Admin or Agent Manager
     ...((isAdmin || isAgentManager) ? [{ id: 'invoices' as const, label: t.invoicesManagement, icon: Download }] : []),
+    // Photo Management - Admin, Agent Manager, Driver, Driver Assistant
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
-    { id: 'import' as const, label: t.dataImport, icon: Upload },
+    // Data Import - Admin or Agent Manager only (NOT drivers)
+    ...((isAdmin || isAgentManager) ? [{ id: 'import' as const, label: t.dataImport, icon: Upload }] : []),
   ];
 
   return (

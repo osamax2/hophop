@@ -102,25 +102,76 @@ router.post("/", requireAuth, upload.single("image"), async (req: MulterRequest,
 // GET /api/admin/images/all - Get all images (Admin/Agent only)
 router.get("/all", requireAuth, async (req: AuthedRequest, res) => {
   try {
-    const result = await pool.query(
-      `
-      SELECT 
-        i.id,
-        i.entity_type,
-        i.entity_id,
-        i.image_url,
-        i.file_name,
-        i.file_size,
-        i.mime_type,
-        i.uploaded_by,
-        i.created_at,
-        u.first_name || ' ' || u.last_name as uploaded_by_name,
-        u.email as uploaded_by_email
-      FROM images i
-      LEFT JOIN users u ON i.uploaded_by = u.id
-      ORDER BY i.created_at DESC
-      `
-    );
+    const userId = req.user!.id;
+    
+    // Get user's role and company info
+    const userInfo = await pool.query(`
+      SELECT u.id, u.company_id, ut.code as agent_type,
+             EXISTS(SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = u.id AND r.name = 'Administrator') as is_admin
+      FROM users u
+      LEFT JOIN user_types ut ON u.user_type_id = ut.id
+      WHERE u.id = $1
+    `, [userId]);
+    
+    const currentUser = userInfo.rows[0];
+    const isAdmin = currentUser?.is_admin;
+    const isDriver = currentUser?.agent_type === 'driver' || currentUser?.agent_type === 'driver_assistant';
+    const companyId = currentUser?.company_id;
+    
+    let query: string;
+    let params: any[] = [];
+    
+    if (isAdmin) {
+      // Admin sees all images
+      query = `
+        SELECT 
+          i.id,
+          i.entity_type,
+          i.entity_id,
+          i.image_url,
+          i.file_name,
+          i.file_size,
+          i.mime_type,
+          i.uploaded_by,
+          i.created_at,
+          u.first_name || ' ' || u.last_name as uploaded_by_name,
+          u.email as uploaded_by_email
+        FROM images i
+        LEFT JOIN users u ON i.uploaded_by = u.id
+        ORDER BY i.created_at DESC
+      `;
+    } else if (companyId) {
+      // Agent managers, drivers, and driver assistants see only their company's images
+      // Images are linked to company through the uploader or through trips/buses
+      query = `
+        SELECT DISTINCT
+          i.id,
+          i.entity_type,
+          i.entity_id,
+          i.image_url,
+          i.file_name,
+          i.file_size,
+          i.mime_type,
+          i.uploaded_by,
+          i.created_at,
+          u.first_name || ' ' || u.last_name as uploaded_by_name,
+          u.email as uploaded_by_email
+        FROM images i
+        LEFT JOIN users u ON i.uploaded_by = u.id
+        LEFT JOIN users uploader ON i.uploaded_by = uploader.id
+        LEFT JOIN trips t ON i.entity_type = 'trip' AND i.entity_id = t.id
+        WHERE 
+          uploader.company_id = $1
+          OR t.company_id = $1
+        ORDER BY i.created_at DESC
+      `;
+      params = [companyId];
+    } else {
+      // No company - return empty
+      return res.json([]);
+    }
+    
+    const result = await pool.query(query, params);
 
     res.json(result.rows);
   } catch (error) {
