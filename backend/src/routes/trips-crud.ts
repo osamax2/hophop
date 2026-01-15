@@ -19,10 +19,6 @@ router.get("/sponsored", async (req, res) => {
         t.seats_available,
         t.seats_total,
         t.status,
-        t.is_sponsored,
-        t.sponsored_until,
-        t.price,
-        t.currency,
         c1.name as origin_name,
         c2.name as destination_name,
         COALESCE(comp.name, 'Unknown') AS company_name,
@@ -32,22 +28,20 @@ router.get("/sponsored", async (req, res) => {
           WHERE tf.trip_id = t.id 
           ORDER BY tf.price ASC
           LIMIT 1
-        ), t.price, 0) as price,
+        ), 0) as price,
         COALESCE((
           SELECT tf.currency FROM trip_fares tf 
           WHERE tf.trip_id = t.id 
           ORDER BY tf.price ASC
           LIMIT 1
-        ), t.currency, 'SYP') as currency
+        ), 'SYP') as currency
       FROM trips t
       JOIN routes r ON r.id = t.route_id
       JOIN cities c1 ON c1.id = r.from_city_id
       JOIN cities c2 ON c2.id = r.to_city_id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
       LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
-      WHERE t.is_sponsored = TRUE 
-        AND (t.sponsored_until IS NULL OR t.sponsored_until > NOW())
-        AND t.status = 'scheduled'
+      WHERE t.status = 'scheduled'
         AND t.departure_time > NOW()
         AND t.seats_available > 0
       ORDER BY t.departure_time ASC

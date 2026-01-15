@@ -42,7 +42,7 @@ services:
       SMTP_FROM: ${SMTP_FROM:-noreply@hophopsy.com}
       SMTP_FROM_NAME: ${SMTP_FROM_NAME:-HopHop Syria}
     ports:
-      - "8081:4000"
+      - "4000:4000"
     volumes:
       - backend_uploads:/app/uploads
     depends_on:

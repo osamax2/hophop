@@ -28,6 +28,8 @@ import helmet from "helmet";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+ app.set('trust proxy', 1);
+ 
 
 // ====== Security Middlewares ======
 // Helmet helps secure Express apps by setting various HTTP headers
@@ -55,7 +57,10 @@ app.use(helmet({
     preload: true,
   },
 }));
-
+app.use(cors({
+  origin: 'http://localhost:8080',
+  credentials: true
+}));
 // Custom Permissions-Policy header to avoid browser warnings
 // Explicitly disable experimental Chrome features to suppress console warnings
 app.use((req, res, next) => {
@@ -82,6 +87,9 @@ const allowedOrigins = [
   'https://www.hophopsy.com',
   'http://localhost:5173', // Development
   'http://localhost:3000',
+   'http://localhost:8080', // Development Docker/Nginx
+  'http://87.106.51.243:8080', // Production frontend
+ 
 ];
 
 app.use(cors({

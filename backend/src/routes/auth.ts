@@ -329,7 +329,7 @@ router.post("/login", loginLimiter, async (req, res) => {
       FROM users
       WHERE email = $1
       `,
-      [email]
+      [sanitizedEmail]
     );
 
     console.log("User check result:", userCheck.rows.length > 0 ? "User found" : "User not found");
@@ -351,6 +351,13 @@ router.post("/login", loginLimiter, async (req, res) => {
       });
     }
 
+    if (!user.password_hash) {
+      console.error("User has no password_hash");
+      return res.status(401).json({
+        message: "Invalid email or password",
+      });
+    }
+
     console.log("Comparing password...");
     const isMatch = await bcrypt.compare(password, user.password_hash);
     console.log("Password match:", isMatch);
@@ -362,13 +369,19 @@ router.post("/login", loginLimiter, async (req, res) => {
       });
     }
 
-    // Check if 2FA is enabled
-    const twofaResult = await pool.query(
-      `SELECT twofa_enabled FROM users WHERE id = $1`,
-      [user.id]
-    );
-
-    const twofaEnabled = twofaResult.rows[0]?.twofa_enabled || false;
+    // Check if 2FA is enabled (if columns exist)
+    let twofaEnabled = false;
+    try {
+      const twofaResult = await pool.query(
+        `SELECT twofa_enabled FROM users WHERE id = $1`,
+        [user.id]
+      );
+      twofaEnabled = twofaResult.rows[0]?.twofa_enabled || false;
+    } catch (twofaError: any) {
+      // If columns don't exist, 2FA is not enabled
+      console.log("2FA columns not found, skipping 2FA check");
+      twofaEnabled = false;
+    }
 
     // If 2FA is enabled, require token verification
     if (twofaEnabled) {
@@ -384,36 +397,43 @@ router.post("/login", loginLimiter, async (req, res) => {
       }
 
       // Verify 2FA token
-      const speakeasy = require("speakeasy");
-      const secretResult = await pool.query(
-        `SELECT twofa_secret FROM users WHERE id = $1`,
-        [user.id]
-      );
+      try {
+        const speakeasy = require("speakeasy");
+        const secretResult = await pool.query(
+          `SELECT twofa_secret FROM users WHERE id = $1`,
+          [user.id]
+        );
 
-      const secret = secretResult.rows[0]?.twofa_secret;
+        const secret = secretResult.rows[0]?.twofa_secret;
 
-      if (!secret) {
-        console.error("2FA enabled but no secret found for user:", user.id);
+        if (!secret) {
+          console.error("2FA enabled but no secret found for user:", user.id);
+          return res.status(500).json({
+            message: "2FA configuration error",
+          });
+        }
+
+        const verified = speakeasy.totp.verify({
+          secret,
+          encoding: "base32",
+          token: twofa_token,
+          window: 2,
+        });
+
+        if (!verified) {
+          console.log("Invalid 2FA token for user:", user.id);
+          return res.status(401).json({
+            message: "Invalid 2FA token",
+          });
+        }
+
+        console.log("2FA verification successful for user:", user.id);
+      } catch (twofaVerifyError: any) {
+        console.error("2FA verification error:", twofaVerifyError);
         return res.status(500).json({
-          message: "2FA configuration error",
+          message: "2FA verification failed",
         });
       }
-
-      const verified = speakeasy.totp.verify({
-        secret,
-        encoding: "base32",
-        token: twofa_token,
-        window: 2,
-      });
-
-      if (!verified) {
-        console.log("Invalid 2FA token for user:", user.id);
-        return res.status(401).json({
-          message: "Invalid 2FA token",
-        });
-      }
-
-      console.log("2FA verification successful for user:", user.id);
     }
 
     const token = jwt.sign(
