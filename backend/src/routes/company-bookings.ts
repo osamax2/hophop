@@ -461,6 +461,18 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
     const booking = result.rows[0];
     const alreadyCheckedIn = booking.status === 'checked_in';
 
+    // Get all passenger names for this booking
+    const passengersResult = await pool.query(
+      `SELECT passenger_name, seat_number FROM booking_passengers 
+       WHERE booking_id = $1 
+       ORDER BY seat_number`,
+      [booking.id]
+    );
+    
+    const passengerNames = passengersResult.rows.length > 0 
+      ? passengersResult.rows.map(p => p.passenger_name)
+      : [booking.passenger_name || booking.guest_name || 'Gast'];
+
     // Mark booking as checked-in if not already
     if (!alreadyCheckedIn) {
       await pool.query(
@@ -480,6 +492,7 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
         id: booking.id,
         tripId: booking.trip_id,
         passengerName: booking.passenger_name || 'Gast',
+        passengerNames: passengerNames,
         seats: booking.quantity || 1,
         assignedSeats: booking.assigned_seats || '-',
         route: `${booking.from_city || ''} → ${booking.to_city || ''}`,
@@ -582,10 +595,10 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
     }
 
     // Generate CSV content
-    const csvHeaders = ['Buchungs-Nr', 'Passagier', 'Sitze', 'Sitzplätze', 'Route', 'Abfahrt', 'Eingecheckt'];
+    const csvHeaders = ['Buchungs-Nr', 'Passagiere', 'Sitze', 'Sitzplätze', 'Route', 'Abfahrt', 'Eingecheckt'];
     const csvRows = passengers.map((p: any) => [
       p.bookingId,
-      p.passengerName,
+      p.passengerNames && Array.isArray(p.passengerNames) ? p.passengerNames.join(', ') : p.passengerName,
       p.seats,
       p.assignedSeats,
       p.route,
@@ -643,7 +656,7 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
               <tr>
                 <th>#</th>
                 <th>Buchung</th>
-                <th>Passagier</th>
+                <th>Passagiere</th>
                 <th>Sitze</th>
                 <th>Sitzplätze</th>
                 <th>Eingecheckt</th>
@@ -654,7 +667,7 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
                 <tr>
                   <td>${i + 1}</td>
                   <td>#${p.bookingId}</td>
-                  <td>${p.passengerName}</td>
+                  <td>${p.passengerNames && Array.isArray(p.passengerNames) ? p.passengerNames.join('<br>') : p.passengerName}</td>
                   <td>${p.seats}</td>
                   <td>${p.assignedSeats}</td>
                   <td>${new Date(p.checkedInAt).toLocaleTimeString('de-DE')}</td>

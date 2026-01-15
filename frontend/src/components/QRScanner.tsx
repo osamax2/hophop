@@ -6,6 +6,7 @@ import { Html5Qrcode } from 'html5-qrcode';
 interface ScannedBooking {
   id: number;
   passengerName: string;
+  passengerNames: string[];
   seats: number;
   assignedSeats: string;
   route: string;
@@ -117,6 +118,7 @@ export default function QRScanner() {
           return [...prev, {
             id: booking.id,
             passengerName: booking.passengerName || booking.user_name || booking.guest_name || 'Unbekannt',
+            passengerNames: booking.passengerNames || [booking.passengerName || 'Unbekannt'],
             seats: booking.seats || booking.seats_booked || 1,
             assignedSeats: booking.assignedSeats || '-',
             route: booking.route || `${booking.from_city} → ${booking.to_city}`,
@@ -149,10 +151,10 @@ export default function QRScanner() {
 
   // Generate CSV content
   const generateCSV = () => {
-    const headers = ['Buchungs-Nr', 'Passagier', 'Sitze', 'Sitzplätze', 'Route', 'Abfahrt', 'Eingecheckt'];
+    const headers = ['Buchungs-Nr', 'Passagiere', 'Anzahl Sitze', 'Sitzplätze', 'Route', 'Abfahrt', 'Eingecheckt'];
     const rows = scannedBookings.map(b => [
       b.id.toString(),
-      b.passengerName,
+      b.passengerNames.join(', '), // All passenger names
       b.seats.toString(),
       b.assignedSeats,
       b.route,
@@ -197,6 +199,7 @@ export default function QRScanner() {
       await companyBookingsApi.sendPassengerReport(tripId, scannedBookings.map(b => ({
         bookingId: b.id,
         passengerName: b.passengerName,
+        passengerNames: b.passengerNames,
         seats: b.seats,
         assignedSeats: b.assignedSeats,
         route: b.route,
@@ -423,9 +426,18 @@ export default function QRScanner() {
                       <span className="bg-green-600 text-black text-xs px-2 py-1 rounded-full">
                         #{index + 1}
                       </span>
-                      <span className="font-semibold text-gray-900">{booking.passengerName}</span>
+                      <span className="font-semibold text-gray-900">Buchung #{booking.id}</span>
                     </div>
-                    <div className="text-sm text-gray-600 mt-1">
+                    {/* Show all passenger names */}
+                    <div className="mt-2 space-y-1">
+                      {booking.passengerNames.map((name, i) => (
+                        <div key={i} className="text-sm text-gray-800 flex items-center gap-2">
+                          <span className="text-green-600">👤</span>
+                          <span>{name}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="text-sm text-gray-600 mt-2">
                       <span>{booking.route}</span>
                     </div>
                   </div>
