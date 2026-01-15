@@ -1,7 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { companyBookingsApi } from '../lib/api';
-import { Camera, CheckCircle, XCircle, Scan, AlertCircle } from 'lucide-react';
+import { Camera, CheckCircle, XCircle, Scan, AlertCircle, Download, Send, Trash2, Users } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
+
+interface ScannedBooking {
+  id: number;
+  passengerName: string;
+  seats: number;
+  assignedSeats: string;
+  route: string;
+  departureTime: string;
+  checkedInAt: string;
+  tripId?: number;
+}
 
 export default function QRScanner() {
   const [scanning, setScanning] = useState(false);
@@ -13,6 +24,11 @@ export default function QRScanner() {
   const [error, setError] = useState<string | null>(null);
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
+  
+  // List of scanned bookings for the current trip
+  const [scannedBookings, setScannedBookings] = useState<ScannedBooking[]>([]);
+  const [sendingReport, setSendingReport] = useState(false);
+  const [reportSent, setReportSent] = useState(false);
 
   useEffect(() => {
     // Check camera permission on mount
@@ -91,6 +107,25 @@ export default function QRScanner() {
           message: 'QR-Code gültig! Buchung wurde eingecheckt.',
           booking: response.booking
         });
+        
+        // Add to scanned bookings list if not already there
+        const booking = response.booking;
+        setScannedBookings(prev => {
+          if (prev.some(b => b.id === booking.id)) {
+            return prev; // Already in list
+          }
+          return [...prev, {
+            id: booking.id,
+            passengerName: booking.passengerName || booking.user_name || booking.guest_name || 'Unbekannt',
+            seats: booking.seats || booking.seats_booked || 1,
+            assignedSeats: booking.assignedSeats || '-',
+            route: booking.route || `${booking.from_city} → ${booking.to_city}`,
+            departureTime: booking.departureTime || booking.departure_time,
+            checkedInAt: new Date().toISOString(),
+            tripId: booking.tripId
+          }];
+        });
+        setReportSent(false); // Reset report sent status when new booking added
       } else {
         setResult({
           success: false,
@@ -110,6 +145,81 @@ export default function QRScanner() {
     setResult(null);
     setError(null);
     startScanning();
+  };
+
+  // Generate CSV content
+  const generateCSV = () => {
+    const headers = ['Buchungs-Nr', 'Passagier', 'Sitze', 'Sitzplätze', 'Route', 'Abfahrt', 'Eingecheckt'];
+    const rows = scannedBookings.map(b => [
+      b.id.toString(),
+      b.passengerName,
+      b.seats.toString(),
+      b.assignedSeats,
+      b.route,
+      new Date(b.departureTime).toLocaleString('de-DE'),
+      new Date(b.checkedInAt).toLocaleString('de-DE')
+    ]);
+    
+    const csvContent = [
+      headers.join(';'),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(';'))
+    ].join('\n');
+    
+    return csvContent;
+  };
+
+  // Download CSV file
+  const downloadCSV = () => {
+    const csv = generateCSV();
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    const date = new Date().toISOString().split('T')[0];
+    link.download = `passagierliste_${date}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // Send report to manager and download CSV
+  const sendReportToManager = async () => {
+    if (scannedBookings.length === 0) return;
+    
+    setSendingReport(true);
+    try {
+      // Download CSV first
+      downloadCSV();
+      
+      // Send to manager
+      const tripId = scannedBookings[0]?.tripId || 0;
+      await companyBookingsApi.sendPassengerReport(tripId, scannedBookings.map(b => ({
+        bookingId: b.id,
+        passengerName: b.passengerName,
+        seats: b.seats,
+        assignedSeats: b.assignedSeats,
+        route: b.route,
+        departureTime: b.departureTime,
+        checkedInAt: b.checkedInAt
+      })));
+      
+      setReportSent(true);
+      // Clear the list after sending
+      setScannedBookings([]);
+      setResult(null);
+    } catch (err: any) {
+      console.error('Failed to send report:', err);
+      setError('Bericht konnte nicht gesendet werden: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSendingReport(false);
+    }
+  };
+
+  // Clear the scanned list
+  const clearScannedList = () => {
+    setScannedBookings([]);
+    setReportSent(false);
   };
 
   useEffect(() => {
@@ -280,6 +390,109 @@ export default function QRScanner() {
           </ul>
         </div>
       </div>
+
+      {/* Scanned Bookings List */}
+      {scannedBookings.length > 0 && (
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <Users className="w-6 h-6 text-green-600" />
+              <h3 className="text-xl font-bold text-gray-900">
+                Eingecheckte Passagiere ({scannedBookings.length})
+              </h3>
+            </div>
+            <button
+              onClick={clearScannedList}
+              className="text-gray-500 hover:text-red-600 p-2"
+              title="Liste löschen"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Passenger List */}
+          <div className="space-y-3 mb-6 max-h-80 overflow-y-auto">
+            {scannedBookings.map((booking, index) => (
+              <div 
+                key={booking.id} 
+                className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+                        #{index + 1}
+                      </span>
+                      <span className="font-semibold text-gray-900">{booking.passengerName}</span>
+                    </div>
+                    <div className="text-sm text-gray-600 mt-1">
+                      <span>{booking.route}</span>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-green-700">
+                      🪑 {booking.assignedSeats}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      {booking.seats} {booking.seats === 1 ? 'Sitz' : 'Sitze'}
+                    </div>
+                  </div>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  Eingecheckt: {new Date(booking.checkedInAt).toLocaleTimeString('de-DE')}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Total Summary */}
+          <div className="bg-green-50 rounded-lg p-4 mb-4 border border-green-200">
+            <div className="flex justify-between items-center">
+              <span className="font-semibold text-green-800">Gesamt Passagiere:</span>
+              <span className="text-2xl font-bold text-green-700">
+                {scannedBookings.reduce((sum, b) => sum + b.seats, 0)}
+              </span>
+            </div>
+          </div>
+
+          {/* Send Report Button */}
+          <button
+            onClick={sendReportToManager}
+            disabled={sendingReport || reportSent}
+            className={`w-full py-4 rounded-lg font-semibold flex items-center justify-center gap-3 text-lg ${
+              reportSent
+                ? 'bg-green-100 text-green-700 cursor-not-allowed'
+                : sendingReport
+                ? 'bg-gray-300 text-gray-600 cursor-wait'
+                : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
+            }`}
+          >
+            {reportSent ? (
+              <>
+                <CheckCircle className="w-6 h-6" />
+                Bericht gesendet & heruntergeladen ✓
+              </>
+            ) : sendingReport ? (
+              <>
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
+                Wird gesendet...
+              </>
+            ) : (
+              <>
+                <Send className="w-6 h-6" />
+                <Download className="w-6 h-6" />
+                Passagierliste an Manager senden
+              </>
+            )}
+          </button>
+
+          {reportSent && (
+            <p className="text-center text-sm text-green-600 mt-3">
+              Die CSV-Datei wurde heruntergeladen und per E-Mail an den Manager gesendet.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

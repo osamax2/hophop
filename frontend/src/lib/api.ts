@@ -748,6 +748,23 @@ export const companyBookingsApi = {
     const response = await fetch(`${API_BASE}/api/company-bookings/qr-image/${bookingId}`);
     return handleResponse(response);
   },
+
+  sendPassengerReport: async (tripId: number, passengers: Array<{
+    bookingId: number;
+    passengerName: string;
+    seats: number;
+    assignedSeats: string;
+    route: string;
+    departureTime: string;
+    checkedInAt: string;
+  }>) => {
+    const response = await fetch(`${API_BASE}/api/company-bookings/send-passenger-report`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ tripId, passengers }),
+    });
+    return handleResponse(response);
+  },
 };
 
 export const contactApi = {

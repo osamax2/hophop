@@ -95,6 +95,43 @@ export class EmailService {
     }
   }
 
+  /**
+   * Send an email with attachment
+   */
+  async sendEmailWithAttachment(
+    to: string, 
+    subject: string, 
+    htmlBody: string,
+    attachment: { filename: string; content: string; contentType: string }
+  ): Promise<void> {
+    if (!this.isConfigured || !this.transporter) {
+      console.warn('⚠️  Email service not configured, skipping email');
+      return;
+    }
+
+    try {
+      const mailOptions = {
+        from: `${process.env.SMTP_FROM_NAME || 'HopHop Syria'} <${process.env.SMTP_FROM || 'noreply@hophopsy.com'}>`,
+        to,
+        subject,
+        html: htmlBody,
+        attachments: [
+          {
+            filename: attachment.filename,
+            content: attachment.content,
+            contentType: attachment.contentType,
+          }
+        ]
+      };
+
+      await this.transporter.sendMail(mailOptions);
+      console.log(`✅ Email with attachment sent to ${to}: ${subject}`);
+    } catch (error) {
+      console.error(`❌ Failed to send email with attachment to ${to}:`, error);
+      throw error;
+    }
+  }
+
   async sendBookingConfirmation(data: BookingEmailData): Promise<void> {
     if (!this.isConfigured || !this.transporter) {
       console.warn('📧 Email not sent - SMTP not configured');

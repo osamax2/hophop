@@ -522,4 +522,177 @@ router.get("/qr-image/:bookingId", async (req, res) => {
   }
 });
 
+/**
+ * POST /api/company-bookings/send-passenger-report
+ * Send passenger list report to company manager
+ * Requires: driver or driver_assistant role
+ */
+router.post("/send-passenger-report", requireAuth, requireRole(['company_admin', 'driver', 'driver_assistant']), async (req: AuthedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+    const { tripId, passengers } = req.body;
+
+    if (!passengers || !Array.isArray(passengers) || passengers.length === 0) {
+      return res.status(400).json({ message: "Passenger list is required" });
+    }
+
+    // Get driver's company and manager email
+    const userResult = await pool.query(
+      `SELECT u.first_name, u.last_name, u.company_id, tc.name as company_name, tc.email as manager_email
+       FROM users u
+       LEFT JOIN transport_companies tc ON tc.id = u.company_id
+       WHERE u.id = $1`,
+      [userId]
+    );
+
+    if (!userResult.rows[0]?.company_id) {
+      return res.status(403).json({ message: "No company associated with this user" });
+    }
+
+    const driverName = `${userResult.rows[0].first_name} ${userResult.rows[0].last_name}`;
+    const companyName = userResult.rows[0].company_name || 'HopHop';
+    const managerEmail = userResult.rows[0].manager_email;
+
+    if (!managerEmail) {
+      return res.status(400).json({ message: "No manager email configured for this company" });
+    }
+
+    // Get trip details if tripId provided
+    let tripInfo = '';
+    if (tripId) {
+      const tripResult = await pool.query(
+        `SELECT t.departure_time, fc.name as from_city, tc.name as to_city
+         FROM trips t
+         JOIN routes r ON r.id = t.route_id
+         JOIN cities fc ON fc.id = r.from_city_id
+         JOIN cities tc ON tc.id = r.to_city_id
+         WHERE t.id = $1`,
+        [tripId]
+      );
+      if (tripResult.rows[0]) {
+        const trip = tripResult.rows[0];
+        tripInfo = `${trip.from_city} → ${trip.to_city} (${new Date(trip.departure_time).toLocaleString('de-DE')})`;
+      }
+    }
+
+    // Generate CSV content
+    const csvHeaders = ['Buchungs-Nr', 'Passagier', 'Sitze', 'Sitzplätze', 'Route', 'Abfahrt', 'Eingecheckt'];
+    const csvRows = passengers.map((p: any) => [
+      p.bookingId,
+      p.passengerName,
+      p.seats,
+      p.assignedSeats,
+      p.route,
+      new Date(p.departureTime).toLocaleString('de-DE'),
+      new Date(p.checkedInAt).toLocaleString('de-DE')
+    ]);
+    
+    const csvContent = [
+      csvHeaders.join(';'),
+      ...csvRows.map((row: any[]) => row.map(cell => `"${cell}"`).join(';'))
+    ].join('\n');
+
+    // Calculate total passengers
+    const totalPassengers = passengers.reduce((sum: number, p: any) => sum + (p.seats || 1), 0);
+
+    // Send email to manager
+    const emailSubject = `🚌 Passagierliste - ${tripInfo || 'Fahrt'} (${totalPassengers} Passagiere)`;
+    
+    const emailBody = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <style>
+          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          .header { background: #10b981; color: white; padding: 20px; text-align: center; }
+          .content { padding: 20px; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background: #f3f4f6; }
+          .summary { background: #ecfdf5; border: 2px solid #10b981; padding: 15px; border-radius: 8px; margin: 20px 0; }
+          .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #666; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>🚌 Passagierliste</h1>
+          <p>${tripInfo || 'Aktuelle Fahrt'}</p>
+        </div>
+        
+        <div class="content">
+          <p>Gesendet von: <strong>${driverName}</strong></p>
+          <p>Unternehmen: <strong>${companyName}</strong></p>
+          <p>Datum: ${new Date().toLocaleString('de-DE')}</p>
+          
+          <div class="summary">
+            <h3 style="margin-top: 0;">📊 Zusammenfassung</h3>
+            <p>Anzahl Buchungen: <strong>${passengers.length}</strong></p>
+            <p>Gesamt Passagiere: <strong>${totalPassengers}</strong></p>
+          </div>
+          
+          <h3>📋 Passagierliste</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Buchung</th>
+                <th>Passagier</th>
+                <th>Sitze</th>
+                <th>Sitzplätze</th>
+                <th>Eingecheckt</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${passengers.map((p: any, i: number) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>#${p.bookingId}</td>
+                  <td>${p.passengerName}</td>
+                  <td>${p.seats}</td>
+                  <td>${p.assignedSeats}</td>
+                  <td>${new Date(p.checkedInAt).toLocaleTimeString('de-DE')}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <p style="color: #666; font-size: 12px;">
+            Die CSV-Datei ist dieser E-Mail als Anhang beigefügt.
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p>Diese E-Mail wurde automatisch von HopHop gesendet.</p>
+        </div>
+      </body>
+      </html>
+    `;
+
+    // Send email with CSV attachment
+    await emailService.sendEmailWithAttachment(
+      managerEmail,
+      emailSubject,
+      emailBody,
+      {
+        filename: `passagierliste_${new Date().toISOString().split('T')[0]}.csv`,
+        content: '\ufeff' + csvContent, // UTF-8 BOM for Excel compatibility
+        contentType: 'text/csv'
+      }
+    );
+
+    console.log(`📧 Passenger report sent to ${managerEmail} by driver ${driverName}`);
+
+    res.json({ 
+      success: true,
+      message: "Bericht erfolgreich gesendet",
+      sentTo: managerEmail,
+      passengerCount: totalPassengers
+    });
+  } catch (error: any) {
+    console.error("Error sending passenger report:", error);
+    res.status(500).json({ message: "Error sending passenger report", error: String(error) });
+  }
+});
+
 export default router;
