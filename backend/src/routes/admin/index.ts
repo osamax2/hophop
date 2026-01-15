@@ -17,8 +17,8 @@ import invoicesAdmin from "./invoices.admin";
 
 const router = Router();
 
-// Admin & Agent allowed
-router.use(requireAuth, requireRole(["ADMIN", "AGENT"]));
+// Admin & Agent allowed - include all possible role name variations
+router.use(requireAuth, requireRole(["ADMIN", "admin", "Administrator", "AGENT", "agent", "Agent"]));
 
 router.use("/routes", routesAdmin);
 router.use("/trips", tripsAdmin);
@@ -33,15 +33,15 @@ router.use("/images", imagesAdmin);
 router.use("/users", usersAdmin);
 
 // Companies management: Admin only
-router.use("/companies", requireRole(["ADMIN"]), companiesAdmin);
+router.use("/companies", requireRole(["ADMIN", "admin", "Administrator"]), companiesAdmin);
 
 // Ratings management: Admin only
 // Bookings management: Admin only
-router.use("/bookings", requireRole(["ADMIN"]), bookingsAdmin);
+router.use("/bookings", requireRole(["ADMIN", "admin", "Administrator"]), bookingsAdmin);
 
 // Invoices management: Admin only
-router.use("/invoices", requireRole(["ADMIN"]), invoicesAdmin);
+router.use("/invoices", requireRole(["ADMIN", "admin", "Administrator"]), invoicesAdmin);
 
-router.use("/ratings", requireRole(["ADMIN"]), ratingsAdmin);
+router.use("/ratings", requireRole(["ADMIN", "admin", "Administrator"]), ratingsAdmin);
 
 export default router;
