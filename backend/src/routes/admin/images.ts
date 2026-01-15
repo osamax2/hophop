@@ -107,7 +107,7 @@ router.get("/all", requireAuth, async (req: AuthedRequest, res) => {
     // Get user's role and company info
     const userInfo = await pool.query(`
       SELECT u.id, u.company_id, ut.code as agent_type,
-             EXISTS(SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = u.id AND r.name = 'Administrator') as is_admin
+             EXISTS(SELECT 1 FROM user_roles ur JOIN roles r ON ur.role_id = r.id WHERE ur.user_id = u.id AND UPPER(r.name) IN ('ADMIN', 'ADMINISTRATOR')) as is_admin
       FROM users u
       LEFT JOIN user_types ut ON u.user_type_id = ut.id
       WHERE u.id = $1

@@ -1726,7 +1726,9 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const loadImages = async () => {
     try {
       setLoading(true);
+      console.log('loadImages called, fetching from API...');
       const imagesData = await imagesApi.getAll();
+      console.log('Images loaded:', imagesData);
       setImages(Array.isArray(imagesData) ? imagesData : []);
     } catch (err: any) {
       console.error('Error loading images:', err);
