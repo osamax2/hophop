@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { pool } from "../../db";
 import { AuthedRequest } from "../../middleware/auth";
-import PDFDocument from "pdfkit";
+import puppeteer from "puppeteer";
 
 const router = Router();
 
@@ -563,19 +563,7 @@ router.get("/:id/pdf", async (req: AuthedRequest, res) => {
     };
 
     const t = translations[lang] || translations.en;
-
-    // Create PDF document
-    const doc = new PDFDocument({ size: "A4", margin: 50 });
-
-    // Set response headers
-    res.setHeader("Content-Type", "application/pdf");
-    res.setHeader(
-      "Content-Disposition",
-      `attachment; filename="invoice-${invoice.invoice_number}.pdf"`
-    );
-
-    // Pipe PDF to response
-    doc.pipe(res);
+    const isRTL = lang === "ar";
 
     // Helper functions
     const formatDate = (dateString: string | null) => {
@@ -595,215 +583,371 @@ router.get("/:id/pdf", async (req: AuthedRequest, res) => {
       return t[method] || method;
     };
 
-    // Colors
-    const primaryColor = "#16a34a"; // Green
-    const textColor = "#1f2937";
-    const lightGray = "#6b7280";
+    const statusColor = 
+      invoice.status === "paid" ? "#16a34a" :
+      invoice.status === "overdue" ? "#dc2626" : "#ca8a04";
 
-    // Header with HopHop branding
-    doc
-      .fontSize(28)
-      .fillColor(primaryColor)
-      .text("HopHop", 50, 50, { continued: true })
-      .fontSize(12)
-      .fillColor(lightGray)
-      .text("  Travel Booking", { continued: false });
+    // Generate HTML for PDF
+    const html = `
+<!DOCTYPE html>
+<html dir="${isRTL ? 'rtl' : 'ltr'}" lang="${lang}">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;700&family=Inter:wght@400;600;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: ${isRTL ? "'Noto Sans Arabic', 'Inter', sans-serif" : "'Inter', 'Noto Sans Arabic', sans-serif"};
+      font-size: 10px;
+      color: #1f2937;
+      padding: 25px;
+      direction: ${isRTL ? 'rtl' : 'ltr'};
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 12px;
+    }
+    
+    .logo {
+      font-size: 22px;
+      font-weight: 700;
+      color: #16a34a;
+    }
+    
+    .logo span {
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 400;
+    }
+    
+    .website {
+      font-size: 9px;
+      color: #6b7280;
+      margin-top: 3px;
+    }
+    
+    .invoice-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #1f2937;
+      text-align: center;
+      margin: 12px 0;
+    }
+    
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .detail-section {
+      background: #f9fafb;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+      font-size: 9px;
+    }
+    
+    .detail-label {
+      color: #6b7280;
+      font-weight: 500;
+    }
+    
+    .detail-value {
+      color: #1f2937;
+      font-weight: 600;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 9px;
+      font-weight: 600;
+      color: white;
+      background-color: ${statusColor};
+    }
+    
+    .parties-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+    
+    .party-section h3 {
+      color: #16a34a;
+      font-size: 11px;
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+    
+    .party-section p {
+      margin-bottom: 2px;
+      color: #374151;
+      font-size: 9px;
+    }
+    
+    .party-section .email {
+      color: #6b7280;
+    }
+    
+    .trip-section {
+      background: #f0fdf4;
+      border: 1px solid #16a34a;
+      border-radius: 6px;
+      padding: 12px;
+      margin-bottom: 15px;
+    }
+    
+    .trip-section h3 {
+      color: #16a34a;
+      font-size: 12px;
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    
+    .trip-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    .trip-column h4 {
+      color: #6b7280;
+      font-size: 9px;
+      text-transform: uppercase;
+      margin-bottom: 5px;
+    }
+    
+    .trip-column .city {
+      font-size: 14px;
+      font-weight: 700;
+      color: #1f2937;
+    }
+    
+    .trip-column .station {
+      font-size: 9px;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    
+    .trip-column .time {
+      font-size: 12px;
+      font-weight: 600;
+      color: #16a34a;
+      margin-top: 5px;
+    }
+    
+    .trip-info {
+      display: flex;
+      gap: 20px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #bbf7d0;
+      font-size: 9px;
+    }
+    
+    .trip-info-item {
+      display: flex;
+      gap: 5px;
+    }
+    
+    .trip-info-label {
+      color: #6b7280;
+    }
+    
+    .trip-info-value {
+      font-weight: 600;
+    }
+    
+    .total-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 20px;
+    }
+    
+    .total-box {
+      background: #f0fdf4;
+      border: 2px solid #16a34a;
+      border-radius: 6px;
+      padding: 12px 30px;
+      text-align: center;
+    }
+    
+    .total-label {
+      color: #6b7280;
+      font-size: 10px;
+      margin-bottom: 3px;
+    }
+    
+    .total-amount {
+      color: #16a34a;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 12px;
+      border-top: 1px solid #e5e7eb;
+    }
+    
+    .thank-you {
+      color: #16a34a;
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 5px;
+    }
+    
+    .generated {
+      color: #9ca3af;
+      font-size: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">HopHop <span>Travel Booking</span></div>
+    <div class="website">https://hophopsy.com</div>
+  </div>
+  
+  <div class="invoice-title">${t.invoice}</div>
+  
+  <div class="details-grid">
+    <div class="detail-section">
+      <div class="detail-row">
+        <span class="detail-label">${t.invoiceNumber}:</span>
+        <span class="detail-value">${invoice.invoice_number}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">${t.issueDate}:</span>
+        <span class="detail-value">${formatDate(invoice.issue_date)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">${t.dueDate}:</span>
+        <span class="detail-value">${formatDate(invoice.due_date)}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">${t.status}:</span>
+        <span class="status-badge">${getStatusText(invoice.status)}</span>
+      </div>
+    </div>
+    <div class="detail-section">
+      <div class="detail-row">
+        <span class="detail-label">${t.paymentMethod}:</span>
+        <span class="detail-value">${getPaymentMethodText(invoice.payment_method)}</span>
+      </div>
+      ${invoice.payment_date ? `
+      <div class="detail-row">
+        <span class="detail-label">${t.paymentDate}:</span>
+        <span class="detail-value">${formatDate(invoice.payment_date)}</span>
+      </div>
+      ` : ''}
+    </div>
+  </div>
+  
+  <div class="parties-grid">
+    <div class="party-section">
+      <h3>${t.billTo}</h3>
+      <p><strong>${invoice.user_name || '-'}</strong></p>
+      <p class="email">${invoice.user_email || '-'}</p>
+      ${invoice.user_phone ? `<p>${invoice.user_phone}</p>` : ''}
+    </div>
+    <div class="party-section">
+      <h3>${t.from}</h3>
+      <p><strong>${invoice.company_name || 'HopHop Transport'}</strong></p>
+      <p class="email">${invoice.company_email || 'info@hophopsy.com'}</p>
+      ${invoice.company_phone ? `<p>${invoice.company_phone}</p>` : ''}
+    </div>
+  </div>
+  
+  <div class="trip-section">
+    <h3>${t.tripDetails}</h3>
+    <div class="trip-grid">
+      <div class="trip-column">
+        <h4>${t.departure}</h4>
+        <div class="city">${invoice.departure_city || '-'}</div>
+        <div class="station">${invoice.departure_station || '-'}</div>
+        <div class="time">${invoice.departure_time_str || '-'}</div>
+      </div>
+      <div class="trip-column">
+        <h4>${t.arrival}</h4>
+        <div class="city">${invoice.arrival_city || '-'}</div>
+        <div class="station">${invoice.arrival_station || '-'}</div>
+        <div class="time">${invoice.arrival_time_str || '-'}</div>
+      </div>
+    </div>
+    <div class="trip-info">
+      <div class="trip-info-item">
+        <span class="trip-info-label">${t.date}:</span>
+        <span class="trip-info-value">${formatDate(invoice.departure_date)}</span>
+      </div>
+      <div class="trip-info-item">
+        <span class="trip-info-label">${t.seats}:</span>
+        <span class="trip-info-value">${invoice.seats_booked || 1}</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="total-section">
+    <div class="total-box">
+      <div class="total-label">${t.total}</div>
+      <div class="total-amount">${parseFloat(invoice.amount).toFixed(2)} ${invoice.currency}</div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <div class="thank-you">${t.thankYou}</div>
+    <div class="generated">${t.generatedOn}: ${new Date().toLocaleString(
+      lang === "ar" ? "ar-EG" : lang === "de" ? "de-DE" : "en-US"
+    )}</div>
+  </div>
+</body>
+</html>
+    `;
 
-    doc.moveDown(0.5);
-    doc
-      .fontSize(10)
-      .fillColor(lightGray)
-      .text("https://hophopsy.com", 50, doc.y);
+    // Generate PDF using Puppeteer
+    const browser = await puppeteer.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
+    });
+    
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'networkidle0' });
+    
+    const pdfBuffer = await page.pdf({
+      format: 'A4',
+      printBackground: true,
+      margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' }
+    });
+    
+    await browser.close();
 
-    // Invoice title
-    doc.moveDown(2);
-    doc.fontSize(24).fillColor(textColor).text(t.invoice, { align: "center" });
-
-    // Invoice details box
-    doc.moveDown(1);
-    const detailsY = doc.y;
-
-    // Left column - Invoice info
-    doc.fontSize(10).fillColor(lightGray);
-    doc.text(`${t.invoiceNumber}:`, 50, detailsY);
-    doc.fontSize(10).fillColor(textColor);
-    doc.text(invoice.invoice_number, 180, detailsY);
-
-    doc.fontSize(10).fillColor(lightGray);
-    doc.text(`${t.issueDate}:`, 50, detailsY + 18);
-    doc.fillColor(textColor);
-    doc.text(formatDate(invoice.issue_date), 180, detailsY + 18);
-
-    doc.fillColor(lightGray);
-    doc.text(`${t.dueDate}:`, 50, detailsY + 36);
-    doc.fillColor(textColor);
-    doc.text(formatDate(invoice.due_date), 180, detailsY + 36);
-
-    doc.fillColor(lightGray);
-    doc.text(`${t.status}:`, 50, detailsY + 54);
-    doc.fillColor(
-      invoice.status === "paid"
-        ? "#16a34a"
-        : invoice.status === "overdue"
-        ? "#dc2626"
-        : "#ca8a04"
+    // Set response headers
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="invoice-${invoice.invoice_number}.pdf"`
     );
-    doc.text(getStatusText(invoice.status), 180, detailsY + 54);
-
-    // Right column - Payment info
-    doc.fillColor(lightGray);
-    doc.text(`${t.paymentMethod}:`, 350, detailsY);
-    doc.fillColor(textColor);
-    doc.text(getPaymentMethodText(invoice.payment_method), 480, detailsY);
-
-    if (invoice.payment_date) {
-      doc.fillColor(lightGray);
-      doc.text(`${t.paymentDate}:`, 350, detailsY + 18);
-      doc.fillColor(textColor);
-      doc.text(formatDate(invoice.payment_date), 480, detailsY + 18);
-    }
-
-    // Divider
-    doc.moveDown(4);
-    doc
-      .moveTo(50, doc.y)
-      .lineTo(545, doc.y)
-      .strokeColor("#e5e7eb")
-      .lineWidth(1)
-      .stroke();
-
-    // Bill To section
-    doc.moveDown(1);
-    const billToY = doc.y;
-
-    doc.fontSize(12).fillColor(primaryColor).text(t.billTo, 50, billToY);
-    doc.moveDown(0.5);
-    doc.fontSize(10).fillColor(textColor).text(invoice.user_name || "-");
-    doc.fillColor(lightGray).text(invoice.user_email || "-");
-    if (invoice.user_phone) {
-      doc.text(invoice.user_phone);
-    }
-
-    // Company section (From)
-    doc.fontSize(12).fillColor(primaryColor).text(t.from, 350, billToY);
-    doc.y = billToY + 18;
-    doc.fontSize(10).fillColor(textColor).text(invoice.company_name || "-", 350);
-    if (invoice.company_email) {
-      doc.fillColor(lightGray).text(invoice.company_email, 350);
-    }
-    if (invoice.company_phone) {
-      doc.text(invoice.company_phone, 350);
-    }
-
-    // Divider
-    doc.moveDown(2);
-    doc
-      .moveTo(50, doc.y)
-      .lineTo(545, doc.y)
-      .strokeColor("#e5e7eb")
-      .lineWidth(1)
-      .stroke();
-
-    // Trip Details section
-    doc.moveDown(1);
-    doc.fontSize(14).fillColor(primaryColor).text(t.tripDetails);
-    doc.moveDown(0.5);
-
-    // Trip details table
-    const tripTableY = doc.y;
-
-    // Headers
-    doc.fontSize(9).fillColor(lightGray);
-    doc.text("", 50, tripTableY);
-    doc.text(t.departure, 120, tripTableY);
-    doc.text(t.arrival, 320, tripTableY);
-
-    // Route
-    doc.moveDown(0.8);
-    doc.fontSize(10).fillColor(textColor);
-    doc.text(invoice.departure_city || "-", 120, doc.y);
-    doc.text(invoice.arrival_city || "-", 320, doc.y - 12);
-
-    // Stations
-    doc.moveDown(0.8);
-    doc.fontSize(9).fillColor(lightGray);
-    doc.text(`${t.station}:`, 50, doc.y);
-    doc.fillColor(textColor);
-    doc.text(invoice.departure_station || "-", 120, doc.y - 10);
-    doc.text(invoice.arrival_station || "-", 320, doc.y - 10);
-
-    // Date and Time
-    doc.moveDown(0.8);
-    doc.fillColor(lightGray);
-    doc.text(`${t.date}:`, 50, doc.y);
-    doc.fillColor(textColor);
-    doc.text(formatDate(invoice.departure_date), 120, doc.y - 10);
-
-    doc.moveDown(0.8);
-    doc.fillColor(lightGray);
-    doc.text(`${t.time}:`, 50, doc.y);
-    doc.fillColor(textColor);
-    doc.text(invoice.departure_time_str || "-", 120, doc.y - 10);
-    doc.text(invoice.arrival_time_str || "-", 320, doc.y - 10);
-
-    // Seats
-    doc.moveDown(0.8);
-    doc.fillColor(lightGray);
-    doc.text(`${t.seats}:`, 50, doc.y);
-    doc.fillColor(textColor);
-    doc.text(String(invoice.seats_booked || 1), 120, doc.y - 10);
-
-    // Divider
-    doc.moveDown(2);
-    doc
-      .moveTo(50, doc.y)
-      .lineTo(545, doc.y)
-      .strokeColor("#e5e7eb")
-      .lineWidth(1)
-      .stroke();
-
-    // Total section
-    doc.moveDown(1);
-    const totalY = doc.y;
-
-    // Total amount box
-    doc.rect(350, totalY, 195, 50).fillColor("#f0fdf4").fill();
-    doc.strokeColor(primaryColor).lineWidth(2).rect(350, totalY, 195, 50).stroke();
-
-    doc.fontSize(12).fillColor(lightGray);
-    doc.text(t.total, 370, totalY + 10);
-
-    doc.fontSize(20).fillColor(primaryColor);
-    doc.text(
-      `${parseFloat(invoice.amount).toFixed(2)} ${invoice.currency}`,
-      370,
-      totalY + 26
-    );
-
-    // Footer
-    const footerY = 750;
-
-    // Thank you message
-    doc
-      .fontSize(12)
-      .fillColor(primaryColor)
-      .text(t.thankYou, 50, footerY, { align: "center" });
-
-    // Generated timestamp
-    doc
-      .fontSize(8)
-      .fillColor(lightGray)
-      .text(
-        `${t.generatedOn}: ${new Date().toLocaleString(
-          lang === "ar" ? "ar-EG" : lang === "de" ? "de-DE" : "en-US"
-        )}`,
-        50,
-        footerY + 20,
-        { align: "center" }
-      );
-
-    // Finalize PDF
-    doc.end();
+    
+    res.send(pdfBuffer);
   } catch (error) {
     console.error("Error generating invoice PDF:", error);
     res.status(500).json({ message: "Error generating PDF" });

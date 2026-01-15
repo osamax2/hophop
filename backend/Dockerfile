@@ -18,6 +18,20 @@ RUN npm run build
 # Production stage
 FROM node:20-alpine AS production
 
+# Install Chromium and dependencies for Puppeteer
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    font-noto-arabic
+
+# Tell Puppeteer to use the installed Chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
 WORKDIR /app
 
 # Copy package files
@@ -28,6 +42,9 @@ RUN npm install --only=production
 
 # Copy built files from builder
 COPY --from=builder /app/dist ./dist
+
+# Copy fonts for PDF generation with Arabic support
+COPY fonts ./fonts
 
 # Create uploads directory
 RUN mkdir -p uploads
