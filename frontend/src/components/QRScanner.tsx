@@ -3,6 +3,169 @@ import { companyBookingsApi } from '../lib/api';
 import { Camera, CheckCircle, XCircle, Scan, AlertCircle, Download, Send, Trash2, Users } from 'lucide-react';
 import { Html5Qrcode } from 'html5-qrcode';
 
+// Translation types
+type Language = 'de' | 'en' | 'ar';
+
+interface Translations {
+  title: string;
+  cameraDenied: string;
+  cameraDeniedDesc: string;
+  error: string;
+  valid: string;
+  invalid: string;
+  qrValid: string;
+  qrInvalid: string;
+  verificationFailed: string;
+  booking: string;
+  passenger: string;
+  route: string;
+  seats: string;
+  seatNumbers: string;
+  departure: string;
+  clickToScan: string;
+  startScan: string;
+  stop: string;
+  scanAgain: string;
+  instructions: string;
+  instruction1: string;
+  instruction2: string;
+  instruction3: string;
+  instruction4: string;
+  instruction5: string;
+  checkedInPassengers: string;
+  clearList: string;
+  seat: string;
+  seatsPlural: string;
+  checkedInAt: string;
+  totalPassengers: string;
+  reportSent: string;
+  sending: string;
+  sendToManager: string;
+  csvDownloaded: string;
+  couldNotSendReport: string;
+  couldNotStartCamera: string;
+}
+
+const translations: Record<Language, Translations> = {
+  de: {
+    title: 'QR-Code Scanner',
+    cameraDenied: 'Kamera-Zugriff verweigert',
+    cameraDeniedDesc: 'Bitte erlauben Sie den Kamera-Zugriff in Ihren Browser-Einstellungen, um QR-Codes scannen zu können.',
+    error: 'Fehler',
+    valid: '✓ Gültig',
+    invalid: '✗ Ungültig',
+    qrValid: 'QR-Code gültig! Buchung wurde eingecheckt.',
+    qrInvalid: 'QR-Code ungültig oder bereits verwendet.',
+    verificationFailed: 'Verifizierung fehlgeschlagen',
+    booking: 'Buchung',
+    passenger: 'Passagier',
+    route: 'Route',
+    seats: 'Sitze',
+    seatNumbers: 'Sitzplätze',
+    departure: 'Abfahrt',
+    clickToScan: 'Klicken Sie auf "Scannen starten", um einen QR-Code zu scannen',
+    startScan: 'Scannen starten',
+    stop: 'Stoppen',
+    scanAgain: 'Erneut scannen',
+    instructions: 'Anleitung:',
+    instruction1: 'Klicken Sie auf "Scannen starten"',
+    instruction2: 'Erlauben Sie den Kamera-Zugriff wenn gefragt',
+    instruction3: 'Halten Sie den QR-Code vor die Kamera',
+    instruction4: 'Der Code wird automatisch erkannt und verifiziert',
+    instruction5: 'Grün = gültig, Rot = ungültig oder bereits verwendet',
+    checkedInPassengers: 'Eingecheckte Passagiere',
+    clearList: 'Liste löschen',
+    seat: 'Sitz',
+    seatsPlural: 'Sitze',
+    checkedInAt: 'Eingecheckt',
+    totalPassengers: 'Gesamt Passagiere',
+    reportSent: 'Bericht gesendet & heruntergeladen ✓',
+    sending: 'Wird gesendet...',
+    sendToManager: 'Passagierliste an Manager senden',
+    csvDownloaded: 'Die CSV-Datei wurde heruntergeladen und per E-Mail an den Manager gesendet.',
+    couldNotSendReport: 'Bericht konnte nicht gesendet werden',
+    couldNotStartCamera: 'Kamera konnte nicht gestartet werden',
+  },
+  en: {
+    title: 'QR Code Scanner',
+    cameraDenied: 'Camera access denied',
+    cameraDeniedDesc: 'Please allow camera access in your browser settings to scan QR codes.',
+    error: 'Error',
+    valid: '✓ Valid',
+    invalid: '✗ Invalid',
+    qrValid: 'QR code valid! Booking has been checked in.',
+    qrInvalid: 'QR code invalid or already used.',
+    verificationFailed: 'Verification failed',
+    booking: 'Booking',
+    passenger: 'Passenger',
+    route: 'Route',
+    seats: 'Seats',
+    seatNumbers: 'Seat Numbers',
+    departure: 'Departure',
+    clickToScan: 'Click "Start Scan" to scan a QR code',
+    startScan: 'Start Scan',
+    stop: 'Stop',
+    scanAgain: 'Scan Again',
+    instructions: 'Instructions:',
+    instruction1: 'Click on "Start Scan"',
+    instruction2: 'Allow camera access when prompted',
+    instruction3: 'Hold the QR code in front of the camera',
+    instruction4: 'The code will be automatically detected and verified',
+    instruction5: 'Green = valid, Red = invalid or already used',
+    checkedInPassengers: 'Checked-in Passengers',
+    clearList: 'Clear list',
+    seat: 'seat',
+    seatsPlural: 'seats',
+    checkedInAt: 'Checked in',
+    totalPassengers: 'Total Passengers',
+    reportSent: 'Report sent & downloaded ✓',
+    sending: 'Sending...',
+    sendToManager: 'Send passenger list to manager',
+    csvDownloaded: 'The CSV file has been downloaded and sent to the manager via email.',
+    couldNotSendReport: 'Could not send report',
+    couldNotStartCamera: 'Could not start camera',
+  },
+  ar: {
+    title: 'ماسح رمز QR',
+    cameraDenied: 'تم رفض الوصول للكاميرا',
+    cameraDeniedDesc: 'يرجى السماح بالوصول للكاميرا في إعدادات المتصفح لمسح رموز QR.',
+    error: 'خطأ',
+    valid: '✓ صالح',
+    invalid: '✗ غير صالح',
+    qrValid: 'رمز QR صالح! تم تسجيل الحجز.',
+    qrInvalid: 'رمز QR غير صالح أو مستخدم بالفعل.',
+    verificationFailed: 'فشل التحقق',
+    booking: 'الحجز',
+    passenger: 'المسافر',
+    route: 'المسار',
+    seats: 'المقاعد',
+    seatNumbers: 'أرقام المقاعد',
+    departure: 'المغادرة',
+    clickToScan: 'انقر على "بدء المسح" لمسح رمز QR',
+    startScan: 'بدء المسح',
+    stop: 'إيقاف',
+    scanAgain: 'مسح مرة أخرى',
+    instructions: 'التعليمات:',
+    instruction1: 'انقر على "بدء المسح"',
+    instruction2: 'اسمح بالوصول للكاميرا عند الطلب',
+    instruction3: 'أمسك رمز QR أمام الكاميرا',
+    instruction4: 'سيتم اكتشاف الرمز والتحقق منه تلقائياً',
+    instruction5: 'أخضر = صالح، أحمر = غير صالح أو مستخدم',
+    checkedInPassengers: 'المسافرون المسجلون',
+    clearList: 'مسح القائمة',
+    seat: 'مقعد',
+    seatsPlural: 'مقاعد',
+    checkedInAt: 'تم التسجيل',
+    totalPassengers: 'إجمالي المسافرين',
+    reportSent: 'تم إرسال التقرير وتحميله ✓',
+    sending: 'جاري الإرسال...',
+    sendToManager: 'إرسال قائمة المسافرين للمدير',
+    csvDownloaded: 'تم تحميل ملف CSV وإرساله للمدير عبر البريد الإلكتروني.',
+    couldNotSendReport: 'تعذر إرسال التقرير',
+    couldNotStartCamera: 'تعذر تشغيل الكاميرا',
+  },
+};
+
 interface ScannedBooking {
   id: number;
   passengerName: string;
@@ -26,10 +189,43 @@ export default function QRScanner() {
   const scannerRef = useRef<Html5Qrcode | null>(null);
   const [cameraPermission, setCameraPermission] = useState<'granted' | 'denied' | 'prompt'>('prompt');
   
+  // Language state
+  const [language, setLanguage] = useState<Language>(() => {
+    const saved = localStorage.getItem('hophop_language');
+    return (saved as Language) || 'de';
+  });
+  const t = translations[language];
+  const isRTL = language === 'ar';
+  
   // List of scanned bookings for the current trip
   const [scannedBookings, setScannedBookings] = useState<ScannedBooking[]>([]);
   const [sendingReport, setSendingReport] = useState(false);
   const [reportSent, setReportSent] = useState(false);
+
+  // Listen for language changes from other components
+  useEffect(() => {
+    const handleStorageChange = () => {
+      const saved = localStorage.getItem('hophop_language');
+      if (saved && saved !== language) {
+        setLanguage(saved as Language);
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for same-tab changes
+    const interval = setInterval(() => {
+      const saved = localStorage.getItem('hophop_language');
+      if (saved && saved !== language) {
+        setLanguage(saved as Language);
+      }
+    }, 500);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [language]);
 
   useEffect(() => {
     // Check camera permission on mount
@@ -76,7 +272,7 @@ export default function QRScanner() {
       );
     } catch (err: any) {
       console.error('Failed to start scanner:', err);
-      setError('Kamera konnte nicht gestartet werden: ' + (err.message || 'Unknown error'));
+      setError(t.couldNotStartCamera + ': ' + (err.message || 'Unknown error'));
       setScanning(false);
       
       if (err.name === 'NotAllowedError') {
@@ -105,7 +301,7 @@ export default function QRScanner() {
       if (response.valid) {
         setResult({
           success: true,
-          message: 'QR-Code gültig! Buchung wurde eingecheckt.',
+          message: t.qrValid,
           booking: response.booking
         });
         
@@ -131,14 +327,14 @@ export default function QRScanner() {
       } else {
         setResult({
           success: false,
-          message: response.message || 'QR-Code ungültig oder bereits verwendet.'
+          message: response.message || t.qrInvalid
         });
       }
     } catch (err: any) {
       console.error('Failed to verify QR code:', err);
       setResult({
         success: false,
-        message: 'Verifizierung fehlgeschlagen: ' + (err.message || 'Unknown error')
+        message: t.verificationFailed + ': ' + (err.message || 'Unknown error')
       });
     }
   };
@@ -213,7 +409,7 @@ export default function QRScanner() {
       setResult(null);
     } catch (err: any) {
       console.error('Failed to send report:', err);
-      setError('Bericht konnte nicht gesendet werden: ' + (err.message || 'Unknown error'));
+      setError(t.couldNotSendReport + ': ' + (err.message || 'Unknown error'));
     } finally {
       setSendingReport(false);
     }
@@ -233,11 +429,11 @@ export default function QRScanner() {
   }, []);
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className={`max-w-2xl mx-auto space-y-6 ${isRTL ? 'rtl' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className="flex items-center gap-3 mb-6">
           <Scan className="w-8 h-8 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">QR-Code Scanner</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
         </div>
 
         {/* Camera Permission Warning */}
@@ -246,9 +442,9 @@ export default function QRScanner() {
             <div className="flex items-start gap-3">
               <AlertCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
-                <p className="font-semibold text-red-900">Kamera-Zugriff verweigert</p>
+                <p className="font-semibold text-red-900">{t.cameraDenied}</p>
                 <p className="text-sm text-red-700 mt-1">
-                  Bitte erlauben Sie den Kamera-Zugriff in Ihren Browser-Einstellungen, um QR-Codes scannen zu können.
+                  {t.cameraDeniedDesc}
                 </p>
               </div>
             </div>
@@ -261,7 +457,7 @@ export default function QRScanner() {
             <div className="flex items-start gap-3">
               <XCircle className="w-5 h-5 text-red-600 mt-0.5" />
               <div>
-                <p className="font-semibold text-red-900">Fehler</p>
+                <p className="font-semibold text-red-900">{t.error}</p>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
               </div>
             </div>
@@ -285,7 +481,7 @@ export default function QRScanner() {
                 <p className={`text-xl font-bold mb-2 ${
                   result.success ? 'text-green-900' : 'text-red-900'
                 }`}>
-                  {result.success ? '✓ Gültig' : '✗ Ungültig'}
+                  {result.success ? t.valid : t.invalid}
                 </p>
                 <p className={`text-sm mb-4 ${
                   result.success ? 'text-green-700' : 'text-red-700'
@@ -296,31 +492,31 @@ export default function QRScanner() {
                 {result.booking && (
                   <div className="bg-white rounded-lg p-4 space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="font-semibold text-gray-700">Buchung:</span>
+                      <span className="font-semibold text-gray-700">{t.booking}:</span>
                       <span className="text-gray-900">#{result.booking.id}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="font-semibold text-gray-700">Passagier:</span>
+                      <span className="font-semibold text-gray-700">{t.passenger}:</span>
                       <span className="text-gray-900">{result.booking.passengerName || result.booking.user_name || result.booking.guest_name}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="font-semibold text-gray-700">Route:</span>
+                      <span className="font-semibold text-gray-700">{t.route}:</span>
                       <span className="text-gray-900">{result.booking.route || `${result.booking.from_city} → ${result.booking.to_city}`}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="font-semibold text-gray-700">Sitze:</span>
+                      <span className="font-semibold text-gray-700">{t.seats}:</span>
                       <span className="text-gray-900">{result.booking.seats || result.booking.seats_booked}</span>
                     </div>
                     {result.booking.assignedSeats && (
                       <div className="flex justify-between bg-green-100 -mx-4 px-4 py-2 rounded">
-                        <span className="font-semibold text-green-800">🪑 Sitzplätze:</span>
+                        <span className="font-semibold text-green-800">🪑 {t.seatNumbers}:</span>
                         <span className="text-green-900 font-bold text-lg">{result.booking.assignedSeats}</span>
                       </div>
                     )}
                     <div className="flex justify-between">
-                      <span className="font-semibold text-gray-700">Abfahrt:</span>
+                      <span className="font-semibold text-gray-700">{t.departure}:</span>
                       <span className="text-gray-900">
-                        {new Date(result.booking.departure_time).toLocaleString('de-DE')}
+                        {new Date(result.booking.departure_time).toLocaleString(language === 'ar' ? 'ar-SA' : language === 'en' ? 'en-US' : 'de-DE')}
                       </span>
                     </div>
                   </div>
@@ -341,7 +537,7 @@ export default function QRScanner() {
             <div className="bg-gray-100 rounded-lg p-12 text-center">
               <Camera className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 mb-6">
-                Klicken Sie auf "Scannen starten", um einen QR-Code zu scannen
+                {t.clickToScan}
               </p>
             </div>
           )}
@@ -356,7 +552,7 @@ export default function QRScanner() {
               className="flex-1 bg-blue-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Camera className="w-5 h-5" />
-              Scannen starten
+              {t.startScan}
             </button>
           )}
           
@@ -366,7 +562,7 @@ export default function QRScanner() {
               className="flex-1 bg-red-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-red-700 flex items-center justify-center gap-2"
             >
               <XCircle className="w-5 h-5" />
-              Stoppen
+              {t.stop}
             </button>
           )}
           
@@ -376,20 +572,20 @@ export default function QRScanner() {
               className="flex-1 bg-blue-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
             >
               <Scan className="w-5 h-5" />
-              Erneut scannen
+              {t.scanAgain}
             </button>
           )}
         </div>
 
         {/* Instructions */}
         <div className="mt-6 bg-blue-50 rounded-lg p-4">
-          <p className="text-sm text-blue-900 font-semibold mb-2">Anleitung:</p>
+          <p className="text-sm text-blue-900 font-semibold mb-2">{t.instructions}</p>
           <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
-            <li>Klicken Sie auf "Scannen starten"</li>
-            <li>Erlauben Sie den Kamera-Zugriff wenn gefragt</li>
-            <li>Halten Sie den QR-Code vor die Kamera</li>
-            <li>Der Code wird automatisch erkannt und verifiziert</li>
-            <li>Grün = gültig, Rot = ungültig oder bereits verwendet</li>
+            <li>{t.instruction1}</li>
+            <li>{t.instruction2}</li>
+            <li>{t.instruction3}</li>
+            <li>{t.instruction4}</li>
+            <li>{t.instruction5}</li>
           </ul>
         </div>
       </div>
@@ -401,13 +597,13 @@ export default function QRScanner() {
             <div className="flex items-center gap-3">
               <Users className="w-6 h-6 text-green-600" />
               <h3 className="text-xl font-bold text-gray-900">
-                Eingecheckte Passagiere ({scannedBookings.length})
+                {t.checkedInPassengers} ({scannedBookings.length})
               </h3>
             </div>
             <button
               onClick={clearScannedList}
               className="text-gray-500 hover:text-red-600 p-2"
-              title="Liste löschen"
+              title={t.clearList}
             >
               <Trash2 className="w-5 h-5" />
             </button>
@@ -426,7 +622,7 @@ export default function QRScanner() {
                       <span className="bg-green-600 text-black text-xs px-2 py-1 rounded-full">
                         #{index + 1}
                       </span>
-                      <span className="font-semibold text-gray-900">Buchung #{booking.id}</span>
+                      <span className="font-semibold text-gray-900">{t.booking} #{booking.id}</span>
                     </div>
                     {/* Show all passenger names */}
                     <div className="mt-2 space-y-1">
@@ -446,12 +642,12 @@ export default function QRScanner() {
                       🪑 {booking.assignedSeats}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {booking.seats} {booking.seats === 1 ? 'Sitz' : 'Sitze'}
+                      {booking.seats} {booking.seats === 1 ? t.seat : t.seatsPlural}
                     </div>
                   </div>
                 </div>
                 <div className="text-xs text-gray-500 mt-2">
-                  Eingecheckt: {new Date(booking.checkedInAt).toLocaleTimeString('de-DE')}
+                  {t.checkedInAt}: {new Date(booking.checkedInAt).toLocaleTimeString(language === 'ar' ? 'ar-SA' : language === 'en' ? 'en-US' : 'de-DE')}
                 </div>
               </div>
             ))}
@@ -460,7 +656,7 @@ export default function QRScanner() {
           {/* Total Summary */}
           <div className="bg-green-50 rounded-lg p-4 mb-4 border border-green-200">
             <div className="flex justify-between items-center">
-              <span className="font-semibold text-green-800">Gesamt Passagiere:</span>
+              <span className="font-semibold text-green-800">{t.totalPassengers}:</span>
               <span className="text-2xl font-bold text-green-700">
                 {scannedBookings.reduce((sum, b) => sum + b.seats, 0)}
               </span>
@@ -482,25 +678,25 @@ export default function QRScanner() {
             {reportSent ? (
               <>
                 <CheckCircle className="w-6 h-6" />
-                Bericht gesendet & heruntergeladen ✓
+                {t.reportSent}
               </>
             ) : sendingReport ? (
               <>
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white"></div>
-                Wird gesendet...
+                {t.sending}
               </>
             ) : (
               <>
                 <Send className="w-6 h-6" />
                 <Download className="w-6 h-6" />
-                Passagierliste an Manager senden
+                {t.sendToManager}
               </>
             )}
           </button>
 
           {reportSent && (
             <p className="text-center text-sm text-green-600 mt-3">
-              Die CSV-Datei wurde heruntergeladen und per E-Mail an den Manager gesendet.
+              {t.csvDownloaded}
             </p>
           )}
         </div>
