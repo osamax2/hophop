@@ -1,5 +1,13 @@
 const API_BASE = import.meta.env.VITE_API_BASE || "";
 
+// Helper function to check if a role is an admin role
+// Matches: admin, ADMIN, Administrator, administrator
+export function isAdminRole(role: string | undefined | null): boolean {
+  if (!role) return false;
+  const lowerRole = role.toLowerCase();
+  return lowerRole === 'admin' || lowerRole === 'administrator';
+}
+
 function getAuthHeaders(): HeadersInit {
   const token = localStorage.getItem("token");
   if (!token) {

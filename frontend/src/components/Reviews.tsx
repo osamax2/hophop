@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Star, ThumbsUp, MessageSquare, Loader2 } from 'lucide-react';
 import type { Language } from '../App';
-import { ratingsApi, companiesApi } from '../lib/api';
+import { ratingsApi, companiesApi, isAdminRole } from '../lib/api';
 
 interface ReviewsProps {
   language: Language;
@@ -61,7 +61,7 @@ export function Reviews({ language, isLoggedIn, user }: ReviewsProps) {
   const t = translations[language];
   
   // Check if user is admin or company (agent) user
-  const isAdminOrCompany = user?.role === 'admin' || user?.role === 'agent' || (user?.company_id !== undefined && user?.company_id !== null);
+  const isAdminOrCompany = isAdminRole(user?.role) || user?.role === 'agent' || (user?.company_id !== undefined && user?.company_id !== null);
   const canRate = isLoggedIn && !isAdminOrCompany;
   const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
   const [reviews, setReviews] = useState<any[]>([]);

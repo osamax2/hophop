@@ -18,7 +18,7 @@ import { BookingStatus } from './components/BookingStatus';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { RoundTripBooking } from './components/RoundTripBooking';
 import { MyBookings } from './components/MyBookings';
-import { favoritesApi } from './lib/api';
+import { favoritesApi, isAdminRole } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
 export type UserRole = 'visitor' | 'user' | 'admin' | 'agent';
@@ -339,7 +339,7 @@ export default function App() {
   const handleLogin = (userData: User) => {
     setUser(userData);
     // Redirect admin users to admin dashboard, others to home
-    if (userData.role === 'admin') {
+    if (isAdminRole(userData.role)) {
       setCurrentPage('admin');
     } else {
       setCurrentPage('home');

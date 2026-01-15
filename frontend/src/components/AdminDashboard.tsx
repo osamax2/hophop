@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check, Scan, ListChecks } from 'lucide-react';
 import type { Language, User } from '../App';
-import { adminApi, imagesApi, tripsApi, citiesApi, authApi } from '../lib/api';
+import { adminApi, imagesApi, tripsApi, citiesApi, authApi, isAdminRole } from '../lib/api';
 import { CitySelector } from './CitySelector';
 import { ScheduleManagement } from './ScheduleManagement';
 import { CompanyManagement } from './CompanyManagement';
@@ -437,7 +437,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const t = translations[language];
   
   // Determine user access level
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = isAdminRole(user?.role);
   const isAgentManager = user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id;
   const isDriver = user?.role === 'agent' && (user?.agent_type === 'driver' || user?.agent_type === 'driver_assistant');
   

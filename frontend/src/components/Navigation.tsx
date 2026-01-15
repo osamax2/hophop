@@ -1,6 +1,7 @@
 import { Menu, X, Globe, User, LogOut, Home, Search, Calendar, Star, BarChart3, CreditCard, Ticket } from 'lucide-react';
 import { useState } from 'react';
 import type { Language, User as UserType } from '../App';
+import { isAdminRole } from '../lib/api';
 import logo from 'figma:asset/4dddb73877b28322b7848adc27f0f948198765ae.png';
 
 interface NavigationProps {
@@ -74,7 +75,7 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
     { id: 'home', label: t.home, icon: Home },
   ];
 
-  if (user?.role === 'admin' || user?.role === 'agent') {
+  if (isAdminRole(user?.role) || user?.role === 'agent') {
     console.log("Adding admin menu item");
     menuItems.push({ id: 'admin', label: t.admin, icon: BarChart3 });
     menuItems.push({ id: 'subscriptions', label: t.subscriptions, icon: CreditCard });
