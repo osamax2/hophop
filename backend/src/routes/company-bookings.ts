@@ -431,6 +431,7 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
     const result = await pool.query(`
       SELECT 
         b.id,
+        b.trip_id,
         b.seats_booked as quantity,
         b.booking_status as status,
         b.guest_name,
@@ -438,7 +439,7 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
         t.departure_time,
         fc.name as from_city,
         tc.name as to_city,
-        u.first_name || ' ' || u.last_name as user_name
+        COALESCE(u.first_name || ' ' || u.last_name, b.guest_name, 'Gast') as passenger_name
       FROM bookings b
       JOIN trips t ON t.id = b.trip_id
       JOIN routes r ON r.id = t.route_id
@@ -447,7 +448,7 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
       LEFT JOIN users u ON u.id = b.user_id
       WHERE b.qr_code_data = $1 
         AND t.company_id = $2
-        AND b.booking_status = 'confirmed'
+        AND b.booking_status IN ('confirmed', 'checked_in')
     `, [qrData, companyId]);
 
     if (result.rows.length === 0) {
@@ -458,25 +459,30 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
     }
 
     const booking = result.rows[0];
+    const alreadyCheckedIn = booking.status === 'checked_in';
 
-    // Mark booking as checked-in
-    await pool.query(
-      `UPDATE bookings 
-       SET booking_status = 'checked_in',
-           updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1`,
-      [booking.id]
-    );
+    // Mark booking as checked-in if not already
+    if (!alreadyCheckedIn) {
+      await pool.query(
+        `UPDATE bookings 
+         SET booking_status = 'checked_in',
+             updated_at = CURRENT_TIMESTAMP
+         WHERE id = $1`,
+        [booking.id]
+      );
+    }
 
     res.json({
       valid: true,
-      message: "Booking verified successfully",
+      message: alreadyCheckedIn ? "Buchung bereits eingecheckt" : "Booking verified successfully",
+      alreadyCheckedIn,
       booking: {
         id: booking.id,
-        passengerName: booking.user_name || booking.guest_name,
-        seats: booking.quantity,
-        assignedSeats: booking.assigned_seats,
-        route: `${booking.from_city} → ${booking.to_city}`,
+        tripId: booking.trip_id,
+        passengerName: booking.passenger_name || 'Gast',
+        seats: booking.quantity || 1,
+        assignedSeats: booking.assigned_seats || '-',
+        route: `${booking.from_city || ''} → ${booking.to_city || ''}`,
         departureTime: booking.departure_time
       }
     });

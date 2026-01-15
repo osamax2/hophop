@@ -172,6 +172,7 @@ router.post("/", bookingLimiter, verifyCaptchaEnterpriseForGuests, optionalAuth,
         t.id,
         t.departure_time,
         t.arrival_time,
+        t.company_id,
         fc.name as from_city,
         tc.name as to_city,
         comp.name as company_name
@@ -273,29 +274,32 @@ router.post("/", bookingLimiter, verifyCaptchaEnterpriseForGuests, optionalAuth,
     // 10) Send email notification to company
     try {
       const companyRes = await client.query(
-        'SELECT email, name FROM transport_companies WHERE id = (SELECT company_id FROM trips WHERE id = $1)',
+        'SELECT email, name, id FROM transport_companies WHERE id = (SELECT company_id FROM trips WHERE id = $1)',
         [trip_id]
       );
       
       if (companyRes.rows.length > 0) {
         const company = companyRes.rows[0];
         
+        const bookingNotificationData = {
+          bookingId: newBooking.id,
+          customerName: recipientName,
+          customerEmail: recipientEmail,
+          customerPhone: guest_phone || '',
+          tripFrom: tripDetails.from_city,
+          tripTo: tripDetails.to_city,
+          departureTime: new Date(tripDetails.departure_time).toLocaleString('de-DE'),
+          seats: quantity,
+          passengerNames: passenger_names || [guest_name || 'Main Passenger'],
+          totalPrice: totalPrice,
+          currency: currency,
+        };
+
+        // Send to company main email
         await emailService.sendCompanyNotification(
           company.email,
           company.name,
-          {
-            bookingId: newBooking.id,
-            customerName: recipientName,
-            customerEmail: recipientEmail,
-            customerPhone: guest_phone || '',
-            tripFrom: tripDetails.from_city,
-            tripTo: tripDetails.to_city,
-            departureTime: new Date(tripDetails.departure_time).toLocaleString('de-DE'),
-            seats: quantity,
-            passengerNames: passenger_names || [guest_name || 'Main Passenger'],
-            totalPrice: totalPrice,
-            currency: currency,
-          }
+          bookingNotificationData
         );
       }
     } catch (companyEmailError) {
@@ -303,7 +307,57 @@ router.post("/", bookingLimiter, verifyCaptchaEnterpriseForGuests, optionalAuth,
       // Don't fail the booking if email fails
     }
 
+    // COMMIT the transaction before sending manager emails
     await client.query("COMMIT");
+    
+    // Store data for manager notifications (after commit)
+    const companyId = tripDetails.company_id;
+    const managerNotificationData = {
+      bookingId: newBooking.id,
+      customerName: recipientName,
+      customerEmail: recipientEmail,
+      customerPhone: guest_phone || '',
+      tripFrom: tripDetails.from_city,
+      tripTo: tripDetails.to_city,
+      departureTime: new Date(tripDetails.departure_time).toLocaleString('de-DE'),
+      seats: quantity,
+      passengerNames: passenger_names || [guest_name || 'Main Passenger'],
+      totalPrice: totalPrice,
+      currency: currency,
+    };
+
+    // 11) Send notification to all managers of the company (after commit, using separate connection)
+    try {
+      const managersRes = await pool.query(
+        `SELECT u.email, u.first_name, u.last_name 
+         FROM users u
+         JOIN user_types ut ON ut.id = u.user_type_id
+         WHERE u.company_id = $1 
+           AND ut.code = 'manager' 
+           AND u.is_active = true 
+           AND u.email IS NOT NULL`,
+        [companyId]
+      );
+
+      // Send email to each manager
+      for (const manager of managersRes.rows) {
+        try {
+          await emailService.sendCompanyNotification(
+            manager.email,
+            `${manager.first_name} ${manager.last_name}`,
+            managerNotificationData
+          );
+          console.log(`Manager notification sent to: ${manager.email}`);
+        } catch (managerEmailError) {
+          console.error(`Failed to send notification to manager ${manager.email}:`, managerEmailError);
+          // Continue with other managers
+        }
+      }
+    } catch (managerQueryError) {
+      console.error('Manager notification query failed:', managerQueryError);
+      // Don't fail - booking is already committed
+    }
+
     return res.status(201).json({ 
       booking: newBooking,
       status_link: `${process.env.FRONTEND_URL || 'http://localhost'}/booking-status/${statusToken}`

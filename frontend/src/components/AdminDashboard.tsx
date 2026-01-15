@@ -442,8 +442,25 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
   const isDriver = user?.role === 'agent' && (user?.agent_type === 'driver' || user?.agent_type === 'driver_assistant');
   
   // Default tab based on role
-  const defaultTab = isAdmin ? 'analytics' : isDriver ? 'qr-scanner' : isAgentManager ? 'company-bookings' : 'schedules';
-  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics' | 'company-bookings' | 'qr-scanner' | 'branches' | 'subscriptions'>(defaultTab);
+  const getDefaultTab = () => {
+    if (isAdmin) return 'analytics';
+    if (isDriver) return 'qr-scanner';
+    if (isAgentManager) return 'company-bookings';
+    return 'schedules';
+  };
+  
+  const [activeTab, setActiveTab] = useState<'schedules' | 'users' | 'companies' | 'ratings' | 'bookings' | 'invoices' | 'photos' | 'import' | 'analytics' | 'company-bookings' | 'qr-scanner' | 'branches' | 'subscriptions'>(getDefaultTab());
+  
+  // Ensure driver only sees allowed tabs
+  useEffect(() => {
+    if (isDriver) {
+      const allowedDriverTabs = ['qr-scanner', 'photos'];
+      if (!allowedDriverTabs.includes(activeTab)) {
+        setActiveTab('qr-scanner');
+      }
+    }
+  }, [isDriver, activeTab]);
+  
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [loading, setLoading] = useState(false);
   
