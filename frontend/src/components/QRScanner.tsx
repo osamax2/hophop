@@ -428,12 +428,41 @@ export default function QRScanner() {
     };
   }, []);
 
+  // Handle language change
+  const handleLanguageChange = (newLang: Language) => {
+    setLanguage(newLang);
+    localStorage.setItem('hophop_language', newLang);
+  };
+
   return (
     <div className={`max-w-2xl mx-auto space-y-6 ${isRTL ? 'rtl' : ''}`} dir={isRTL ? 'rtl' : 'ltr'}>
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Scan className="w-8 h-8 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <Scan className="w-8 h-8 text-blue-600" />
+            <h2 className="text-2xl font-bold text-gray-900">{t.title}</h2>
+          </div>
+          {/* Language Switcher */}
+          <div className="flex gap-1">
+            <button
+              onClick={() => handleLanguageChange('de')}
+              className={`px-2 py-1 text-sm rounded ${language === 'de' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            >
+              DE
+            </button>
+            <button
+              onClick={() => handleLanguageChange('en')}
+              className={`px-2 py-1 text-sm rounded ${language === 'en' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            >
+              EN
+            </button>
+            <button
+              onClick={() => handleLanguageChange('ar')}
+              className={`px-2 py-1 text-sm rounded ${language === 'ar' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'}`}
+            >
+              AR
+            </button>
+          </div>
         </div>
 
         {/* Camera Permission Warning */}
