@@ -29,6 +29,7 @@ interface BookingStatusData {
   company_name: string;
   company_phone: string;
   company_email: string;
+  assigned_seats?: string;
   passengers: Array<{ name: string; seat_number: number }>;
 }
 
@@ -58,6 +59,7 @@ const translations = {
     companyContact: 'Kontakt',
     passengers: 'Passagiere',
     seats: 'Plätze',
+    assignedSeats: 'Ihre Sitzplätze',
     totalPrice: 'Gesamtpreis',
     bookedOn: 'Gebucht am',
     mainPassenger: 'Hauptpassagier',
@@ -87,6 +89,7 @@ const translations = {
     companyContact: 'Contact',
     passengers: 'Passengers',
     seats: 'Seats',
+    assignedSeats: 'Your Seat Numbers',
     totalPrice: 'Total Price',
     bookedOn: 'Booked on',
     mainPassenger: 'Main Passenger',
@@ -116,6 +119,7 @@ const translations = {
     companyContact: 'التواصل',
     passengers: 'الركاب',
     seats: 'المقاعد',
+    assignedSeats: 'أرقام مقاعدك',
     totalPrice: 'السعر الإجمالي',
     bookedOn: 'تاريخ الحجز',
     mainPassenger: 'الراكب الرئيسي',
@@ -296,6 +300,33 @@ export function BookingStatus({ token, language = 'en' }: BookingStatusProps) {
             <div className="bg-white p-6 rounded-xl inline-block shadow-md">
               <img src={qrCode} alt="QR Code" className="w-64 h-64 mx-auto" />
             </div>
+          </div>
+        )}
+
+        {/* Assigned Seats for Confirmed Bookings */}
+        {booking.booking_status === 'confirmed' && booking.assigned_seats && (
+          <div className="bg-gradient-to-br from-green-100 to-emerald-100 rounded-2xl shadow-lg p-8 mb-6 border-2 border-green-400">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <span className="text-4xl">🪑</span>
+              <h2 className="text-2xl font-bold text-green-800">{t.assignedSeats}</h2>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4">
+              {booking.assigned_seats.split(',').map((seat, index) => (
+                <div 
+                  key={index}
+                  className="bg-white rounded-xl shadow-md px-8 py-4 border-2 border-green-500"
+                >
+                  <div className="text-4xl font-bold text-green-700">{seat.trim()}</div>
+                </div>
+              ))}
+            </div>
+            <p className="text-green-700 text-center mt-4 text-sm">
+              {language === 'ar' 
+                ? 'يرجى الجلوس في المقعد/المقاعد المحددة لك' 
+                : language === 'de' 
+                ? 'Bitte nehmen Sie Ihren zugewiesenen Sitzplatz/Sitzplätze ein' 
+                : 'Please take your assigned seat(s)'}
+            </p>
           </div>
         )}
 

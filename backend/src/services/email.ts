@@ -12,6 +12,7 @@ interface BookingEmailData {
     seats: number;
     totalPrice: number;
     currency: string;
+    assignedSeats?: string; // e.g. "1, 2, 3"
   };
   bookingId: number;
   isGuestBooking: boolean;
@@ -510,6 +511,12 @@ export class EmailService {
           <span class="detail-label">Plätze / Seats / المقاعد:</span>
           <span>${trip.seats}</span>
         </div>
+        ${trip.assignedSeats ? `
+        <div class="detail-row" style="background: #dcfce7; padding: 12px 8px; margin: 8px -8px; border-radius: 6px;">
+          <span class="detail-label" style="color: #166534;">🪑 Sitzplätze / Seat Numbers / أرقام المقاعد:</span>
+          <span style="font-weight: bold; font-size: 1.2em; color: #166534;">${trip.assignedSeats}</span>
+        </div>
+        ` : ''}
         <div class="detail-row">
           <span class="detail-label">Gesamtpreis / Total / الإجمالي:</span>
           <span><strong>${trip.totalPrice} ${trip.currency}</strong></span>

@@ -188,16 +188,22 @@ export default function QRScanner() {
                     </div>
                     <div className="flex justify-between">
                       <span className="font-semibold text-gray-700">Passagier:</span>
-                      <span className="text-gray-900">{result.booking.user_name || result.booking.guest_name}</span>
+                      <span className="text-gray-900">{result.booking.passengerName || result.booking.user_name || result.booking.guest_name}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-semibold text-gray-700">Route:</span>
-                      <span className="text-gray-900">{result.booking.from_city} → {result.booking.to_city}</span>
+                      <span className="text-gray-900">{result.booking.route || `${result.booking.from_city} → ${result.booking.to_city}`}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="font-semibold text-gray-700">Sitze:</span>
-                      <span className="text-gray-900">{result.booking.seats_booked}</span>
+                      <span className="text-gray-900">{result.booking.seats || result.booking.seats_booked}</span>
                     </div>
+                    {result.booking.assignedSeats && (
+                      <div className="flex justify-between bg-green-100 -mx-4 px-4 py-2 rounded">
+                        <span className="font-semibold text-green-800">🪑 Sitzplätze:</span>
+                        <span className="text-green-900 font-bold text-lg">{result.booking.assignedSeats}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between">
                       <span className="font-semibold text-gray-700">Abfahrt:</span>
                       <span className="text-gray-900">

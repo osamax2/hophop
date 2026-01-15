@@ -176,14 +176,51 @@ router.put("/:id/accept", requireAuth, requireRole(['company_admin']), async (re
     // Generate unique QR code data
     const qrData = crypto.randomBytes(32).toString('hex');
 
-    // Update booking status to confirmed
+    // Calculate next available seat numbers
+    // Get all already assigned seats for this trip
+    const assignedSeatsResult = await pool.query(`
+      SELECT assigned_seats FROM bookings 
+      WHERE trip_id = $1 
+        AND booking_status = 'confirmed' 
+        AND assigned_seats IS NOT NULL
+        AND deleted_at IS NULL
+    `, [booking.trip_id]);
+    
+    // Parse all already assigned seats
+    const usedSeats: number[] = [];
+    for (const row of assignedSeatsResult.rows) {
+      if (row.assigned_seats) {
+        const seats = row.assigned_seats.split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
+        usedSeats.push(...seats);
+      }
+    }
+    
+    // Find next available seat numbers
+    const seatsNeeded = booking.seats_booked;
+    const assignedSeats: number[] = [];
+    let seatNumber = 1;
+    
+    while (assignedSeats.length < seatsNeeded) {
+      if (!usedSeats.includes(seatNumber)) {
+        assignedSeats.push(seatNumber);
+      }
+      seatNumber++;
+      // Safety limit to prevent infinite loop
+      if (seatNumber > 1000) break;
+    }
+    
+    const assignedSeatsString = assignedSeats.join(', ');
+    console.log(`🪑 Assigning seats ${assignedSeatsString} to booking #${bookingId}`);
+
+    // Update booking status to confirmed with assigned seats
     await pool.query(
       `UPDATE bookings 
        SET booking_status = 'confirmed', 
            qr_code_data = $1,
+           assigned_seats = $2,
            updated_at = CURRENT_TIMESTAMP
-       WHERE id = $2`,
-      [qrData, bookingId]
+       WHERE id = $3`,
+      [qrData, assignedSeatsString, bookingId]
     );
 
     // Send confirmation email to user/guest
@@ -238,7 +275,8 @@ router.put("/:id/accept", requireAuth, requireRole(['company_admin']), async (re
             company: companyName,
             seats: booking.seats_booked,
             totalPrice: booking.total_price,
-            currency: booking.currency
+            currency: booking.currency,
+            assignedSeats: assignedSeatsString
           }
         });
       } catch (emailError) {
@@ -250,7 +288,8 @@ router.put("/:id/accept", requireAuth, requireRole(['company_admin']), async (re
     res.json({ 
       message: "Booking accepted successfully",
       bookingId,
-      qrCodeData: qrData
+      qrCodeData: qrData,
+      assignedSeats: assignedSeatsString
     });
   } catch (error: any) {
     console.error("Error accepting booking:", error);
@@ -395,6 +434,7 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
         b.seats_booked as quantity,
         b.booking_status as status,
         b.guest_name,
+        b.assigned_seats,
         t.departure_time,
         fc.name as from_city,
         tc.name as to_city,
@@ -435,6 +475,7 @@ router.post("/verify-qr", requireAuth, requireRole(['company_admin', 'driver', '
         id: booking.id,
         passengerName: booking.user_name || booking.guest_name,
         seats: booking.quantity,
+        assignedSeats: booking.assigned_seats,
         route: `${booking.from_city} → ${booking.to_city}`,
         departureTime: booking.departure_time
       }
