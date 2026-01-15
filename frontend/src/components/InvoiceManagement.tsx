@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, Filter, Trash2, RotateCcw, AlertCircle, Loader2, Download } from 'lucide-react';
+import { X, Search, Filter, Trash2, RotateCcw, AlertCircle, Loader2, Download, FileText } from 'lucide-react';
 
 interface Invoice {
   id: number;
@@ -86,6 +86,8 @@ const translations = {
     updateError: 'Fehler beim Aktualisieren der Rechnung',
     deleteError: 'Fehler beim Löschen der Rechnung',
     restoreError: 'Fehler beim Wiederherstellen der Rechnung',
+    downloadPdf: 'PDF herunterladen',
+    downloadError: 'Fehler beim Herunterladen der PDF',
   },
   en: {
     title: 'Invoice Management',
@@ -145,6 +147,8 @@ const translations = {
     updateError: 'Error updating invoice',
     deleteError: 'Error deleting invoice',
     restoreError: 'Error restoring invoice',
+    downloadPdf: 'Download PDF',
+    downloadError: 'Error downloading PDF',
   },
   ar: {
     title: 'إدارة الفواتير',
@@ -204,6 +208,8 @@ const translations = {
     updateError: 'خطأ في تحديث الفاتورة',
     deleteError: 'خطأ في حذف الفاتورة',
     restoreError: 'خطأ في استعادة الفاتورة',
+    downloadPdf: 'تحميل PDF',
+    downloadError: 'خطأ في تحميل PDF',
   },
 };
 
@@ -354,6 +360,37 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
     } catch (error) {
       console.error('Error restoring invoice:', error);
       alert(t.restoreError);
+    }
+  };
+
+  // Download invoice as PDF
+  const handleDownloadPdf = async (invoice: Invoice) => {
+    try {
+      const response = await fetch(
+        `/api/admin/invoices/${invoice.id}/pdf?lang=${language}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `invoice-${invoice.invoice_number}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert(t.downloadError);
+      }
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      alert(t.downloadError);
     }
   };
 
@@ -688,7 +725,14 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex space-x-2">
+                        <div className="flex space-x-2 items-center">
+                          <button
+                            onClick={() => handleDownloadPdf(invoice)}
+                            className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
+                            title={t.downloadPdf}
+                          >
+                            <FileText className="w-5 h-5" />
+                          </button>
                           <button
                             onClick={() => handleEdit(invoice)}
                             className="text-blue-600 hover:text-blue-900"
