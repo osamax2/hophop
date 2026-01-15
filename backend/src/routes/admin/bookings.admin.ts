@@ -311,9 +311,45 @@ router.patch("/:id", async (req: AuthedRequest, res) => {
 
       // Generate QR code
       const qrData = crypto.randomBytes(32).toString('hex');
+      
+      // Calculate next available seat numbers for this trip
+      const assignedSeatsResult = await pool.query(`
+        SELECT assigned_seats FROM bookings 
+        WHERE trip_id = $1 
+          AND booking_status IN ('confirmed', 'checked_in')
+          AND assigned_seats IS NOT NULL
+          AND deleted_at IS NULL
+          AND id != $2
+      `, [booking.trip_id, id]);
+      
+      // Parse all already assigned seats
+      const usedSeats: number[] = [];
+      for (const row of assignedSeatsResult.rows) {
+        if (row.assigned_seats) {
+          const seats = row.assigned_seats.split(',').map((s: string) => parseInt(s.trim())).filter((n: number) => !isNaN(n));
+          usedSeats.push(...seats);
+        }
+      }
+      
+      // Find next available seat numbers
+      const seatsNeeded = booking.seats_booked;
+      const assignedSeats: number[] = [];
+      let seatNumber = 1;
+      
+      while (assignedSeats.length < seatsNeeded) {
+        if (!usedSeats.includes(seatNumber)) {
+          assignedSeats.push(seatNumber);
+        }
+        seatNumber++;
+        if (seatNumber > 1000) break;
+      }
+      
+      const assignedSeatsString = assignedSeats.join(', ');
+      console.log(`🪑 Admin: Assigning seats ${assignedSeatsString} to booking #${id}`);
+
       await pool.query(
-        'UPDATE bookings SET qr_code_data = $1 WHERE id = $2',
-        [qrData, id]
+        'UPDATE bookings SET qr_code_data = $1, assigned_seats = $2 WHERE id = $3',
+        [qrData, assignedSeatsString, id]
       );
 
       // Get full booking details for email
@@ -364,7 +400,8 @@ router.patch("/:id", async (req: AuthedRequest, res) => {
               company: details.company_name,
               seats: details.seats_booked,
               totalPrice: details.total_price,
-              currency: details.currency
+              currency: details.currency,
+              assignedSeats: assignedSeatsString
             }
           });
         } catch (emailError) {

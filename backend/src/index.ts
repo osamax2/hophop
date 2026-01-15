@@ -31,6 +31,9 @@ const PORT = process.env.PORT || 4000;
  app.set('trust proxy', 1);
  
 
+// Trust proxy for rate limiter when behind nginx/docker
+app.set('trust proxy', 1);
+
 // ====== Security Middlewares ======
 // Helmet helps secure Express apps by setting various HTTP headers
 const isProduction = process.env.NODE_ENV === 'production';
@@ -85,7 +88,7 @@ app.use((req, res, next) => {
 const allowedOrigins = [
   'https://hophopsy.com',
   'https://www.hophopsy.com',
-  'http://localhost:5173', // Development
+  'http://localhost:5173', // Development Vite
   'http://localhost:3000',
    'http://localhost:8080', // Development Docker/Nginx
   'http://87.106.51.243:8080', // Production frontend

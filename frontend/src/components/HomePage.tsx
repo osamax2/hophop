@@ -507,7 +507,7 @@ export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, o
  {/* Sponsored Badge */}
                 <div style={{ width: 'fit-content' }} className={`relative w-fit top-3 ${language === 'ar' ? 'left-3' : 'right-3'} bg-yellow-500 text-white text-xs px-3 py-1 rounded-full flex items-center gap-1`}>
                   <Star className="w-3 h-3 fill-white" />
-                  {language === 'de' ? 'Gesponsert' : language === 'ar' ? 'ديعاية' : 'Sponsored'}
+                  {language === 'de' ? 'Gesponsert' : language === 'ar' ? 'مُموّل' : 'Sponsored'}
                 </div>               
                 
                 {/* Company Name */}
