@@ -350,7 +350,7 @@ export default function QRScanner() {
             <button
               onClick={startScanning}
               disabled={cameraPermission === 'denied'}
-              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 bg-blue-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <Camera className="w-5 h-5" />
               Scannen starten
@@ -360,7 +360,7 @@ export default function QRScanner() {
           {scanning && (
             <button
               onClick={stopScanning}
-              className="flex-1 bg-red-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-red-700 flex items-center justify-center gap-2"
+              className="flex-1 bg-red-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-red-700 flex items-center justify-center gap-2"
             >
               <XCircle className="w-5 h-5" />
               Stoppen
@@ -370,7 +370,7 @@ export default function QRScanner() {
           {result && (
             <button
               onClick={handleScanAgain}
-              className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
+              className="flex-1 bg-blue-600 text-black px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center justify-center gap-2"
             >
               <Scan className="w-5 h-5" />
               Erneut scannen
@@ -420,7 +420,7 @@ export default function QRScanner() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="bg-green-600 text-white text-xs px-2 py-1 rounded-full">
+                      <span className="bg-green-600 text-black text-xs px-2 py-1 rounded-full">
                         #{index + 1}
                       </span>
                       <span className="font-semibold text-gray-900">{booking.passengerName}</span>
@@ -464,7 +464,7 @@ export default function QRScanner() {
                 ? 'bg-green-100 text-green-700 cursor-not-allowed'
                 : sendingReport
                 ? 'bg-gray-300 text-gray-600 cursor-wait'
-                : 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700'
+                : 'bg-gradient-to-r from-green-600 to-emerald-600 text-black hover:from-green-700 hover:to-emerald-700'
             }`}
           >
             {reportSent ? (

@@ -177,11 +177,11 @@ router.put("/:id/accept", requireAuth, requireRole(['company_admin']), async (re
     const qrData = crypto.randomBytes(32).toString('hex');
 
     // Calculate next available seat numbers
-    // Get all already assigned seats for this trip
+    // Get all already assigned seats for this trip (including checked_in bookings)
     const assignedSeatsResult = await pool.query(`
       SELECT assigned_seats FROM bookings 
       WHERE trip_id = $1 
-        AND booking_status = 'confirmed' 
+        AND booking_status IN ('confirmed', 'checked_in')
         AND assigned_seats IS NOT NULL
         AND deleted_at IS NULL
     `, [booking.trip_id]);
