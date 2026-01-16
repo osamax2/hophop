@@ -50,9 +50,24 @@ COPY fonts ./fonts
 # Copy migrations directory
 COPY migrations ./migrations
 
-# Copy init script
-COPY init-db.sh ./init-db.sh
-RUN chmod +x ./init-db.sh
+# Create init script inline (avoids Windows CRLF issues)
+RUN printf '#!/bin/sh\n\
+set -e\n\
+echo "Waiting for database to be ready..."\n\
+until pg_isready -h ${DB_HOST:-hophop-db} -U ${DB_USER:-hophop}; do\n\
+  sleep 1\n\
+done\n\
+echo "Database is ready. Running migrations..."\n\
+for migration in /app/migrations/*.sql; do\n\
+  if [ -f "$migration" ]; then\n\
+    echo "Running migration: $(basename $migration)"\n\
+    PGPASSWORD=${DB_PASSWORD:-hophop123} psql -h ${DB_HOST:-hophop-db} -U ${DB_USER:-hophop} -d ${DB_NAME:-hophop} -f "$migration" 2>&1 || {\n\
+      echo "Warning: Migration $(basename $migration) failed or already applied"\n\
+    }\n\
+  fi\n\
+done\n\
+echo "Migrations complete. Starting application..."\n\
+exec npm start\n' > ./init-db.sh && chmod +x ./init-db.sh
 
 # Create uploads directory
 RUN mkdir -p uploads
