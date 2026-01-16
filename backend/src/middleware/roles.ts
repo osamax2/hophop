@@ -26,11 +26,12 @@ export function requireRole(allowed: string[]) {
         )
       ]);
 
-      // Map role names to codes
+      // Map role names to codes (case-insensitive)
       const roleMap: { [key: string]: string } = {
-        'Administrator': 'admin',
-        'Agent': 'company_admin',
-        'User': 'user'
+        'administrator': 'admin',
+        'admin': 'admin',
+        'agent': 'company_admin',
+        'user': 'user'
       };
       
       // Collect all role codes
@@ -38,13 +39,16 @@ export function requireRole(allowed: string[]) {
       
       // Add system roles
       systemRoles.rows.forEach((row) => {
-        // Add the raw name (e.g., "ADMIN", "AGENT", "Administrator")
-        userRoles.push(row.name);
-        userRoles.push(row.name.toUpperCase());
-        userRoles.push(row.name.toLowerCase());
+        const roleName = row.name;
+        const roleNameLower = roleName.toLowerCase();
         
-        // Add mapped name if it exists
-        const mapped = roleMap[row.name];
+        // Add the raw name (e.g., "ADMIN", "AGENT", "Administrator")
+        userRoles.push(roleName);
+        userRoles.push(roleName.toUpperCase());
+        userRoles.push(roleNameLower);
+        
+        // Add mapped name if it exists (using lowercase key for lookup)
+        const mapped = roleMap[roleNameLower];
         if (mapped) {
           userRoles.push(mapped);
           userRoles.push(mapped.toUpperCase());
