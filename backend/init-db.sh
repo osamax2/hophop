@@ -5,7 +5,7 @@
 set -e
 
 echo "Waiting for database to be ready..."
-until pg_isready -h hophop-db -U hophop; do
+until pg_isready -h ${DB_HOST:-hophop-db} -U ${DB_USER:-hophop}; do
   sleep 1
 done
 
@@ -15,7 +15,7 @@ echo "Database is ready. Running migrations..."
 for migration in /app/migrations/*.sql; do
   if [ -f "$migration" ]; then
     echo "Running migration: $(basename $migration)"
-    PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME -f "$migration" || {
+    PGPASSWORD=${DB_PASSWORD:-hophop123} psql -h ${DB_HOST:-hophop-db} -U ${DB_USER:-hophop} -d ${DB_NAME:-hophop} -f "$migration" 2>&1 || {
       echo "Warning: Migration $(basename $migration) failed or already applied"
     }
   fi
