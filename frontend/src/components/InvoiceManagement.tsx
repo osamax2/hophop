@@ -758,106 +758,143 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
 
       {/* Edit Modal */}
       {editingInvoice && (
-        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-gray-900 text-white rounded-lg shadow-xl max-w-md w-full p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-white">{t.editInvoice}</h3>
+        <div 
+          className="fixed inset-0 flex items-center justify-center p-4"
+          style={{ 
+            zIndex: 99999,
+            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backdropFilter: 'blur(4px)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setEditingInvoice(null);
+            }
+          }}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[95vh] flex flex-col"
+            style={{ 
+              position: 'relative',
+              zIndex: 100000,
+              overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
+              <h3 className="text-2xl font-bold text-gray-900">{t.editInvoice}</h3>
               <button
                 onClick={() => setEditingInvoice(null)}
-                className="text-gray-400 hover:text-white"
+                className="text-black hover:bg-black/10 rounded-full p-2 transition-colors"
               >
                 <X className="w-6 h-6" />
               </button>
             </div>
 
-            <div className="space-y-4">
-              {/* Status */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t.updateStatus}
-                </label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="pending">{t.pending}</option>
-                  <option value="paid">{t.paid}</option>
-                  <option value="overdue">{t.overdue}</option>
-                  <option value="cancelled">{t.cancelled}</option>
-                </select>
-              </div>
+            {/* Content */}
+            <div 
+              className="flex-1 p-6"
+              style={{
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                maxHeight: 'calc(95vh - 160px)',
+              }}
+            >
+              <div className="space-y-4">
+                {/* Status */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.updateStatus}
+                  </label>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="pending">{t.pending}</option>
+                    <option value="paid">{t.paid}</option>
+                    <option value="overdue">{t.overdue}</option>
+                    <option value="cancelled">{t.cancelled}</option>
+                  </select>
+                </div>
 
-              {/* Payment Method */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t.updatePaymentMethod}
-                </label>
-                <select
-                  value={editPaymentMethod}
-                  onChange={(e) => setEditPaymentMethod(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">-</option>
-                  <option value="cash">{t.cash}</option>
-                  <option value="card">{t.card}</option>
-                  <option value="bank">{t.bank}</option>
-                  <option value="online">{t.online}</option>
-                </select>
-              </div>
+                {/* Payment Method */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.updatePaymentMethod}
+                  </label>
+                  <select
+                    value={editPaymentMethod}
+                    onChange={(e) => setEditPaymentMethod(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  >
+                    <option value="">-</option>
+                    <option value="cash">{t.cash}</option>
+                    <option value="card">{t.card}</option>
+                    <option value="bank">{t.bank}</option>
+                    <option value="online">{t.online}</option>
+                  </select>
+                </div>
 
-              {/* Amount */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t.updateAmount}
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={editAmount}
-                  onChange={(e) => setEditAmount(parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                {/* Amount */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.updateAmount}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(parseFloat(e.target.value))}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
 
-              {/* Due Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t.updateDueDate}
-                </label>
-                <input
-                  type="date"
-                  value={editDueDate}
-                  onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+                {/* Due Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.updateDueDate}
+                  </label>
+                  <input
+                    type="date"
+                    value={editDueDate}
+                    onChange={(e) => setEditDueDate(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
 
-              {/* Payment Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  {t.updatePaymentDate}
-                </label>
-                <input
-                  type="date"
-                  value={editPaymentDate}
-                  onChange={(e) => setEditPaymentDate(e.target.value)}
-                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+                {/* Payment Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {t.updatePaymentDate}
+                  </label>
+                  <input
+                    type="date"
+                    value={editPaymentDate}
+                    onChange={(e) => setEditPaymentDate(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
 
-            <div className="flex space-x-3 mt-6">
+            {/* Footer Buttons */}
+            <div className="sticky bottom-0 bg-gray-50 px-6 py-4 border-t border-gray-200 flex space-x-3">
               <button
                 onClick={handleSaveEdit}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="flex-1 bg-green-600 text-white px-4 py-3 rounded-lg hover:bg-green-700 font-medium transition-colors"
               >
                 {t.save}
               </button>
               <button
                 onClick={() => setEditingInvoice(null)}
-                className="flex-1 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
+                className="flex-1 bg-gray-200 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-300 font-medium transition-colors"
               >
                 {t.cancel}
               </button>
