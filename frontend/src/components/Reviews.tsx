@@ -60,9 +60,8 @@ const translations = {
 export function Reviews({ language, isLoggedIn, user }: ReviewsProps) {
   const t = translations[language];
   
-  // Check if user is admin or company (agent) user
-  const isAdminOrCompany = isAdminRole(user?.role) || user?.role === 'agent' || (user?.company_id !== undefined && user?.company_id !== null);
-  const canRate = isLoggedIn && !isAdminOrCompany;
+  // All logged-in users can rate (including admin and agents)
+  const canRate = isLoggedIn;
   const [companies, setCompanies] = useState<Array<{ id: number; name: string }>>([]);
   const [reviews, setReviews] = useState<any[]>([]);
   const [selectedCompany, setSelectedCompany] = useState('');

@@ -24,8 +24,11 @@ const SubscriptionPlans: React.FC = () => {
   const fetchPlans = async () => {
     try {
       const API_BASE = import.meta.env.VITE_API_BASE || '';
+      console.log('Fetching subscription plans from:', `${API_BASE}/api/subscriptions/plans`);
       const response = await fetch(`${API_BASE}/api/subscriptions/plans`);
+      console.log('Subscription plans response status:', response.status);
       const data = await response.json();
+      console.log('Subscription plans data:', data);
       
       // Ensure price_per_month is a number
       const normalizedPlans = data.map((plan: any) => ({
@@ -34,9 +37,10 @@ const SubscriptionPlans: React.FC = () => {
         max_branches: Number(plan.max_branches) || 0,
       }));
       
+      console.log('Normalized subscription plans:', normalizedPlans);
       setPlans(normalizedPlans);
     } catch (error) {
-      console.error('Error fetching plans:', error);
+      console.error('Error fetching subscription plans:', error);
     } finally {
       setLoading(false);
     }
