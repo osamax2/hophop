@@ -758,13 +758,13 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
 
       {/* Edit Modal */}
       {editingInvoice && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[9999]">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center p-4 z-[9999]">
+          <div className="bg-gray-900 text-white rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold">{t.editInvoice}</h3>
+              <h3 className="text-xl font-bold text-white">{t.editInvoice}</h3>
               <button
                 onClick={() => setEditingInvoice(null)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-white"
               >
                 <X className="w-6 h-6" />
               </button>
@@ -773,13 +773,13 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
             <div className="space-y-4">
               {/* Status */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   {t.updateStatus}
                 </label>
                 <select
                   value={editStatus}
                   onChange={(e) => setEditStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="pending">{t.pending}</option>
                   <option value="paid">{t.paid}</option>
@@ -790,13 +790,13 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
 
               {/* Payment Method */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   {t.updatePaymentMethod}
                 </label>
                 <select
                   value={editPaymentMethod}
                   onChange={(e) => setEditPaymentMethod(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">-</option>
                   <option value="cash">{t.cash}</option>
@@ -808,7 +808,7 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
 
               {/* Amount */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   {t.updateAmount}
                 </label>
                 <input
@@ -817,33 +817,33 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
                   step="0.01"
                   value={editAmount}
                   onChange={(e) => setEditAmount(parseFloat(e.target.value))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               {/* Due Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   {t.updateDueDate}
                 </label>
                 <input
                   type="date"
                   value={editDueDate}
                   onChange={(e) => setEditDueDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
 
               {/* Payment Date */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-gray-300 mb-2">
                   {t.updatePaymentDate}
                 </label>
                 <input
                   type="date"
                   value={editPaymentDate}
                   onChange={(e) => setEditPaymentDate(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             </div>
@@ -851,13 +851,13 @@ const InvoiceManagement: React.FC<InvoiceManagementProps> = ({ language }) => {
             <div className="flex space-x-3 mt-6">
               <button
                 onClick={handleSaveEdit}
-                className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600"
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
               >
                 {t.save}
               </button>
               <button
                 onClick={() => setEditingInvoice(null)}
-                className="flex-1 bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300"
+                className="flex-1 bg-gray-700 text-white px-4 py-2 rounded-lg hover:bg-gray-600"
               >
                 {t.cancel}
               </button>
