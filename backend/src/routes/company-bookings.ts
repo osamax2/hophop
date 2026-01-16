@@ -590,20 +590,20 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
       );
       if (tripResult.rows[0]) {
         const trip = tripResult.rows[0];
-        tripInfo = `${trip.from_city} → ${trip.to_city} (${new Date(trip.departure_time).toLocaleString('de-DE')})`;
+        tripInfo = `${trip.from_city} ← ${trip.to_city} (${new Date(trip.departure_time).toLocaleString('ar-SA')})`;
       }
     }
 
-    // Generate CSV content
-    const csvHeaders = ['Buchungs-Nr', 'Passagiere', 'Sitze', 'Sitzplätze', 'Route', 'Abfahrt', 'Eingecheckt'];
+    // Generate CSV content in Arabic
+    const csvHeaders = ['رقم الحجز', 'المسافرون', 'عدد المقاعد', 'أرقام المقاعد', 'المسار', 'وقت المغادرة', 'وقت تسجيل الوصول'];
     const csvRows = passengers.map((p: any) => [
       p.bookingId,
-      p.passengerNames && Array.isArray(p.passengerNames) ? p.passengerNames.join(', ') : p.passengerName,
+      p.passengerNames && Array.isArray(p.passengerNames) ? p.passengerNames.join('، ') : p.passengerName,
       p.seats,
       p.assignedSeats,
       p.route,
-      new Date(p.departureTime).toLocaleString('de-DE'),
-      new Date(p.checkedInAt).toLocaleString('de-DE')
+      new Date(p.departureTime).toLocaleString('ar-SA'),
+      new Date(p.checkedInAt).toLocaleString('ar-SA')
     ]);
     
     const csvContent = [
@@ -614,20 +614,20 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
     // Calculate total passengers
     const totalPassengers = passengers.reduce((sum: number, p: any) => sum + (p.seats || 1), 0);
 
-    // Send email to manager
-    const emailSubject = `🚌 Passagierliste - ${tripInfo || 'Fahrt'} (${totalPassengers} Passagiere)`;
+    // Send email to manager (Arabic)
+    const emailSubject = `🚌 قائمة الركاب - ${tripInfo || 'الرحلة'} (${totalPassengers} راكب)`;
     
     const emailBody = `
       <!DOCTYPE html>
-      <html>
+      <html dir="rtl" lang="ar">
       <head>
         <meta charset="UTF-8">
         <style>
-          body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+          body { font-family: 'Segoe UI', Tahoma, Arial, sans-serif; line-height: 1.8; color: #333; direction: rtl; }
           .header { background: #10b981; color: white; padding: 20px; text-align: center; }
           .content { padding: 20px; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; direction: rtl; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: right; }
           th { background: #f3f4f6; }
           .summary { background: #ecfdf5; border: 2px solid #10b981; padding: 15px; border-radius: 8px; margin: 20px 0; }
           .footer { background: #f3f4f6; padding: 15px; text-align: center; font-size: 12px; color: #666; }
@@ -635,31 +635,31 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
       </head>
       <body>
         <div class="header">
-          <h1>🚌 Passagierliste</h1>
-          <p>${tripInfo || 'Aktuelle Fahrt'}</p>
+          <h1>🚌 قائمة الركاب</h1>
+          <p>${tripInfo || 'الرحلة الحالية'}</p>
         </div>
         
         <div class="content">
-          <p>Gesendet von: <strong>${driverName}</strong></p>
-          <p>Unternehmen: <strong>${companyName}</strong></p>
-          <p>Datum: ${new Date().toLocaleString('de-DE')}</p>
+          <p>أرسلها: <strong>${driverName}</strong></p>
+          <p>الشركة: <strong>${companyName}</strong></p>
+          <p>التاريخ: ${new Date().toLocaleString('ar-SA')}</p>
           
           <div class="summary">
-            <h3 style="margin-top: 0;">📊 Zusammenfassung</h3>
-            <p>Anzahl Buchungen: <strong>${passengers.length}</strong></p>
-            <p>Gesamt Passagiere: <strong>${totalPassengers}</strong></p>
+            <h3 style="margin-top: 0;">📊 ملخص</h3>
+            <p>عدد الحجوزات: <strong>${passengers.length}</strong></p>
+            <p>إجمالي الركاب: <strong>${totalPassengers}</strong></p>
           </div>
           
-          <h3>📋 Passagierliste</h3>
+          <h3>📋 قائمة الركاب</h3>
           <table>
             <thead>
               <tr>
                 <th>#</th>
-                <th>Buchung</th>
-                <th>Passagiere</th>
-                <th>Sitze</th>
-                <th>Sitzplätze</th>
-                <th>Eingecheckt</th>
+                <th>الحجز</th>
+                <th>المسافرون</th>
+                <th>عدد المقاعد</th>
+                <th>أرقام المقاعد</th>
+                <th>وقت التسجيل</th>
               </tr>
             </thead>
             <tbody>
@@ -670,19 +670,19 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
                   <td>${p.passengerNames && Array.isArray(p.passengerNames) ? p.passengerNames.join('<br>') : p.passengerName}</td>
                   <td>${p.seats}</td>
                   <td>${p.assignedSeats}</td>
-                  <td>${new Date(p.checkedInAt).toLocaleTimeString('de-DE')}</td>
+                  <td>${new Date(p.checkedInAt).toLocaleTimeString('ar-SA')}</td>
                 </tr>
               `).join('')}
             </tbody>
           </table>
           
           <p style="color: #666; font-size: 12px;">
-            Die CSV-Datei ist dieser E-Mail als Anhang beigefügt.
+            ملف CSV مرفق بهذا البريد الإلكتروني.
           </p>
         </div>
         
         <div class="footer">
-          <p>Diese E-Mail wurde automatisch von HopHop gesendet.</p>
+          <p>تم إرسال هذا البريد الإلكتروني تلقائياً من HopHop.</p>
         </div>
       </body>
       </html>
@@ -694,7 +694,7 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
       emailSubject,
       emailBody,
       {
-        filename: `passagierliste_${new Date().toISOString().split('T')[0]}.csv`,
+        filename: `قائمة_الركاب_${new Date().toISOString().split('T')[0]}.csv`,
         content: '\ufeff' + csvContent, // UTF-8 BOM for Excel compatibility
         contentType: 'text/csv'
       }
@@ -704,7 +704,7 @@ router.post("/send-passenger-report", requireAuth, requireRole(['company_admin',
 
     res.json({ 
       success: true,
-      message: "Bericht erfolgreich gesendet",
+      message: "تم إرسال التقرير بنجاح",
       sentTo: managerEmail,
       passengerCount: totalPassengers
     });
