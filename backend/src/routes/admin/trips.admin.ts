@@ -368,6 +368,7 @@ router.patch("/:id", async (req, res) => {
   console.log(`PATCH /api/admin/trips/${id} - Request body:`, req.body);
 
   // تحديثات بسيطة شائعة
+  // Note: price and currency are handled separately via trip_fares table
   const allowed = [
     "departure_time",
     "arrival_time",
@@ -381,8 +382,6 @@ router.patch("/:id", async (req, res) => {
     "equipment",
     "cancellation_policy",
     "extra_info",
-    "price",
-    "currency",
   ];
 
   const updates: string[] = [];
@@ -509,7 +508,20 @@ router.patch("/:id", async (req, res) => {
   } catch (error: any) {
     await client.query("ROLLBACK");
     console.error("Error updating trip:", error);
-    res.status(500).json({ message: "Error updating trip", error: String(error) });
+    console.error("Error details:", {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint,
+      stack: error.stack
+    });
+    res.status(500).json({ 
+      message: "Error updating trip", 
+      error: error.message || String(error),
+      code: error.code,
+      detail: error.detail,
+      constraint: error.constraint
+    });
   } finally {
     client.release();
   }

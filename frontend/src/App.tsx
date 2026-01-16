@@ -425,6 +425,7 @@ export default function App() {
             language={language}
             isLoggedIn={!!user}
             onNavigateToLogin={() => setCurrentPage('login')}
+            onToggleFavorite={toggleFavorite}
           />
         )}
         

@@ -10,6 +10,7 @@ interface FavoritesProps {
   language: Language;
   isLoggedIn: boolean;
   onNavigateToLogin: () => void;
+  onToggleFavorite?: (tripId: string) => void; // Optional callback to sync with parent
 }
 
 const translations = {
@@ -63,7 +64,7 @@ const translations = {
   },
 };
 
-export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNavigateToLogin }: FavoritesProps) {
+export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNavigateToLogin, onToggleFavorite }: FavoritesProps) {
   const t = translations[language];
   
   // Helper to convert to Arabic numerals
@@ -126,10 +127,17 @@ export function Favorites({ favorites, onViewDetails, language, isLoggedIn, onNa
     try {
       setRemovingTripId(tripId);
       setRemovalError(null);
+      
+      // Remove from backend
       await favoritesApi.remove(tripIdNum);
       
-      // Optimistically update UI - remove trip from list immediately
+      // Update local state - remove trip from list immediately
       setFavoriteTrips(prev => prev.filter(trip => trip.id !== tripId));
+      
+      // Also update parent component's favorites list if callback is provided
+      if (onToggleFavorite) {
+        onToggleFavorite(tripId);
+      }
     } catch (err: any) {
       console.error('Error removing favorite:', err);
       setRemovalError(err.message || 'Failed to remove favorite');
