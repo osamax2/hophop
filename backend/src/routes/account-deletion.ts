@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
+import { requireRole } from '../middleware/roles';
 
 const router = Router();
 
@@ -67,14 +68,8 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // Get all deletion requests (admin only)
-router.get('/admin', requireAuth, async (req: Request, res: Response) => {
+router.get('/admin', requireAuth, requireRole(['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator']), async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    
-    if (!user || !['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator'].includes(user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { status, limit = 100, offset = 0 } = req.query;
 
     let query = 'SELECT * FROM account_deletion_requests';
@@ -102,14 +97,9 @@ router.get('/admin', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Update deletion request status (admin only)
-router.put('/admin/:id', requireAuth, async (req: Request, res: Response) => {
+router.put('/admin/:id', requireAuth, requireRole(['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator']), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    
-    if (!user || !['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator'].includes(user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { id } = req.params;
     const { status, admin_notes } = req.body;
 
@@ -157,14 +147,9 @@ router.put('/admin/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Process account deletion (admin only) - actually deletes the user
-router.post('/admin/:id/process', requireAuth, async (req: Request, res: Response) => {
+router.post('/admin/:id/process', requireAuth, requireRole(['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator']), async (req: Request, res: Response) => {
   try {
     const user = (req as any).user;
-    
-    if (!user || !['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator'].includes(user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { id } = req.params;
 
     // Get the deletion request

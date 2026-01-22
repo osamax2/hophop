@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { pool } from '../db';
 import { requireAuth, AuthedRequest } from '../middleware/auth';
+import { requireRole } from '../middleware/roles';
 
 const router = Router();
 
@@ -87,15 +88,8 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // Get all complaints (admin only)
-router.get('/admin', requireAuth, async (req: Request, res: Response) => {
+router.get('/admin', requireAuth, requireRole(['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator']), async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    
-    // Check if user is admin
-    if (!user || !['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator'].includes(user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { status, search, limit = 100, offset = 0 } = req.query;
 
     let query = 'SELECT * FROM complaints';
@@ -133,14 +127,8 @@ router.get('/admin', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Get single complaint (admin only)
-router.get('/admin/:id', requireAuth, async (req: Request, res: Response) => {
+router.get('/admin/:id', requireAuth, requireRole(['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator']), async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    
-    if (!user || !['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator'].includes(user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { id } = req.params;
     const result = await pool.query('SELECT * FROM complaints WHERE id = $1', [id]);
 
@@ -156,14 +144,8 @@ router.get('/admin/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Update complaint status (admin only)
-router.put('/admin/:id', requireAuth, async (req: Request, res: Response) => {
+router.put('/admin/:id', requireAuth, requireRole(['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator']), async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    
-    if (!user || !['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator'].includes(user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { id } = req.params;
     const { status, admin_notes } = req.body;
 
@@ -189,14 +171,8 @@ router.put('/admin/:id', requireAuth, async (req: Request, res: Response) => {
 });
 
 // Delete complaint (admin only)
-router.delete('/admin/:id', requireAuth, async (req: Request, res: Response) => {
+router.delete('/admin/:id', requireAuth, requireRole(['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator']), async (req: Request, res: Response) => {
   try {
-    const user = (req as any).user;
-    
-    if (!user || !['admin', 'Admin', 'ADMIN', 'administrator', 'Administrator'].includes(user.role)) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
     const { id } = req.params;
     const result = await pool.query('DELETE FROM complaints WHERE id = $1 RETURNING id', [id]);
 

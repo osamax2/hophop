@@ -67,20 +67,13 @@ app.use(cors({
   credentials: true
 }));
 // Custom Permissions-Policy header to avoid browser warnings
-// Explicitly disable experimental Chrome features to suppress console warnings
+// Only include widely supported features
 app.use((req, res, next) => {
   res.setHeader('Permissions-Policy', 
     'geolocation=(self), ' +
     'camera=(), ' +
     'microphone=(), ' +
-    'payment=(self), ' +
-    'browsing-topics=(), ' +
-    'run-ad-auction=(), ' +
-    'join-ad-interest-group=(), ' +
-    'private-state-token-redemption=(), ' +
-    'private-state-token-issuance=(), ' +
-    'private-aggregation=(), ' +
-    'attribution-reporting=()'
+    'payment=(self)'
   );
   next();
 });
