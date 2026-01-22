@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check, Scan, ListChecks } from 'lucide-react';
+import { BarChart3, Users, Calendar, Upload, Image, AlertCircle, TrendingUp, Clock, MapPin, Loader2, Plus, X, Save, Filter, Download, Building2, Star, Search, Check, Scan, ListChecks, MessageSquare } from 'lucide-react';
 import type { Language, User } from '../App';
 import { adminApi, imagesApi, tripsApi, citiesApi, authApi, isAdminRole } from '../lib/api';
 import { CitySelector } from './CitySelector';
@@ -11,7 +11,7 @@ import InvoiceManagement from './InvoiceManagement';
 import CompanyBookings from './CompanyBookings';
 import QRScanner from './QRScanner';
 import BranchManagement from './BranchManagement';
-import BranchManagement from './BranchManagement';
+import { ComplaintsManagement } from './ComplaintsManagement';
 
 interface AdminDashboardProps {
   user: User | null;
@@ -76,6 +76,7 @@ const translations = {
     invoicesManagement: 'Rechnungsverwaltung',
     branchManagement: 'Filialen-Verwaltung',
     subscriptionManagement: 'Abonnementverwaltung',
+    complaintsManagement: 'Beschwerdeverwaltung',
     userManagement: 'Benutzerverwaltung',
     searchUsers: 'Benutzer suchen',
     searchUsersPlaceholder: 'Nach Name oder E-Mail suchen...',
@@ -198,6 +199,7 @@ const translations = {
     invoicesManagement: 'Invoice Management',
     branchManagement: 'Branch Management',
     subscriptionManagement: 'Subscription Management',
+    complaintsManagement: 'Complaints Management',
     userManagement: 'User Management',
     searchUsers: 'Search Users',
     searchUsersPlaceholder: 'Search by name or email...',
@@ -320,6 +322,7 @@ const translations = {
     invoicesManagement: 'إدارة الفواتير',
     branchManagement: 'إدارة الفروع',
     subscriptionManagement: 'إدارة الاشتراكات',
+    complaintsManagement: 'إدارة الشكاوى',
     userManagement: 'إدارة المستخدمين',
     searchUsers: 'بحث المستخدمين',
     searchUsersPlaceholder: 'البحث بالاسم أو البريد الإلكتروني...',
@@ -2629,6 +2632,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     ...((isAdmin || isAgentManager) ? [{ id: 'bookings' as const, label: t.bookingsManagement, icon: Calendar }] : []),
     // Invoices management tab - Admin or Agent Manager
     ...((isAdmin || isAgentManager) ? [{ id: 'invoices' as const, label: t.invoicesManagement, icon: Download }] : []),
+    // Complaints management tab - Admin only
+    ...(isAdmin ? [{ id: 'complaints' as const, label: t.complaintsManagement, icon: MessageSquare }] : []),
     // Photo Management - Admin, Agent Manager, Driver, Driver Assistant
     { id: 'photos' as const, label: t.photoManagement, icon: Image },
     // Data Import - Admin or Agent Manager only (NOT drivers)
@@ -4404,6 +4409,11 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       {/* Invoices Tab */}
       {activeTab === 'invoices' && (isAdmin || isAgentManager) && (
         <InvoiceManagement language={language} companyId={isAgentManager ? user?.company_id : undefined} />
+      )}
+
+      {/* Complaints Tab */}
+      {activeTab === 'complaints' && isAdmin && (
+        <ComplaintsManagement language={language} />
       )}
 
       {/* Company Bookings Tab */}

@@ -276,11 +276,17 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, onSponsorT
   const [trips, setTrips] = useState<any[]>([]);
   const [showTrash, setShowTrash] = useState(false);
   
-  // Filter states
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+  
+  // Filter states - default to today's date
   const [filterTimeFrom, setFilterTimeFrom] = useState<string>('');
   const [filterTimeTo, setFilterTimeTo] = useState<string>('');
-  const [filterDateFrom, setFilterDateFrom] = useState<string>('');
-  const [filterDateTo, setFilterDateTo] = useState<string>('');
+  const [filterDateFrom, setFilterDateFrom] = useState<string>(getTodayDate());
+  const [filterDateTo, setFilterDateTo] = useState<string>(getTodayDate());
   const [filterCity, setFilterCity] = useState<string>('');
   const [filterCompany, setFilterCompany] = useState<string>('');
   const [allCities, setAllCities] = useState<any[]>([]);
@@ -326,8 +332,8 @@ export function ScheduleManagement({ language, onEditTrip, onAddTrip, onSponsorT
   const clearFilters = () => {
     setFilterTimeFrom('');
     setFilterTimeTo('');
-    setFilterDateFrom('');
-    setFilterDateTo('');
+    setFilterDateFrom(getTodayDate());
+    setFilterDateTo(getTodayDate());
     setFilterCity('');
     setFilterCompany('');
   };

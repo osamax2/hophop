@@ -368,7 +368,7 @@ export function TermsOfService({ isOpen, onClose, language }: TermsOfServiceProp
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-3xl font-bold">{t.title}</h2>
+            <h2 className="text-3xl text-black font-bold">{t.title}</h2>
             <p className="text-green-100 text-sm mt-1">
               {t.lastUpdated}: {currentDate}
             </p>

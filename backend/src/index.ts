@@ -17,6 +17,8 @@ import contactRoutes from "./routes/contact";
 import branchesRoutes from "./routes/branches";
 import subscriptionsRoutes from "./routes/subscriptions";
 import twofaRoutes from "./routes/twofa";
+import complaintsRoutes from "./routes/complaints";
+import accountDeletionRoutes from "./routes/account-deletion";
 // CRUD Routes
 import usersRoutes from "./routes/users";
 import bookingsCrudRoutes from "./routes/bookings-crud";
@@ -138,6 +140,8 @@ app.use("/api/contact", contactRoutes);
 app.use("/api/branches", branchesRoutes);
 app.use("/api/subscriptions", subscriptionsRoutes);
 app.use("/api/twofa", twofaRoutes);
+app.use("/api/complaints", complaintsRoutes);
+app.use("/api/account-deletion-requests", accountDeletionRoutes);
 
 // ✅ CRUD Routes
 app.use("/api/users", usersRoutes);

@@ -18,6 +18,9 @@ import { BookingStatus } from './components/BookingStatus';
 import SubscriptionPlans from './components/SubscriptionPlans';
 import { RoundTripBooking } from './components/RoundTripBooking';
 import { MyBookings } from './components/MyBookings';
+import { AboutUs } from './components/AboutUs';
+import { ComplaintForm } from './components/ComplaintForm';
+import { DeleteAccountRequest } from './components/DeleteAccountRequest';
 import { favoritesApi, isAdminRole } from './lib/api';
 
 export type Language = 'de' | 'ar' | 'en';
@@ -90,6 +93,12 @@ export default function App() {
       setCurrentPage('privacy-policy');
     } else if (path === '/terms-of-service') {
       setCurrentPage('terms-of-service');
+    } else if (path === '/about-us') {
+      setCurrentPage('about-us');
+    } else if (path === '/complaint') {
+      setCurrentPage('complaint');
+    } else if (path === '/delete-account') {
+      setCurrentPage('delete-account');
     } else if (path === '/search') {
       const from = urlParams.get('from') || '';
       const to = urlParams.get('to') || '';
@@ -140,6 +149,15 @@ export default function App() {
       case 'terms-of-service':
         url = '/terms-of-service';
         break;
+      case 'about-us':
+        url = '/about-us';
+        break;
+      case 'complaint':
+        url = '/complaint';
+        break;
+      case 'delete-account':
+        url = '/delete-account';
+        break;
       case 'verify-email':
         if (verifyToken) {
           url = `/verify-email?token=${verifyToken}`;
@@ -188,6 +206,12 @@ export default function App() {
         setCurrentPage('privacy-policy');
       } else if (path === '/terms-of-service') {
         setCurrentPage('terms-of-service');
+      } else if (path === '/about-us') {
+        setCurrentPage('about-us');
+      } else if (path === '/complaint') {
+        setCurrentPage('complaint');
+      } else if (path === '/delete-account') {
+        setCurrentPage('delete-account');
       } else if (path === '/search') {
         const from = urlParams.get('from') || '';
         const to = urlParams.get('to') || '';
@@ -377,6 +401,8 @@ export default function App() {
             onContactClick={() => setCurrentPage('contact')}
             onPrivacyClick={() => setCurrentPage('privacy-policy')}
             onTermsClick={() => setCurrentPage('terms-of-service')}
+            onComplaintClick={() => setCurrentPage('complaint')}
+            onDeleteAccountClick={() => setCurrentPage('delete-account')}
             searchParams={searchParams}
           />
         )}
@@ -522,6 +548,30 @@ export default function App() {
           <TermsOfServicePage
             language={language}
             onBack={() => setCurrentPage('home')}
+          />
+        )}
+        
+        {currentPage === 'about-us' && (
+          <AboutUs
+            language={language}
+            onBack={() => setCurrentPage('home')}
+            onContact={() => setCurrentPage('home')}
+          />
+        )}
+        
+        {currentPage === 'complaint' && (
+          <ComplaintForm
+            language={language}
+            onBack={() => setCurrentPage('home')}
+            user={user}
+          />
+        )}
+        
+        {currentPage === 'delete-account' && (
+          <DeleteAccountRequest
+            language={language}
+            onBack={() => setCurrentPage('home')}
+            user={user}
           />
         )}
       </main>

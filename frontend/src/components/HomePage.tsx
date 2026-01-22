@@ -10,6 +10,8 @@ interface HomePageProps {
   onContactClick?: () => void;
   onPrivacyClick?: () => void;
   onTermsClick?: () => void;
+  onComplaintClick?: () => void;
+  onDeleteAccountClick?: () => void;
   searchParams?: SearchParams | null;
 }
 
@@ -69,6 +71,8 @@ const translations = {
     footerSupport: 'Support',
     footerSupportText: 'Kontaktieren Sie uns für Fragen und Unterstützung.',
     footerLegal: 'Rechtliches',
+    footerComplaint: 'Beschwerde einreichen',
+    footerDeleteAccount: 'Konto löschen',
   },
   en: {
     mainTitle: 'Find Your Journey',
@@ -125,6 +129,8 @@ const translations = {
     footerSupport: 'Support',
     footerSupportText: 'Contact us for questions and support.',
     footerLegal: 'Legal',
+    footerComplaint: 'Submit Complaint',
+    footerDeleteAccount: 'Delete Account',
   },
   ar: {
     mainTitle: 'ابحث عن رحلتك',
@@ -181,6 +187,8 @@ const translations = {
     footerSupport: 'الدعم',
     footerSupportText: 'يمكنك التواصل معنا للاستفسارات والدعم.',
     footerLegal: 'معلومات قانونية',
+    footerComplaint: 'رفع شكوى',
+    footerDeleteAccount: 'طلب حذف الحساب',
   },
 };
 
@@ -191,7 +199,7 @@ const popularRoutes = [
   { from: 'دمشق', to: 'حمص', duration: '2h 30m' },
 ];
 
-export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, onTermsClick, searchParams }: HomePageProps) {
+export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, onTermsClick, onComplaintClick, onDeleteAccountClick, searchParams }: HomePageProps) {
   const t = translations[language];
   const [from, setFrom] = useState(searchParams?.from || '');
   const [to, setTo] = useState(searchParams?.to || '');
@@ -686,6 +694,36 @@ export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, o
                     <span className={`w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${language === 'ar' ? 'order-2' : ''}`}></span>
                     <span className={`relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 group-hover:after:w-full`}>
                       {t.footerTerms}
+                    </span>
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onComplaintClick?.();
+                    }}
+                    type="button"
+                    className="group inline-flex items-center gap-2 text-gray-400 hover:text-green-400 transition-all duration-200 text-sm cursor-pointer"
+                  >
+                    <span className={`w-1.5 h-1.5 bg-green-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${language === 'ar' ? 'order-2' : ''}`}></span>
+                    <span className={`relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 group-hover:after:w-full`}>
+                      {t.footerComplaint}
+                    </span>
+                  </button>
+                </li>
+                <li>
+                  <button 
+                    onClick={(e) => {
+                      e.preventDefault();
+                      onDeleteAccountClick?.();
+                    }}
+                    type="button"
+                    className="group inline-flex items-center gap-2 text-gray-400 hover:text-red-400 transition-all duration-200 text-sm cursor-pointer"
+                  >
+                    <span className={`w-1.5 h-1.5 bg-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 ${language === 'ar' ? 'order-2' : ''}`}></span>
+                    <span className={`relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-red-400 after:transition-all after:duration-200 group-hover:after:w-full`}>
+                      {t.footerDeleteAccount}
                     </span>
                   </button>
                 </li>

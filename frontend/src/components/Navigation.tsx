@@ -1,4 +1,4 @@
-import { Menu, X, Globe, User, LogOut, Home, Search, Calendar, Star, BarChart3, CreditCard, Ticket } from 'lucide-react';
+import { Menu, X, Globe, User, LogOut, Home, Search, Calendar, Star, BarChart3, CreditCard, Ticket, Info } from 'lucide-react';
 import { useState } from 'react';
 import type { Language, User as UserType } from '../App';
 import { isAdminRole } from '../lib/api';
@@ -26,6 +26,7 @@ const translations = {
     login: 'Anmelden',
     admin: 'Admin-Bereich',
     subscriptions: 'Abonnements',
+    aboutUs: 'Über uns',
     logout: 'Abmelden',
   },
   en: {
@@ -40,6 +41,7 @@ const translations = {
     login: 'Login',
     admin: 'Admin',
     subscriptions: 'Subscriptions',
+    aboutUs: 'About Us',
     logout: 'Logout',
   },
   ar: {
@@ -54,6 +56,7 @@ const translations = {
     login: 'تسجيل الدخول',
     admin: 'لوحة الإدارة',
     subscriptions: 'الاشتراكات',
+    aboutUs: 'من نحن',
     logout: 'تسجيل الخروج',
   },
 };
@@ -69,6 +72,7 @@ export function Navigation({ currentPage, setCurrentPage, language, setLanguage,
   console.log("Navigation - User role:", user?.role);
 
   const menuItems = [
+    { id: 'about-us', label: t.aboutUs, icon: Info },
     { id: 'reviews', label: t.reviews, icon: Star },
     { id: 'favorites', label: t.favorites, icon: Star },
     { id: 'bookings', label: t.bookings, icon: Ticket },
