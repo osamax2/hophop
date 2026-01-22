@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { AlertTriangle, CheckCircle, Clock, Eye, MessageSquare, Search, Filter, RefreshCw, X, Send } from 'lucide-react';
 
 interface ComplaintsManagementProps {
@@ -314,7 +315,166 @@ export function ComplaintsManagement({ language }: ComplaintsManagementProps) {
     }
   };
 
+  // Modal component rendered via portal
+  const detailsModal = selectedComplaint ? createPortal(
+    <div 
+      className="fixed inset-0 flex items-center justify-center p-4"
+      style={{ 
+        zIndex: 99999,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        backdropFilter: 'blur(4px)',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          setSelectedComplaint(null);
+        }
+      }}
+    >
+      <div 
+        className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[95vh] flex flex-col"
+        style={{ 
+          position: 'relative',
+          zIndex: 100000,
+          overflow: 'hidden',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+          <div>
+            <h2 className="text-2xl font-bold">{t.complaintDetails}</h2>
+            <p className="text-white/80">{selectedComplaint.complaint_number}</p>
+          </div>
+          <button
+            onClick={() => setSelectedComplaint(null)}
+            className="text-white hover:bg-white/20 rounded-full p-2 transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+        </div>
+
+        {/* Content - Scrollable */}
+        <div 
+          className="flex-1 p-6"
+          style={{
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            maxHeight: 'calc(95vh - 160px)',
+          }}
+        >
+          <div className="space-y-6">
+            {/* Party Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-500">{t.from}</p>
+                <p className="font-semibold text-gray-900">{selectedComplaint.name}</p>
+                <p className="text-sm text-green-600">{getPartyLabel(selectedComplaint.complainer_type)}</p>
+              </div>
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-sm text-gray-500">{t.against}</p>
+                <p className="font-semibold text-gray-900">{getPartyLabel(selectedComplaint.against_type)}</p>
+              </div>
+            </div>
+
+            {/* Subject & Description */}
+            <div>
+              <p className="text-sm text-gray-500 mb-1">{t.subject}</p>
+              <p className="font-semibold text-gray-900">{selectedComplaint.subject}</p>
+            </div>
+            <div>
+              <p className="text-sm text-gray-500 mb-1">{t.description}</p>
+              <p className="text-gray-700 bg-gray-50 rounded-lg p-4">{selectedComplaint.description}</p>
+            </div>
+
+            {/* Trip Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">{t.tripDate}</p>
+                <p className="text-gray-900">{selectedComplaint.trip_date || t.notAvailable}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">{t.tripRoute}</p>
+                <p className="text-gray-900">{selectedComplaint.trip_route || t.notAvailable}</p>
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div>
+              <p className="text-sm text-gray-500 mb-2">{t.contactInfo}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">{t.email}</p>
+                  <p className="text-gray-900">{selectedComplaint.email}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">{t.phone}</p>
+                  <p className="text-gray-900">{selectedComplaint.phone || t.notAvailable}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Status Update */}
+            <div>
+              <p className="text-sm text-gray-500 mb-2">{t.updateStatus}</p>
+              <select
+                value={newStatus}
+                onChange={(e) => setNewStatus(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="pending">{t.pending}</option>
+                <option value="in_progress">{t.inProgress}</option>
+                <option value="resolved">{t.resolved}</option>
+                <option value="rejected">{t.rejected}</option>
+              </select>
+            </div>
+
+            {/* Admin Notes */}
+            <div>
+              <p className="text-sm text-gray-500 mb-2">{t.adminNotes}</p>
+              <textarea
+                value={adminNotes}
+                onChange={(e) => setAdminNotes(e.target.value)}
+                placeholder={t.notesPlaceholder}
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer with buttons */}
+        <div className="sticky bottom-0 bg-gray-50 p-6 border-t border-gray-200 flex gap-3">
+          <button
+            onClick={() => setSelectedComplaint(null)}
+            className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+          >
+            {t.close}
+          </button>
+          <button
+            onClick={saveChanges}
+            disabled={saving}
+            className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {saving ? t.saving : (
+              <>
+                <Send className="w-5 h-5" />
+                {t.saveNotes}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  ) : null;
+
   return (
+    <>
     <div className={`space-y-6 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div>
@@ -442,130 +602,9 @@ export function ComplaintsManagement({ language }: ComplaintsManagementProps) {
           </div>
         )}
       </div>
-
-      {/* Details Modal */}
-      {selectedComplaint && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-emerald-700 text-black p-6 rounded-t-2xl">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-xl font-bold">{t.complaintDetails}</h3>
-                  <p className="text-white/80">{selectedComplaint.complaint_number}</p>
-                </div>
-                <button
-                  onClick={() => setSelectedComplaint(null)}
-                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-6">
-              {/* Party Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500">{t.from}</p>
-                  <p className="font-semibold text-gray-900">{selectedComplaint.name}</p>
-                  <p className="text-sm text-green-600">{getPartyLabel(selectedComplaint.complainer_type)}</p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <p className="text-sm text-gray-500">{t.against}</p>
-                  <p className="font-semibold text-gray-900">{getPartyLabel(selectedComplaint.against_type)}</p>
-                </div>
-              </div>
-
-              {/* Subject & Description */}
-              <div>
-                <p className="text-sm text-gray-500 mb-1">{t.subject}</p>
-                <p className="font-semibold text-gray-900">{selectedComplaint.subject}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 mb-1">{t.description}</p>
-                <p className="text-gray-700 bg-gray-50 rounded-lg p-4">{selectedComplaint.description}</p>
-              </div>
-
-              {/* Trip Info */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-gray-500">{t.tripDate}</p>
-                  <p className="text-gray-900">{selectedComplaint.trip_date || t.notAvailable}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">{t.tripRoute}</p>
-                  <p className="text-gray-900">{selectedComplaint.trip_route || t.notAvailable}</p>
-                </div>
-              </div>
-
-              {/* Contact Info */}
-              <div>
-                <p className="text-sm text-gray-500 mb-2">{t.contactInfo}</p>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs text-gray-500">{t.email}</p>
-                    <p className="text-gray-900">{selectedComplaint.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-gray-500">{t.phone}</p>
-                    <p className="text-gray-900">{selectedComplaint.phone || t.notAvailable}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Status Update */}
-              <div>
-                <p className="text-sm text-gray-500 mb-2">{t.updateStatus}</p>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="pending">{t.pending}</option>
-                  <option value="in_progress">{t.inProgress}</option>
-                  <option value="resolved">{t.resolved}</option>
-                  <option value="rejected">{t.rejected}</option>
-                </select>
-              </div>
-
-              {/* Admin Notes */}
-              <div>
-                <p className="text-sm text-gray-500 mb-2">{t.adminNotes}</p>
-                <textarea
-                  value={adminNotes}
-                  onChange={(e) => setAdminNotes(e.target.value)}
-                  placeholder={t.notesPlaceholder}
-                  rows={4}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={saveChanges}
-                  disabled={saving}
-                  className="flex-1 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                >
-                  {saving ? t.saving : (
-                    <>
-                      <Send className="w-5 h-5" />
-                      {t.saveNotes}
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={() => setSelectedComplaint(null)}
-                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  {t.close}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
+    {detailsModal}
+    </>
   );
 }
 
