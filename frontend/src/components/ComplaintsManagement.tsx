@@ -174,17 +174,23 @@ export function ComplaintsManagement({ language }: ComplaintsManagementProps) {
 
   const API_BASE = import.meta.env.VITE_API_BASE || "";
   const token = localStorage.getItem("token");
-  const headers = token ? { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } : { 'Content-Type': 'application/json' };
 
   const loadComplaints = async () => {
     setLoading(true);
     setError('');
     try {
-      const response = await fetch(`${API_BASE}/api/complaints/admin`, { headers });
+      const response = await fetch(`${API_BASE}/api/complaints/admin`, { 
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
       if (response.ok) {
         const data = await response.json();
         setComplaints(data);
       } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to load complaints:', response.status, errorData);
         throw new Error('Failed to load complaints');
       }
     } catch (err) {
@@ -274,7 +280,10 @@ export function ComplaintsManagement({ language }: ComplaintsManagementProps) {
     try {
       const response = await fetch(`${API_BASE}/api/complaints/admin/${selectedComplaint.id}`, {
         method: 'PUT',
-        headers,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           status: newStatus,
           admin_notes: adminNotes,
@@ -282,16 +291,24 @@ export function ComplaintsManagement({ language }: ComplaintsManagementProps) {
       });
 
       if (response.ok) {
-        // Update local state
+        const updatedComplaint = await response.json();
+        // Update local state with the response from server
         setComplaints(complaints.map(c => 
           c.id === selectedComplaint.id 
-            ? { ...c, status: newStatus as any, admin_notes: adminNotes }
+            ? updatedComplaint
             : c
         ));
         setSelectedComplaint(null);
+        // Reload to ensure sync
+        loadComplaints();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Failed to save complaint:', response.status, errorData);
+        alert('Failed to save changes');
       }
     } catch (err) {
       console.error('Error saving complaint:', err);
+      alert('Error saving changes');
     } finally {
       setSaving(false);
     }
