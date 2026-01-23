@@ -738,26 +738,7 @@ export function HomePage({ onSearch, language, onContactClick, onPrivacyClick, o
                 {t.footerCopyright}
               </p>
               <div className={`flex gap-4 sm:gap-6 text-xs ${language === 'ar' ? 'flex-row-reverse' : ''}`}>
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onPrivacyClick?.();
-                  }}
-                  type="button"
-                  className={`text-gray-500 hover:text-green-400 transition-colors duration-200 relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 hover:after:w-full cursor-pointer`}
-                >
-                  {t.footerPrivacy}
-                </button>
-                <button 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onTermsClick?.();
-                  }}
-                  type="button"
-                  className={`text-gray-500 hover:text-green-400 transition-colors duration-200 relative after:absolute after:bottom-0 ${language === 'ar' ? 'after:right-0' : 'after:left-0'} after:w-0 after:h-[1px] after:bg-green-400 after:transition-all after:duration-200 hover:after:w-full cursor-pointer`}
-                >
-                  {t.footerTerms}
-                </button>
+              
               </div>
             </div>
           </div>

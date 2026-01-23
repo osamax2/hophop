@@ -6,6 +6,7 @@ import { contactApi } from '../lib/api';
 interface ContactFormProps {
   language: Language;
   onClose?: () => void;
+  isModal?: boolean;
 }
 
 const translations = {
@@ -80,7 +81,7 @@ const translations = {
   },
 };
 
-export function ContactForm({ language, onClose }: ContactFormProps) {
+export function ContactForm({ language, onClose, isModal = false }: ContactFormProps) {
   const t = translations[language];
   const isRTL = language === 'ar';
   const [formData, setFormData] = useState({
@@ -176,6 +177,164 @@ export function ContactForm({ language, onClose }: ContactFormProps) {
     }
   };
 
+  // Modal wrapper
+  if (isModal) {
+    return (
+      <div 
+        className="fixed inset-0 flex items-center justify-center p-4"
+        style={{ zIndex: 9999, position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
+      >
+        {/* Backdrop */}
+        <div 
+          className="absolute inset-0"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.6)', zIndex: 9999 }}
+          onClick={onClose}
+        />
+        
+        {/* Modal Content */}
+        <div 
+          className="relative bg-white rounded-2xl shadow-xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+          style={{ zIndex: 10000 }}
+        >
+          {/* Header */}
+          <div className={`flex items-center justify-between mb-8 ${isRTL ? 'flex-row-reverse' : ''}`}>
+            <h2 className="text-3xl font-bold text-gray-900">{t.title}</h2>
+            {onClose && (
+              <button
+                onClick={onClose}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Close"
+              >
+                <X className="w-6 h-6 text-gray-600" />
+              </button>
+            )}
+          </div>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Name */}
+            <div>
+              <label className={`block text-gray-700 mb-2 font-medium flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <User className="w-5 h-5 text-green-600" />
+                <span>{t.name}</span>
+              </label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleChange('name', e.target.value)}
+                placeholder={t.namePlaceholder}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                  errors.name ? 'border-red-500' : 'border-gray-300'
+                }`}
+                dir={isRTL ? 'rtl' : 'ltr'}
+              />
+              {errors.name && (
+                <p className="mt-1 text-sm text-red-600">{errors.name}</p>
+              )}
+            </div>
+
+            {/* Email */}
+            <div>
+              <label className={`block text-gray-700 mb-2 font-medium flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Mail className="w-5 h-5 text-green-600" />
+                <span>{t.email}</span>
+              </label>
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder={t.emailPlaceholder}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                  errors.email ? 'border-red-500' : 'border-gray-300'
+                }`}
+                dir="ltr"
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
+              )}
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className={`block text-gray-700 mb-2 font-medium flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <Phone className="w-5 h-5 text-green-600" />
+                <span>{t.phone}</span>
+              </label>
+              <input
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                placeholder={t.phonePlaceholder}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                  errors.phone ? 'border-red-500' : 'border-gray-300'
+                }`}
+                dir="ltr"
+              />
+              {errors.phone && (
+                <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
+              )}
+            </div>
+
+            {/* Subject */}
+            <div>
+              <label className={`block text-gray-700 mb-2 font-medium flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <MessageSquare className="w-5 h-5 text-green-600" />
+                <span>{t.subject}</span>
+              </label>
+              <input
+                type="text"
+                value={formData.subject}
+                onChange={(e) => handleChange('subject', e.target.value)}
+                placeholder={t.subjectPlaceholder}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 ${
+                  errors.subject ? 'border-red-500' : 'border-gray-300'
+                }`}
+                dir={isRTL ? 'rtl' : 'ltr'}
+              />
+              {errors.subject && (
+                <p className="mt-1 text-sm text-red-600">{errors.subject}</p>
+              )}
+            </div>
+
+            {/* Message */}
+            <div>
+              <label className={`block text-gray-700 mb-2 font-medium flex items-center gap-2 ${isRTL ? 'flex-row-reverse' : ''}`}>
+                <MessageSquare className="w-5 h-5 text-green-600" />
+                <span>{t.message}</span>
+              </label>
+              <textarea
+                value={formData.message}
+                onChange={(e) => handleChange('message', e.target.value)}
+                placeholder={t.messagePlaceholder}
+                rows={4}
+                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 resize-none ${
+                  errors.message ? 'border-red-500' : 'border-gray-300'
+                }`}
+                dir={isRTL ? 'rtl' : 'ltr'}
+              />
+              {errors.message && (
+                <p className="mt-1 text-sm text-red-600">{errors.message}</p>
+              )}
+            </div>
+
+            {/* Submit Button */}
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className={`w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-3 font-medium ${
+                isSubmitting ? 'opacity-50 cursor-not-allowed' : ''
+              } ${isRTL ? 'flex-row-reverse' : ''}`}
+            >
+              <Send className="w-5 h-5" />
+              <span>{isSubmitting ? t.sending : t.send}</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Full page version
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-2xl mx-auto">

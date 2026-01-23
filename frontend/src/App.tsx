@@ -62,6 +62,7 @@ export default function App() {
   const [showNoTripsModal, setShowNoTripsModal] = useState(false);
   const [showPrivacyPolicy, setShowPrivacyPolicy] = useState(false);
   const [showTermsOfService, setShowTermsOfService] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
 
   const isRTL = language === 'ar';
 
@@ -555,7 +556,7 @@ export default function App() {
           <AboutUs
             language={language}
             onBack={() => setCurrentPage('home')}
-            onContact={() => setCurrentPage('home')}
+            onContact={() => setShowContactModal(true)}
           />
         )}
         
@@ -589,6 +590,15 @@ export default function App() {
         onClose={() => setShowTermsOfService(false)}
         language={language}
       />
+
+      {/* Contact Form Modal - Global */}
+      {showContactModal && (
+        <ContactForm 
+          language={language}
+          onClose={() => setShowContactModal(false)}
+          isModal={true}
+        />
+      )}
 
       {/* No Trips Modal */}
       {showNoTripsModal && (

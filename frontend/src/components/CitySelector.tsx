@@ -2,6 +2,85 @@ import { useState, useEffect, useRef } from 'react';
 import { MapPin } from 'lucide-react';
 import { citiesApi } from '../lib/api';
 
+// Arabic to English city name mapping for Syrian cities
+const arabicToEnglishCity: Record<string, string> = {
+  'دمشق': 'Damascus',
+  'حلب': 'Aleppo',
+  'حمص': 'Homs',
+  'حماة': 'Hama',
+  'اللاذقية': 'Latakia',
+  'طرطوس': 'Tartus',
+  'دير الزور': 'Deir ez-Zor',
+  'الرقة': 'Raqqa',
+  'الحسكة': 'Hasakah',
+  'القامشلي': 'Qamishli',
+  'إدلب': 'Idlib',
+  'درعا': 'Daraa',
+  'السويداء': 'As-Suwayda',
+  'القنيطرة': 'Quneitra',
+  'تدمر': 'Palmyra',
+  'الباب': 'Al-Bab',
+  'منبج': 'Manbij',
+  'عفرين': 'Afrin',
+  'كوباني': 'Kobani',
+  'البوكمال': 'Al-Bukamal',
+  'الميادين': 'Al-Mayadin',
+  'سلمية': 'Salamiyah',
+  'جبلة': 'Jableh',
+  'بانياس': 'Baniyas',
+  'صافيتا': 'Safita',
+  'مصياف': 'Masyaf',
+  'القصير': 'Al-Qusayr',
+  'دوما': 'Douma',
+  'حرستا': 'Harasta',
+  'التل': 'Al-Tall',
+  'النبك': 'Al-Nabek',
+  'قطنا': 'Qatana',
+  'داريا': 'Darayya',
+  'الحجر الأسود': 'Al-Hajar al-Aswad',
+  'سحنايا': 'Sahnaya',
+  'كفربطنا': 'Kafr Batna',
+  'جرمانا': 'Jaramana',
+  'ريف دمشق': 'Rif Dimashq',
+  'التنف': 'Al-Tanam',
+};
+
+// English to Arabic city name mapping (reverse mapping for display)
+const englishToArabicCity: Record<string, string> = Object.fromEntries(
+  Object.entries(arabicToEnglishCity).map(([ar, en]) => [en, ar])
+);
+
+// Helper function to get English city name from Arabic or return as-is
+const getEnglishCityName = (input: string): string => {
+  return arabicToEnglishCity[input] || input;
+};
+
+// Helper function to check if input matches city (Arabic or English)
+const cityMatchesInput = (cityName: string, input: string): boolean => {
+  const inputLower = input.toLowerCase();
+  const cityLower = cityName.toLowerCase();
+  
+  // Direct match with English name
+  if (cityLower.startsWith(inputLower)) {
+    return true;
+  }
+  
+  // Check if input is Arabic and matches this city
+  const englishFromArabic = arabicToEnglishCity[input];
+  if (englishFromArabic && englishFromArabic.toLowerCase() === cityLower) {
+    return true;
+  }
+  
+  // Check partial Arabic match
+  for (const [arabic, english] of Object.entries(arabicToEnglishCity)) {
+    if (arabic.startsWith(input) && english.toLowerCase() === cityLower) {
+      return true;
+    }
+  }
+  
+  return false;
+};
+
 interface City {
   id: number;
   name: string;
@@ -12,7 +91,7 @@ interface City {
 
 interface CitySelectorProps {
   value: string;
-  onChange: (cityName: string) => void;
+  onChange: (cityName: string, cityId?: number) => void;
   placeholder?: string;
   label?: string;
   required?: boolean;
@@ -73,9 +152,9 @@ export function CitySelector({
       return;
     }
 
-    // Filter cities that start with the input value (even if it's just one character)
+    // Filter cities that match the input value (English or Arabic)
     const filtered = cities.filter(city =>
-      city.name.toLowerCase().startsWith(inputValue.toLowerCase())
+      cityMatchesInput(city.name, inputValue)
     ).slice(0, 50); // Show up to 50 cities that match
     
     setFilteredCities(filtered);
@@ -100,7 +179,17 @@ export function CitySelector({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    onChange(newValue);
+    
+    // Convert Arabic to English if needed
+    const englishCityName = getEnglishCityName(newValue);
+    
+    // Find the city to get its ID (check both Arabic input and English name)
+    const matchedCity = cities.find(c => 
+      c.name.toLowerCase() === newValue.toLowerCase() ||
+      c.name.toLowerCase() === englishCityName.toLowerCase()
+    );
+    
+    onChange(matchedCity?.name || newValue, matchedCity?.id);
     // Keep dropdown open when typing to show filtered results
     if (newValue.trim() && cities.length > 0) {
       setIsOpen(true);
@@ -109,7 +198,7 @@ export function CitySelector({
 
   const handleSelect = (city: City) => {
     setInputValue(city.name);
-    onChange(city.name);
+    onChange(city.name, city.id);
     setIsOpen(false);
     setSelectedIndex(-1);
   };

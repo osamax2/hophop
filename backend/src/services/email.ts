@@ -50,6 +50,9 @@ export class EmailService {
       },
       connectionTimeout: 10000, // 10 seconds
       greetingTimeout: 10000,
+      tls: {
+        rejectUnauthorized: process.env.SMTP_REJECT_UNAUTHORIZED !== 'false',
+      },
     });
 
     this.isConfigured = true;

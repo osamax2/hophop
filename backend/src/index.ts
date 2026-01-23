@@ -247,7 +247,7 @@ app.get("/api/trips", async (req, res) => {
     }
 
     let query = `
-      SELECT
+      SELECT DISTINCT ON (r.id, DATE(t.departure_time))
         t.id,
         t.departure_time,
         t.arrival_time,
@@ -262,8 +262,8 @@ app.get("/api/trips", async (req, res) => {
         s_to.name   AS arrival_station,
         COALESCE(comp.name, 'Unknown') AS company_name,
         COALESCE(tt.label, tt.code, 'normal') AS transport_type,
-        MIN(tf.price)    AS price,
-        MIN(tf.currency) AS currency,
+        COALESCE(tf_standard.price, tf_any.price) AS price,
+        COALESCE(tf_standard.currency, tf_any.currency) AS currency,
         COALESCE((
           SELECT COUNT(*)::int
           FROM route_stops rs
@@ -277,7 +277,20 @@ app.get("/api/trips", async (req, res) => {
       JOIN stations s_to    ON t.arrival_station_id   = s_to.id
       LEFT JOIN transport_companies comp ON t.company_id = comp.id
       LEFT JOIN transport_types tt ON t.transport_type_id = tt.id
-      LEFT JOIN trip_fares tf ON tf.trip_id = t.id
+      LEFT JOIN LATERAL (
+        SELECT tf.price, tf.currency
+        FROM trip_fares tf
+        JOIN fare_categories fc ON fc.id = tf.fare_category_id
+        WHERE tf.trip_id = t.id AND fc.code = 'STANDARD'
+        LIMIT 1
+      ) tf_standard ON true
+      LEFT JOIN LATERAL (
+        SELECT tf.price, tf.currency
+        FROM trip_fares tf
+        WHERE tf.trip_id = t.id
+        ORDER BY tf.price ASC
+        LIMIT 1
+      ) tf_any ON tf_standard.price IS NULL
     `;
 
     if (conditions.length > 0) {
@@ -285,10 +298,7 @@ app.get("/api/trips", async (req, res) => {
     }
 
     query += `
-      GROUP BY
-        t.id, c_from.name, c_to.name, s_from.name, s_to.name,
-        comp.name, tt.label, tt.code, t.equipment, t.route_id
-      ORDER BY t.id
+      ORDER BY r.id, DATE(t.departure_time), t.departure_time
       LIMIT 100
     `;
 
@@ -340,10 +350,17 @@ app.get("/api/trips", async (req, res) => {
         else if (type.includes('van')) tripType = 'van';
       }
 
+      // Format date as YYYY-MM-DD
+      const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        return date.toISOString().split('T')[0];
+      };
+
       return {
         id: String(row.id),
         from: row.from_city,
         to: row.to_city,
+        date: formatDate(row.departure_time),
         departureTime: formatTime(row.departure_time),
         arrivalTime: formatTime(row.arrival_time),
         duration: formatDuration(row.duration_minutes || 0),

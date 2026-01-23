@@ -113,7 +113,7 @@ export const AboutUs: React.FC<AboutUsProps> = ({ language, onBack, onContact })
     <div className={`min-h-screen bg-gradient-to-br from-gray-100 via-white to-gray-100 ${isRTL ? 'rtl' : 'ltr'}`} dir={isRTL ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="bg-gradient-to-r from-green-600 to-emerald-700 text-black">
-        <div className="max-w-7xl mx-auto px-4 py-6">
+        <div style={{ paddingTop: '15px' }} className="max-w-7xl mx-auto px-4 py-6">
           <button
             onClick={onBack}
             className={`flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-4 ${isRTL ? 'flex-row-reverse' : ''}`}

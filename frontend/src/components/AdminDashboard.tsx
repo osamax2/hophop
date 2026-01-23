@@ -3204,101 +3204,69 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                   {/* From City */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t.from}</label>
-                    <select
-                      value={newTrip.from_city}
-                      onChange={(e) => {
-                        const fromCity = e.target.value;
-                        const fromCityObj = cities.find((c: any) => c.name === fromCity);
+                    <CitySelector
+                      value={newTrip.from_city || ''}
+                      onChange={(fromCity, fromCityId) => {
                         setNewTrip((prev: any) => ({ 
                           ...prev, 
-                          from_city: fromCity, 
+                          from_city: fromCity,
+                          from_city_id: fromCityId,
                           route_id: '',
                           departure_station_id: '' // Reset departure station when city changes
                         }));
                         // Auto-select route if to_city is already selected
-                        if (newTrip.to_city && fromCity && fromCityObj) {
-                          const toCityObj = cities.find((c: any) => c.name === newTrip.to_city);
-                          if (toCityObj) {
-                            const existingRoute = routes.find((r: any) => 
-                              r.from_city_id === fromCityObj.id && r.to_city_id === toCityObj.id
-                            );
-                            if (existingRoute) {
-                              setNewTrip((prev: any) => ({ 
-                                ...prev, 
-                                from_city: fromCity, 
-                                route_id: String(existingRoute.id),
-                                departure_station_id: '' // Reset departure station when city changes
-                              }));
-                            }
+                        if (newTrip.to_city && fromCity && fromCityId && newTrip.to_city_id) {
+                          const existingRoute = routes.find((r: any) => 
+                            r.from_city_id === fromCityId && r.to_city_id === newTrip.to_city_id
+                          );
+                          if (existingRoute) {
+                            setNewTrip((prev: any) => ({ 
+                              ...prev, 
+                              from_city: fromCity,
+                              from_city_id: fromCityId,
+                              route_id: String(existingRoute.id),
+                              departure_station_id: '' // Reset departure station when city changes
+                            }));
                           }
                         }
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder={language === 'ar' ? 'اختر مدينة المغادرة' : language === 'de' ? 'Abfahrtsstadt wählen' : 'Select departure city'}
                       required
-                    >
-                      <option value="">{language === 'ar' ? 'اختر مدينة المغادرة' : language === 'de' ? 'Abfahrtsstadt wählen' : 'Select departure city'}</option>
-                      {cities.length > 0 ? (
-                        cities.map((city: any) => (
-                          <option key={city.id} value={city.name}>
-                            {city.name}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="" disabled>
-                          {language === 'ar' ? 'لا توجد مدن متاحة' : language === 'de' ? 'Keine Städte verfügbar' : 'No cities available'}
-                        </option>
-                      )}
-                    </select>
+                    />
                   </div>
 
                   {/* To City */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">{t.to}</label>
-                    <select
-                      value={newTrip.to_city}
-                      onChange={(e) => {
-                        const toCity = e.target.value;
-                        const toCityObj = cities.find((c: any) => c.name === toCity);
+                    <CitySelector
+                      value={newTrip.to_city || ''}
+                      onChange={(toCity, toCityId) => {
                         setNewTrip((prev: any) => ({ 
                           ...prev, 
-                          to_city: toCity, 
+                          to_city: toCity,
+                          to_city_id: toCityId,
                           route_id: '',
                           arrival_station_id: '' // Reset arrival station when city changes
                         }));
                         // Auto-select route if from_city is already selected
-                        if (newTrip.from_city && toCity && toCityObj) {
-                          const fromCityObj = cities.find((c: any) => c.name === newTrip.from_city);
-                          if (fromCityObj) {
-                            const existingRoute = routes.find((r: any) => 
-                              r.from_city_id === fromCityObj.id && r.to_city_id === toCityObj.id
-                            );
-                            if (existingRoute) {
-                              setNewTrip((prev: any) => ({ 
-                                ...prev, 
-                                to_city: toCity, 
-                                route_id: String(existingRoute.id),
-                                arrival_station_id: '' // Reset arrival station when city changes
-                              }));
-                            }
+                        if (newTrip.from_city && toCity && toCityId && newTrip.from_city_id) {
+                          const existingRoute = routes.find((r: any) => 
+                            r.from_city_id === newTrip.from_city_id && r.to_city_id === toCityId
+                          );
+                          if (existingRoute) {
+                            setNewTrip((prev: any) => ({ 
+                              ...prev, 
+                              to_city: toCity,
+                              to_city_id: toCityId,
+                              route_id: String(existingRoute.id),
+                              arrival_station_id: '' // Reset arrival station when city changes
+                            }));
                           }
                         }
                       }}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                      placeholder={language === 'ar' ? 'اختر مدينة الوصول' : language === 'de' ? 'Ankunftsstadt wählen' : 'Select arrival city'}
                       required
-                    >
-                      <option value="">{language === 'ar' ? 'اختر مدينة الوصول' : language === 'de' ? 'Ankunftsstadt wählen' : 'Select arrival city'}</option>
-                      {cities.length > 0 ? (
-                        cities.map((city: any) => (
-                          <option key={city.id} value={city.name}>
-                            {city.name}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="" disabled>
-                          {language === 'ar' ? 'لا توجد مدن متاحة' : language === 'de' ? 'Keine Städte verfügbar' : 'No cities available'}
-                        </option>
-                      )}
-                    </select>
+                    />
                   </div>
 
                   {/* Company - Only show for Admins, Agent Managers use their company automatically */}
@@ -3370,7 +3338,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                           }
                         </option>
                         {stations
-                          .filter((station: any) => station.city_name === newTrip.from_city)
+                          .filter((station: any) => {
+                            if (!newTrip.from_city) return false;
+                            // Match by city_id if available, or by city_name (exact or partial match)
+                            if (newTrip.from_city_id && station.city_id === newTrip.from_city_id) return true;
+                            // Also match by station's city_name for English names
+                            return station.city_name?.toLowerCase() === newTrip.from_city?.toLowerCase();
+                          })
                           .map((station: any) => (
                             <option key={station.id} value={station.id}>
                               {station.name}
@@ -3396,7 +3370,13 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                           }
                         </option>
                         {stations
-                          .filter((station: any) => station.city_name === newTrip.to_city)
+                          .filter((station: any) => {
+                            if (!newTrip.to_city) return false;
+                            // Match by city_id if available, or by city_name (exact or partial match)
+                            if (newTrip.to_city_id && station.city_id === newTrip.to_city_id) return true;
+                            // Also match by station's city_name for English names
+                            return station.city_name?.toLowerCase() === newTrip.to_city?.toLowerCase();
+                          })
                           .map((station: any) => (
                             <option key={station.id} value={station.id}>
                               {station.name}

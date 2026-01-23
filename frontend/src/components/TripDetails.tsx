@@ -293,7 +293,32 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                     </div>
                   </div>
                   
-                  {trip.stops.map((stop: any, index: number) => (
+                  {trip.stops.map((stop: any, index: number) => {
+                    // Format time - handle both full datetime and time-only formats
+                    const formatStopTime = (timeStr: string) => {
+                      if (!timeStr) return '';
+                      let time = '';
+                      // Check if it's just a time string (HH:MM:SS or HH:MM)
+                      if (/^\d{2}:\d{2}(:\d{2})?$/.test(timeStr)) {
+                        time = timeStr.substring(0, 5); // Return HH:MM
+                      } else {
+                        // Try to parse as full datetime
+                        const date = new Date(timeStr);
+                        if (!isNaN(date.getTime())) {
+                          time = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+                        } else {
+                          time = timeStr; // Fallback to raw string
+                        }
+                      }
+                      // Convert to Arabic numerals if language is Arabic
+                      if (language === 'ar') {
+                        const arabicNumerals = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+                        return time.replace(/[0-9]/g, (d) => arabicNumerals[parseInt(d)]);
+                      }
+                      return time;
+                    };
+                    
+                    return (
                     <div key={index} className="flex items-start gap-4">
                       <div className="flex flex-col items-center">
                         <div className="w-4 h-4 rounded-full bg-gray-300" />
@@ -307,19 +332,19 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                             <div className="text-gray-900">{stop.station_name}</div>
                             {stop.arrival_time && (
                               <div className="text-sm text-gray-600">
-                                {new Date(stop.arrival_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                                {formatStopTime(stop.arrival_time)}
                               </div>
                             )}
                           </div>
-                          {stop.arrival_time && (
+                          {stop.departure_time && (
                             <div className="text-gray-900">
-                              {new Date(stop.arrival_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })}
+                              {formatStopTime(stop.departure_time)}
                             </div>
                           )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                   
                   {/* Add arrival station */}
                   <div className="flex items-start gap-4">
@@ -536,45 +561,6 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                 ) : (
                   <div className="text-center text-sm text-gray-600 py-3">
                     {t.loginToFavorite}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Amenities */}
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg text-gray-900 mb-4">{t.amenities}</h2>
-              <div className="space-y-3">
-                {trip.amenities.includes('wifi') && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
-                      <Wifi className="w-5 h-5 text-blue-600" />
-                    </div>
-                    <span className="text-sm text-gray-700">WiFi</span>
-                  </div>
-                )}
-                {trip.amenities.includes('ac') && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-cyan-50 rounded-lg flex items-center justify-center">
-                      <Wind className="w-5 h-5 text-cyan-600" />
-                    </div>
-                    <span className="text-sm text-gray-700">Klimaanlage</span>
-                  </div>
-                )}
-                {trip.amenities.includes('reclining-seats') && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-purple-50 rounded-lg flex items-center justify-center">
-                      <Check className="w-5 h-5 text-purple-600" />
-                    </div>
-                    <span className="text-sm text-gray-700">Liegesitze</span>
-                  </div>
-                )}
-                {trip.amenities.includes('charging-ports') && (
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-50 rounded-lg flex items-center justify-center">
-                      <Check className="w-5 h-5 text-green-600" />
-                    </div>
-                    <span className="text-sm text-gray-700">Ladeanschlüsse</span>
                   </div>
                 )}
               </div>

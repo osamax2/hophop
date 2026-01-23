@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
   Clock,
+  Calendar,
   DollarSign,
   Star,
   Wifi,
@@ -129,6 +130,7 @@ type Trip = {
   id: string;
   from: string;
   to: string;
+  date?: string;
   departureTime: string;
   arrivalTime: string;
   duration: string;
@@ -495,6 +497,10 @@ export function SearchResults({
               <div className="text-center">
                 <div className="text-2xl text-gray-900 mb-1">{trip.departureTime}</div>
                 <div className="text-sm text-gray-600">{trip.from}</div>
+                <div className="text-sm text-green-600 mt-1 font-semibold flex items-center justify-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {trip.date ? new Date(trip.date).toLocaleDateString(language === 'ar' ? 'ar-SA' : language === 'de' ? 'de-DE' : 'en-US', { weekday: 'short', day: 'numeric', month: 'short' }) : 'N/A'}
+                </div>
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
