@@ -431,6 +431,7 @@ app.get("/api/trips/:id", async (req, res) => {
         s_to.id AS arrival_station_id,
         co.name AS company_name,
         co.id AS company_id,
+        co.phone AS company_phone,
         tt.label AS transport_type,
         tt.id AS transport_type_id,
         MIN(tf.price) AS price,
@@ -447,7 +448,7 @@ app.get("/api/trips/:id", async (req, res) => {
       WHERE t.id = $1
       GROUP BY
         t.id, t.route_id, c_from.name, c_to.name, s_from.name, s_from.id, s_to.name, s_to.id,
-        co.name, co.id, tt.label, tt.id
+        co.name, co.id, co.phone, tt.label, tt.id
       `,
       [tripId]
     );

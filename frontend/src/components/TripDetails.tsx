@@ -37,6 +37,7 @@ const translations = {
     date: 'Datum',
     price: 'Preis',
     company: 'Busgesellschaft',
+    companyPhone: 'Telefon',
     tripUnavailable: 'Diese Verbindung ist derzeit nicht verfügbar',
     alternativeTrips: 'Alternative Fahrten',
     loginToFavorite: 'Melden Sie sich an, um Favoriten zu speichern',
@@ -76,6 +77,7 @@ const translations = {
     date: 'Date',
     price: 'Price',
     company: 'Bus Company',
+    companyPhone: 'Phone',
     tripUnavailable: 'This connection is currently unavailable',
     alternativeTrips: 'Alternative Trips',
     loginToFavorite: 'Sign in to save favorites',
@@ -114,8 +116,7 @@ const translations = {
     duration: 'المدة',
     date: 'التاريخ',
     price: 'السعر',
-    company: 'شركة الباص',
-    tripUnavailable: 'هذه الرحلة غير متاحة حاليًا',
+    company: 'شركة الباص',    companyPhone: 'الهاتف',    tripUnavailable: 'هذه الرحلة غير متاحة حاليًا',
     alternativeTrips: 'رحلات بديلة',
     loginToFavorite: 'سجل الدخول لحفظ المفضلة',
     noBusPhotos: 'لا توجد صور للباص',
@@ -167,6 +168,7 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
           currency: data.currency || 'SYP',
           company: data.company_name || 'Unknown',
           companyId: data.company_id,
+          companyPhone: data.company_phone || null,
           seatsAvailable: data.seats_available,
           totalSeats: data.seats_total,
           stops: data.stops || [],
@@ -476,6 +478,18 @@ export function TripDetails({ tripId, language, isFavorite, onToggleFavorite, is
                   <span className="text-sm text-gray-600">{t.company}</span>
                   <span className="text-sm text-gray-900">{trip.company}</span>
                 </div>
+                {trip.companyPhone && (
+                  <div className="flex justify-between py-3 border-b border-gray-100">
+                    <span className="text-sm text-gray-600">{t.companyPhone}</span>
+                    <a 
+                      href={`tel:${trip.companyPhone}`} 
+                      className="text-sm text-green-600 hover:text-green-700 font-medium"
+                      dir="ltr"
+                    >
+                      {trip.companyPhone}
+                    </a>
+                  </div>
+                )}
                 <div className="flex justify-between py-3 border-b border-gray-100">
                   <span className="text-sm text-gray-600">{t.date}</span>
                   <span className="text-sm text-gray-900">

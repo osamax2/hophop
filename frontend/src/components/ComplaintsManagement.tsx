@@ -345,10 +345,10 @@ export function ComplaintsManagement({ language }: ComplaintsManagementProps) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-white p-6 flex justify-between items-center z-10 shadow-lg">
+        <div className="sticky top-0 bg-gradient-to-r from-green-600 to-green-700 text-black p-6 flex justify-between items-center z-10 shadow-lg">
           <div>
             <h2 className="text-2xl font-bold">{t.complaintDetails}</h2>
-            <p className="text-white/80">{selectedComplaint.complaint_number}</p>
+            <p className="text-black/80">{selectedComplaint.complaint_number}</p>
           </div>
           <button
             onClick={() => setSelectedComplaint(null)}

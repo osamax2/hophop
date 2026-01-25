@@ -185,8 +185,17 @@ const translations = {
     recurringTrip: 'Wiederholende Fahrt',
     once: 'Einmalig',
     daily: 'Täglich (30 Tage)',
+    dailyExclude: 'Täglich mit Ausnahmen',
     weekly: 'Wöchentlich (4 Wochen)',
     recurringInfo: 'Wählen Sie, ob diese Fahrt einmalig oder wiederkehrend erstellt werden soll',
+    excludeDays: 'Ausgeschlossene Tage',
+    monday: 'Montag',
+    tuesday: 'Dienstag',
+    wednesday: 'Mittwoch',
+    thursday: 'Donnerstag',
+    friday: 'Freitag',
+    saturday: 'Samstag',
+    sunday: 'Sonntag',
   },
   en: {
     adminDashboard: 'Admin Dashboard',
@@ -308,8 +317,17 @@ const translations = {
     recurringTrip: 'Recurring Trip',
     once: 'Once',
     daily: 'Daily (30 days)',
+    dailyExclude: 'Daily with exclusions',
     weekly: 'Weekly (4 weeks)',
     recurringInfo: 'Choose whether this trip should be created once or recurring',
+    excludeDays: 'Excluded Days',
+    monday: 'Monday',
+    tuesday: 'Tuesday',
+    wednesday: 'Wednesday',
+    thursday: 'Thursday',
+    friday: 'Friday',
+    saturday: 'Saturday',
+    sunday: 'Sunday',
   },
   ar: {
     adminDashboard: 'لوحة الإدارة',
@@ -413,8 +431,17 @@ const translations = {
     recurringTrip: 'رحلة متكررة',
     once: 'مرة واحدة',
     daily: 'يومياً (30 يوم)',
+    dailyExclude: 'يومياً مع استثناءات',
     weekly: 'أسبوعياً (4 أسابيع)',
     recurringInfo: 'اختر ما إذا كان يجب إنشاء هذه الرحلة مرة واحدة أو متكررة',
+    excludeDays: 'الأيام المستثناة',
+    monday: 'الاثنين',
+    tuesday: 'الثلاثاء',
+    wednesday: 'الأربعاء',
+    thursday: 'الخميس',
+    friday: 'الجمعة',
+    saturday: 'السبت',
+    sunday: 'الأحد',
     deletePermanently: 'حذف هذه الرحلة المعطلة نهائياً؟',
     deletePermanentlyConfirm: 'هل أنت متأكد من حذف هذه الرحلة المعطلة نهائياً؟ لا يمكن التراجع عن هذا الإجراء.',
     welcomeMessage: 'أهلاً',
@@ -526,7 +553,8 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     seats_available: string;
   }>>([]);
   const [newRoute, setNewRoute] = useState({ from_city: '', to_city: '' });
-  const [recurringType, setRecurringType] = useState<'once' | 'daily' | 'weekly'>('once');
+  const [recurringType, setRecurringType] = useState<'once' | 'daily' | 'dailyExclude' | 'weekly'>('once');
+  const [excludedDays, setExcludedDays] = useState<number[]>([]); // 0=Sunday, 1=Monday, ..., 6=Saturday
   const [newTrip, setNewTrip] = useState({
     route_id: '',
     company_id: '',
@@ -2191,13 +2219,22 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
         if (recurringType !== 'once') {
           const baseDepartureTime = new Date(newTrip.departure_time);
           const baseArrivalTime = new Date(newTrip.arrival_time);
-          const iterations = recurringType === 'daily' ? 30 : 4;
-          const dayIncrement = recurringType === 'daily' ? 1 : 7;
+          
+          // For dailyExclude, we iterate through 30 days but skip excluded days
+          // For daily, 30 iterations with 1 day increment
+          // For weekly, 4 iterations with 7 day increment
+          const iterations = (recurringType === 'daily' || recurringType === 'dailyExclude') ? 30 : 4;
+          const dayIncrement = (recurringType === 'daily' || recurringType === 'dailyExclude') ? 1 : 7;
           
           for (let i = 1; i < iterations; i++) {
             try {
               const recurringDepartureTime = new Date(baseDepartureTime);
               recurringDepartureTime.setDate(recurringDepartureTime.getDate() + (dayIncrement * i));
+              
+              // Skip excluded days for dailyExclude option
+              if (recurringType === 'dailyExclude' && excludedDays.includes(recurringDepartureTime.getDay())) {
+                continue; // Skip this day
+              }
               
               const recurringArrivalTime = new Date(baseArrivalTime);
               recurringArrivalTime.setDate(recurringArrivalTime.getDate() + (dayIncrement * i));
@@ -2297,6 +2334,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
       setTripImageId(null);
       setTripFares([]);
       setRecurringType('once');
+      setExcludedDays([]);
       setNewTrip({
         from_city: '',
         to_city: '',
@@ -2347,6 +2385,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
     setTripImageId(null);
     setTripFares([]);
     setRecurringType('once');
+    setExcludedDays([]);
     // For Agent Managers, automatically set their company_id
     const agentManagerCompanyId = (user?.role === 'agent' && user?.agent_type === 'manager' && user?.company_id) 
       ? String(user.company_id) 
@@ -3709,7 +3748,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                             name="recurring"
                             value="once"
                             checked={recurringType === 'once'}
-                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'weekly')}
+                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'dailyExclude' | 'weekly')}
                             className="w-4 h-4 text-green-600"
                           />
                           <span className="text-sm">{t.once}</span>
@@ -3720,7 +3759,7 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                             name="recurring"
                             value="daily"
                             checked={recurringType === 'daily'}
-                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'weekly')}
+                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'dailyExclude' | 'weekly')}
                             className="w-4 h-4 text-green-600"
                           />
                           <span className="text-sm">{t.daily}</span>
@@ -3729,14 +3768,63 @@ export function AdminDashboard({ user, language }: AdminDashboardProps) {
                           <input
                             type="radio"
                             name="recurring"
+                            value="dailyExclude"
+                            checked={recurringType === 'dailyExclude'}
+                            onChange={(e) => {
+                              setRecurringType(e.target.value as 'once' | 'daily' | 'dailyExclude' | 'weekly');
+                              setExcludedDays([]);
+                            }}
+                            className="w-4 h-4 text-green-600"
+                          />
+                          <span className="text-sm">{t.dailyExclude}</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="recurring"
                             value="weekly"
                             checked={recurringType === 'weekly'}
-                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'weekly')}
+                            onChange={(e) => setRecurringType(e.target.value as 'once' | 'daily' | 'dailyExclude' | 'weekly')}
                             className="w-4 h-4 text-green-600"
                           />
                           <span className="text-sm">{t.weekly}</span>
                         </label>
                       </div>
+                      
+                      {/* Excluded Days Selection - only show when dailyExclude is selected */}
+                      {recurringType === 'dailyExclude' && (
+                        <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                          <label className="block text-sm font-medium text-gray-700 mb-3">{t.excludeDays}</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {[
+                              { day: 0, label: t.sunday },
+                              { day: 1, label: t.monday },
+                              { day: 2, label: t.tuesday },
+                              { day: 3, label: t.wednesday },
+                              { day: 4, label: t.thursday },
+                              { day: 5, label: t.friday },
+                              { day: 6, label: t.saturday },
+                            ].map(({ day, label }) => (
+                              <label key={day} className="flex items-center gap-2 cursor-pointer p-2 rounded hover:bg-gray-100">
+                                <input
+                                  type="checkbox"
+                                  checked={excludedDays.includes(day)}
+                                  onChange={(e) => {
+                                    if (e.target.checked) {
+                                      setExcludedDays([...excludedDays, day]);
+                                    } else {
+                                      setExcludedDays(excludedDays.filter(d => d !== day));
+                                    }
+                                  }}
+                                  className="w-4 h-4 text-red-600 rounded"
+                                />
+                                <span className="text-sm">{label}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      
                       <p className="text-xs text-gray-500 mt-2">{t.recurringInfo}</p>
                     </div>
                   )}
